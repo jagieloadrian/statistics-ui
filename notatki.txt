@@ -1,0 +1,18 @@
+
+
+Statisctics app and web page
+1. kontrakt z backendem
+    1.1. pomyśleć o attack rate
+2. implementacje wizualizacji statsów
+3. dodać ewnentualne bajery
+
+Zadania:
+1. Zrobić graph działania aplikacji
+2. uporządkowac ekrany
+ 2.1. uporządkować modele
+ 2.1.1 wyodrębnić utils, colory, shapes itd
+ 2.2. dopisać ktor client
+ 2.3. testy
+3. dopisać sso
+4. uporządkować readme
+5.
