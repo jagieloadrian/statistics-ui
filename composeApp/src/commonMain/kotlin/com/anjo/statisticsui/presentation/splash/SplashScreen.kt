@@ -39,6 +39,9 @@ import androidx.compose.ui.graphics.StrokeCap.Companion.Round
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
+import com.anjo.statisticsui.ui.theme.SMALL_PADDING
+import com.anjo.statisticsui.ui.theme.SMALL_SMALL_PADDING
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -94,7 +97,7 @@ fun SplashScreen(onAnimationFinished: () -> Unit) {
                     .alpha(alpha.value)
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(MEDIUM_PADDING))
 
             Text(
                 text = "StatsFlow",
@@ -110,7 +113,7 @@ fun SplashScreen(onAnimationFinished: () -> Unit) {
                 color = Color(0xFFAAAAAA),
                 fontSize = 14.sp,
                 modifier = Modifier
-                    .padding(top = 8.dp)
+                    .padding(top = SMALL_PADDING)
                     .alpha(alpha.value)
             )
         }
@@ -166,7 +169,7 @@ fun StatsLogo(
                 color = Color.White.copy(alpha = lineAlpha),
                 start = Offset(0f, baseHeight * 0.8f),
                 end = Offset(size.width, baseHeight * 0.2f),
-                strokeWidth = 4.dp.toPx(),
+                strokeWidth = SMALL_SMALL_PADDING.toPx(),
                 cap = Round
             )
         }
@@ -191,7 +194,7 @@ fun LoadingDots() {
         animationSpec = infiniteRepeatable(tween(600, delayMillis = 400), RepeatMode.Reverse)
     )
 
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
         Dot(alpha1)
         Dot(alpha2)
         Dot(alpha3)

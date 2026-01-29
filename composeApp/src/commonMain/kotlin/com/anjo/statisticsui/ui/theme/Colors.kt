@@ -1,4 +1,4 @@
-package com.anjo.statisticsui.theme
+package com.anjo.statisticsui.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

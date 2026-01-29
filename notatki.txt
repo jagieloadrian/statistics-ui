@@ -15,4 +15,3 @@ Zadania:
  2.3. testy
 3. dopisać sso
 4. uporządkować readme
-5.

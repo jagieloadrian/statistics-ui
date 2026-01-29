@@ -20,7 +20,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Coronavirus
-import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -43,13 +42,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.anjo.statisticsui.model.DataTypeTile
 import com.anjo.statisticsui.model.ScreenIcons
 import com.anjo.statisticsui.navigation.Screen
+import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
+import com.anjo.statisticsui.ui.theme.LARGE_PADDING
+import com.anjo.statisticsui.ui.theme.LARGE_SMALL_PADDING
+import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
+import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
+import com.anjo.statisticsui.ui.theme.SMALL_PADDING
+import com.anjo.statisticsui.ui.theme.SMALL_SMALL_PADDING
 
 
 @Composable
@@ -62,20 +67,19 @@ fun MainLayout(navController: NavHostController) {
                 drawerContainerColor = MaterialTheme.colorScheme.surface,
                 modifier = Modifier.width(240.dp)
             ) {
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(MEDIUM_PADDING))
                 Text(
                     text = "StatsFlow",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
+                    modifier = Modifier.padding(horizontal = MEDIUM_PADDING, vertical = SMALL_MEDIUM_PADDING)
                 )
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    modifier = Modifier.padding(horizontal = SMALL_MEDIUM_PADDING, vertical = SMALL_PADDING)
                 )
 
-                // Elementy menu
                 ScreenIcons.entries.forEach { screen ->
                     NavigationDrawerItem(
                         label = { Text(screen.label) },
@@ -89,7 +93,7 @@ fun MainLayout(navController: NavHostController) {
                             unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                             unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                         ),
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(horizontal = LARGE_SMALL_PADDING, vertical = SMALL_SMALL_PADDING)
                     )
                 }
             }
@@ -131,7 +135,7 @@ fun DashboardContent(navController: NavHostController) {
         )
     )
 
-    Column(modifier = Modifier.fillMaxSize().padding(32.dp)) {
+    Column(modifier = Modifier.fillMaxSize().padding(LARGE_MEDIUM_PADDING)) {
         Text(
             text = "Welcome",
             style = MaterialTheme.typography.headlineLarge,
@@ -142,13 +146,13 @@ fun DashboardContent(navController: NavHostController) {
             text = "Choose category to analyze",
             style = MaterialTheme.typography.bodyLarge,
             color = Color.Gray,
-            modifier = Modifier.padding(top = 8.dp, bottom = 32.dp)
+            modifier = Modifier.padding(top = SMALL_PADDING, bottom = LARGE_MEDIUM_PADDING)
         )
 
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 200.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(SMALL_MEDIUM_PADDING),
+            verticalArrangement = Arrangement.spacedBy(SMALL_MEDIUM_PADDING)
         ) {
             items(tiles) { tile ->
                 DataTileCard(tile) {
@@ -162,8 +166,8 @@ fun DashboardContent(navController: NavHostController) {
 @Composable
 fun DataTileCard(tile: DataTypeTile, onClick: () -> Unit) {
     Card(
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(SMALL_MEDIUM_PADDING),
+        elevation = CardDefaults.cardElevation(defaultElevation = SMALL_SMALL_PADDING),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier
             .height(180.dp)
@@ -187,20 +191,20 @@ fun DataTileCard(tile: DataTypeTile, onClick: () -> Unit) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(24.dp),
+                    .padding(MEDIUM_PADDING),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(LARGE_SMALL_PADDING),
                     color = tile.primaryColor.copy(alpha = 0.2f),
-                    modifier = Modifier.size(56.dp)
+                    modifier = Modifier.size(LARGE_PADDING)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = tile.icon,
                             contentDescription = tile.title,
                             tint = tile.primaryColor,
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(LARGE_MEDIUM_PADDING)
                         )
                     }
                 }

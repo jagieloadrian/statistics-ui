@@ -28,16 +28,20 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
+import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
+import com.anjo.statisticsui.ui.theme.SMALL_PADDING
+import com.anjo.statisticsui.ui.theme.XLARGE_PADDING
 
 
 @Composable
 fun DataDetailScreen(title: String, icon: ImageVector, color: Color, navController: NavHostController) {
-    Column(modifier = Modifier.fillMaxSize().padding(32.dp)) {
+    Column(modifier = Modifier.fillMaxSize().padding(LARGE_MEDIUM_PADDING)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { navController.popBackStack() }) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Wstecz", tint = Color.White)
             }
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(SMALL_PADDING))
             Text(title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         }
 
@@ -49,11 +53,11 @@ fun DataDetailScreen(title: String, icon: ImageVector, color: Color, navControll
         ) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(icon, null, tint = color, modifier = Modifier.size(80.dp))
+                    Icon(icon, null, tint = color, modifier = Modifier.size(XLARGE_PADDING))
                     Text("Details for: $title", color = Color.Gray)
                     Button(
                         onClick = { navController.popBackStack() },
-                        modifier = Modifier.padding(top = 24.dp),
+                        modifier = Modifier.padding(top = MEDIUM_PADDING),
                         colors = ButtonDefaults.buttonColors(containerColor = color)
                     ) {
                         Text("Back")

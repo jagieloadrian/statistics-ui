@@ -17,8 +17,8 @@ import com.anjo.statisticsui.presentation.home.DashboardContent
 import com.anjo.statisticsui.presentation.home.MainLayout
 import com.anjo.statisticsui.presentation.home.PlaceholderScreen
 import com.anjo.statisticsui.presentation.splash.SplashScreen
-import com.anjo.statisticsui.theme.Colors.LIGHT_ORANGE
-import com.anjo.statisticsui.theme.Colors.LIGHT_RED
+import com.anjo.statisticsui.ui.theme.Colors.LIGHT_ORANGE
+import com.anjo.statisticsui.ui.theme.Colors.LIGHT_RED
 
 @Composable
 fun NavGraph(navController: NavHostController, startDestination: String = Screen.Splash.route, modifier: Modifier = Modifier) {
