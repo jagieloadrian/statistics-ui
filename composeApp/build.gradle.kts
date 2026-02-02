@@ -1,5 +1,6 @@
 @file:OptIn(ExperimentalKotlinGradlePluginApi::class)
 
+import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
@@ -10,6 +11,7 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.koinCompiler)
+    alias(libs.plugins.buildKonfig)
 }
 
 kotlin {
@@ -66,6 +68,12 @@ kotlin {
     }
 }
 
+buildkonfig {
+     packageName = "com.anjo.statisticsui"
+    defaultConfigs {
+        buildConfigField(STRING, "backendurl", "d18-terminal.int:8080/")
+    }
+}
 
 compose.desktop {
     application {

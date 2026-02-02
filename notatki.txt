@@ -15,3 +15,7 @@ Zadania:
  2.3. testy
 3. dopisać sso
 4. uporządkować readme
+
+wersje
+kotlin 2.3.20-beta1 nie kompiluje js -> użyć 2.3.0
+koin 4.2.0-RC1 - używa kotlin 2.3.20-beta1 -> użyć 4.1.1
