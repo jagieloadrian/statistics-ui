@@ -14,6 +14,7 @@ import io.ktor.http.URLProtocol
 import io.ktor.http.headers
 import io.ktor.http.path
 import kotlinx.datetime.LocalDateTime
+import org.koin.core.annotation.Singleton
 
 interface TemperatureApi {
     suspend fun getTemperatureDevices() : List<TemperatureDevice>
@@ -21,6 +22,7 @@ interface TemperatureApi {
     suspend fun getTemperatureSummary(deviceId:String): TemperatureSummary
 }
 
+@Singleton
 class TemperatureClient(private val client: HttpClient, private val backendUrl:String = BuildKonfig.backendurl): TemperatureApi {
 
     override suspend fun getTemperatureDevices(): List<TemperatureDevice> {
@@ -42,11 +44,34 @@ class TemperatureClient(private val client: HttpClient, private val backendUrl:S
         to: LocalDateTime,
         resolution: Resolution
     ): List<TemperatureSeries> {
-        TODO("Not yet implemented")
+       return client.get {
+           url {
+               protocol = URLProtocol.HTTP
+               host = backendUrl
+               path(ApiUrls.getTemperatureSeriesUrl(deviceId))
+               parameters.append("from", from.toString())
+               parameters.append("to", to.toString())
+               parameters.append("resolution", resolution.param)
+           }
+           headers {
+               append(HttpHeaders.Accept , "application/json")
+           }
+       }
+           .body()
     }
 
     override suspend fun getTemperatureSummary(deviceId: String): TemperatureSummary {
-        TODO("Not yet implemented")
+        return client.get {
+            url {
+                protocol = URLProtocol.HTTP
+                host = backendUrl
+                path(ApiUrls.getTemperatureSummaryUrl(deviceId))
+            }
+            headers {
+                append(HttpHeaders.Accept , "application/json")
+            }
+        }
+            .body()
     }
 
 }
