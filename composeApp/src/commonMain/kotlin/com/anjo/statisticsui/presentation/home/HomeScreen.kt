@@ -17,10 +17,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Coronavirus
-import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -55,6 +51,10 @@ import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_SMALL_PADDING
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Arrow_forward
+import com.composables.icons.materialsymbols.rounded.Coronavirus
+import com.composables.icons.materialsymbols.rounded.Thermostat
 
 
 @Composable
@@ -120,7 +120,7 @@ fun DashboardContent(navController: NavHostController) {
         DataTypeTile(
             id = "temp",
             title = "Temperature",
-            icon = Icons.Default.Thermostat,
+            icon = MaterialSymbols.Rounded.Thermostat,
             primaryColor = Color(0xFFFF7043),
             secondaryColor = Color(0xFFFFAB91),
             route = Screen.TemperatureDetails.route,
@@ -128,7 +128,7 @@ fun DashboardContent(navController: NavHostController) {
         DataTypeTile(
             id = "epidemic",
             title = "Epidemic",
-            icon = Icons.Default.Coronavirus,
+            icon = MaterialSymbols.Rounded.Coronavirus,
             primaryColor = Color(0xFFEF5350),
             secondaryColor = Color(0xFFE57373),
             route = Screen.EpidemicDetails.route,
@@ -222,7 +222,7 @@ fun DataTileCard(tile: DataTypeTile, onClick: () -> Unit) {
                     )
 
                     Icon(
-                        imageVector = Icons.AutoMirrored.Default.ArrowForward,
+                        imageVector = MaterialSymbols.Rounded.Arrow_forward,
                         contentDescription = "Go",
                         tint = Color.Gray.copy(alpha = 0.5f),
                         modifier = Modifier.size(20.dp)

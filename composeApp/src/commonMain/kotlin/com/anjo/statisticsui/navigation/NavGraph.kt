@@ -4,21 +4,20 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Coronavirus
-import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.anjo.statisticsui.presentation.configurationchart.temperature.TemperatureDeviceListScreen
 import com.anjo.statisticsui.presentation.details.DataDetailScreen
 import com.anjo.statisticsui.presentation.home.DashboardContent
 import com.anjo.statisticsui.presentation.home.MainLayout
 import com.anjo.statisticsui.presentation.home.PlaceholderScreen
 import com.anjo.statisticsui.presentation.splash.SplashScreen
-import com.anjo.statisticsui.ui.theme.Colors.LIGHT_ORANGE
 import com.anjo.statisticsui.ui.theme.Colors.LIGHT_RED
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Coronavirus
 
 @Composable
 fun NavGraph(navController: NavHostController, startDestination: String = Screen.Splash.route, modifier: Modifier = Modifier) {
@@ -39,10 +38,11 @@ fun NavGraph(navController: NavHostController, startDestination: String = Screen
             DashboardContent(navController)
         }
         composable(Screen.TemperatureDetails.route) {
-            DataDetailScreen("Temperature statistics", Icons.Default.Thermostat, LIGHT_ORANGE, navController)
+//            DataDetailScreen("Temperature statistics", Icons.Default.Thermostat, LIGHT_ORANGE, navController)
+            TemperatureDeviceListScreen(navController)
         }
         composable(Screen.EpidemicDetails.route) {
-            DataDetailScreen("Epidemic statistics", Icons.Default.Coronavirus, LIGHT_RED, navController)
+            DataDetailScreen("Epidemic statistics", MaterialSymbols.Rounded.Coronavirus, LIGHT_RED, navController)
         }
         composable(Screen.Charts.route) {
             PlaceholderScreen("Charts")
