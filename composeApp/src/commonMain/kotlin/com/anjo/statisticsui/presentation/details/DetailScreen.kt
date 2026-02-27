@@ -17,6 +17,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -36,31 +37,35 @@ import com.composables.icons.materialsymbols.rounded.Arrow_back
 
 @Composable
 fun DataDetailScreen(title: String, icon: ImageVector, color: Color, navController: NavHostController) {
-    Column(modifier = Modifier.fillMaxSize().padding(LARGE_MEDIUM_PADDING)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(MaterialSymbols.Rounded.Arrow_back, contentDescription = "Wstecz", tint = Color.White)
+    Scaffold(
+            containerColor = MaterialTheme.colorScheme.background
+    ) { padding ->
+        Column(modifier = Modifier.fillMaxSize().padding(LARGE_MEDIUM_PADDING)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(MaterialSymbols.Rounded.Arrow_back, contentDescription = "Wstecz", tint = Color.White)
+                }
+                Spacer(Modifier.width(SMALL_PADDING))
+                Text(title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             }
-            Spacer(Modifier.width(SMALL_PADDING))
-            Text(title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        }
 
-        Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(40.dp))
 
-        Card(
-            modifier = Modifier.fillMaxWidth().height(300.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-        ) {
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(icon, null, tint = color, modifier = Modifier.size(XLARGE_PADDING))
-                    Text("Details for: $title", color = Color.Gray)
-                    Button(
-                        onClick = { navController.popBackStack() },
-                        modifier = Modifier.padding(top = MEDIUM_PADDING),
-                        colors = ButtonDefaults.buttonColors(containerColor = color)
-                    ) {
-                        Text("Back")
+            Card(
+                    modifier = Modifier.fillMaxWidth().height(300.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(icon, null, tint = color, modifier = Modifier.size(XLARGE_PADDING))
+                        Text("Details for: $title", color = Color.Gray)
+                        Button(
+                                onClick = { navController.popBackStack() },
+                                modifier = Modifier.padding(top = MEDIUM_PADDING),
+                                colors = ButtonDefaults.buttonColors(containerColor = color)
+                        ) {
+                            Text("Back")
+                        }
                     }
                 }
             }

@@ -6,6 +6,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
+    alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
@@ -51,6 +52,9 @@ kotlin {
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.ktor.client.logging)
 
+            implementation(libs.kotlin.logging)
+
+            //kotlin
             implementation(libs.kotlinx.date.time)
             //koin
             implementation(project.dependencies.platform(libs.koin.bom))
@@ -66,21 +70,29 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            implementation(libs.kotlin.logging.jvm)
+            implementation(libs.logback.classic)
+        }
+        jsMain.dependencies {
+            implementation(libs.kotlin.logging.js)
+        }
+        wasmJsMain.dependencies {
+            implementation(libs.kotlin.logging.wasmjs)
         }
     }
 }
 
 buildkonfig {
-     packageName = "com.anjo.statisticsui"
+    packageName = "com.anjo.statisticsui"
     defaultConfigs {
-        buildConfigField(STRING, "backendurl", "d18-terminal.int:8080/")
+        buildConfigField(STRING, "backendurl", "http://127.0.0.1:8080")
     }
 }
 
 compose.desktop {
     application {
         mainClass = "com.anjo.statisticsui.MainKt"
-   
+
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "com.anjo.statisticsui"

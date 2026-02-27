@@ -9,15 +9,10 @@ import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
-import org.koin.dsl.module
+import org.koin.core.annotation.Singleton
 
 
-val networkModule = module {
-    single {
-        createHttpClient()
-    }
-}
-
+@Singleton
 fun createHttpClient(): HttpClient {
     return HttpClient(CIO) {
         install(ContentNegotiation) {

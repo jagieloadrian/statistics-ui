@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.anjo.statisticsui.model.dto.TemperatureDevice
 import com.anjo.statisticsui.service.rest.TemperatureApi
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,19 +14,24 @@ import org.koin.core.annotation.KoinViewModel
 import kotlin.collections.emptyList
 import com.anjo.statisticsui.model.Result
 import com.anjo.statisticsui.model.Status
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 @KoinViewModel
 class TemperatureRunsViewModel(
     private val temperatureApi: TemperatureApi,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.Default
+    private val ioDispatcher: CoroutineDispatcher
 ) : ViewModel()  {
+
+    private val logger = KotlinLogging.logger {  }
 
     private val _devices = MutableStateFlow(Result<List<TemperatureDevice>>(data = emptyList()))
     val devices: StateFlow<Result<List<TemperatureDevice>>> = _devices.asStateFlow()
 
-    fun getDevices() {
+    fun fetchDevices() {
         viewModelScope.launch(ioDispatcher) {
+            logger.info { "Start fetching devices" }
             _devices.update {
+                logger.info { "fetching devices..." }
                 val data = temperatureApi.getTemperatureDevices()
                 it.copy(status = Status.SUCCESS, data = data)
             }
