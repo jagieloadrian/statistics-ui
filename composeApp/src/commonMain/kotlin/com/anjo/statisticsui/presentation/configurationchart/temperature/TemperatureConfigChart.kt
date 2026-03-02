@@ -2,12 +2,30 @@ package com.anjo.statisticsui.presentation.configurationchart.temperature
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -15,10 +33,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.anjo.statisticsui.model.dto.TemperatureDevice
+import com.anjo.statisticsui.presentation.configurationchart.common.ConfigAnalyticsHeader
+import com.anjo.statisticsui.presentation.configurationchart.common.SummaryBox
+import com.anjo.statisticsui.presentation.configurationchart.common.toPrettyString
 import com.composables.icons.materialsymbols.MaterialSymbols
-import com.composables.icons.materialsymbols.rounded.Arrow_back
 import com.composables.icons.materialsymbols.rounded.Bar_chart
-import com.composables.icons.materialsymbols.rounded.Download
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.number
 import org.koin.compose.viewmodel.koinViewModel
@@ -45,57 +64,21 @@ fun TemperatureDeviceListScreen(navController: NavHostController,
                         .padding(horizontal = 32.dp, vertical = 24.dp)
                         .background(MaterialTheme.colorScheme.background)
         ) {
-            // Nagłówek analityczny
-            Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(MaterialSymbols.Rounded.Arrow_back, contentDescription = "Wstecz", tint = Color.White)
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    Column {
-                        Text(
-                                text = "Devices",
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                        )
-                        Text(
-                                text = "Activity time analysis and connection history",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.Gray
-                        )
-                    }
-                }
-
-                OutlinedButton(
-                        onClick = { /* Export danych */ },
-                        shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(MaterialSymbols.Rounded.Download, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Export CSV")
-                }
-            }
+            ConfigAnalyticsHeader("Devices", navController)
 
             Spacer(Modifier.height(32.dp))
 
-            // Podsumowanie floty
             Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 SummaryBox("All", itemsData.data.size.toString(), Color.White, Modifier.weight(1f))
-                SummaryBox("Last seen", "18", Color(0xFF4CAF50), Modifier.weight(1f))
-                SummaryBox("Offline", "6", Color(0xFFEF5350), Modifier.weight(1f))
+                SummaryBox("First seen", itemsData.data.map {it.firstSeen}.minByOrNull { it }.toPrettyString(), Color(0xFF4CAF50), Modifier.weight(1f))
+                SummaryBox("Last seen", itemsData.data.map {it.lastSeen}.maxByOrNull { it }.toPrettyString(), Color(0xFFEF5350), Modifier.weight(1f))
             }
 
             Spacer(Modifier.height(32.dp))
 
-            // Nagłówki tabeli (opcjonalnie dla stylu dashboardu)
             Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -168,20 +151,6 @@ fun DeviceStatRow(device: TemperatureDevice, onClick: () -> Unit) {
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp)
             )
-        }
-    }
-}
-
-@Composable
-fun SummaryBox(label: String, value: String, color: Color, modifier: Modifier) {
-    Surface(
-            modifier = modifier,
-            color = Color.White.copy(alpha = 0.05f),
-            shape = RoundedCornerShape(8.dp)
-    ) {
-        Column(Modifier.padding(12.dp)) {
-            Text(label, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-            Text(value, style = MaterialTheme.typography.titleLarge, color = color, fontWeight = FontWeight.Black)
         }
     }
 }

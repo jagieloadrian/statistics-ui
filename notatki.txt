@@ -1,5 +1,3 @@
-
-
 Statisctics app and web page
 1. kontrakt z backendem
     1.1. pomyśleć o attack rate
@@ -15,6 +13,7 @@ Zadania:
  2.3. testy
 3. dopisać sso
 4. uporządkować readme
+5. obsługa błędów
 
 wersje
 kotlin 2.3.20-beta2 możliwe ze kompiluje js

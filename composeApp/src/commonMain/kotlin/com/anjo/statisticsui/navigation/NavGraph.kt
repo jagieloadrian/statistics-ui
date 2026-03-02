@@ -11,14 +11,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.anjo.statisticsui.presentation.configurationchart.epidemic.EpidemicConfigChart
 import com.anjo.statisticsui.presentation.configurationchart.temperature.TemperatureDeviceListScreen
-import com.anjo.statisticsui.presentation.details.DataDetailScreen
 import com.anjo.statisticsui.presentation.home.DashboardContent
 import com.anjo.statisticsui.presentation.home.MainLayout
 import com.anjo.statisticsui.presentation.home.PlaceholderScreen
 import com.anjo.statisticsui.presentation.splash.SplashScreen
-import com.anjo.statisticsui.ui.theme.Colors.LIGHT_RED
-import com.composables.icons.materialsymbols.MaterialSymbols
-import com.composables.icons.materialsymbols.rounded.Coronavirus
 
 @Composable
 fun NavGraph(navController: NavHostController, startDestination: String = Screen.Splash.route, modifier: Modifier = Modifier) {
@@ -43,7 +39,7 @@ fun NavGraph(navController: NavHostController, startDestination: String = Screen
             TemperatureDeviceListScreen(navController)
         }
         composable(Screen.EpidemicDetails.route) {
-            DataDetailScreen("Epidemic statistics", MaterialSymbols.Rounded.Coronavirus, LIGHT_RED, navController)
+//            DataDetailScreen("Epidemic statistics", MaterialSymbols.Rounded.Coronavirus, LIGHT_RED, navController)
             EpidemicConfigChart(navController)
         }
         composable(Screen.Charts.route) {
