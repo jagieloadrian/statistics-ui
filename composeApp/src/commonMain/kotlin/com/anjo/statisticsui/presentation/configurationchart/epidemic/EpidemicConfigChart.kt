@@ -33,11 +33,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.anjo.statisticsui.model.dto.EpidemicShortRun
-import com.anjo.statisticsui.model.dto.TemperatureDevice
 import com.anjo.statisticsui.presentation.configurationchart.common.ConfigAnalyticsHeader
 import com.anjo.statisticsui.presentation.configurationchart.common.SummaryBox
 import com.anjo.statisticsui.presentation.configurationchart.common.toPrettyString
-import com.anjo.statisticsui.presentation.configurationchart.temperature.formatDate
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Bar_chart
 import org.koin.compose.viewmodel.koinViewModel
