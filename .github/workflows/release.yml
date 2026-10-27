@@ -20,7 +20,8 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v6
-      - run: ./gradlew :composeApp:packageDistributionForCurrentOS
+      - run: ./gradlew :composeApp:packageDistributionForCurrentOS -PappVersion="${GITHUB_REF_NAME#v}"
+        shell: bash
       - uses: actions/upload-artifact@v7
         with:
           name: desktop-${{ matrix.os }}
