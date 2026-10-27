@@ -9,16 +9,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.rememberNavController
-import com.anjo.statisticsui.api.Prefs
-import com.anjo.statisticsui.auth.LocalPrefs
 import com.anjo.statisticsui.auth.Session
+import com.anjo.statisticsui.di.StatsUIApplication
+import com.anjo.statisticsui.model.Prefs
 import com.anjo.statisticsui.navigation.NavGraph
+import com.anjo.statisticsui.ui.common.LocalPrefs
 import org.koin.compose.KoinApplication
 import org.koin.compose.koinInject
-import org.koin.core.annotation.ComponentScan
-import org.koin.core.annotation.Configuration
-import org.koin.core.annotation.KoinApplication
-import org.koin.core.annotation.Module
 import org.koin.plugin.module.dsl.koinConfiguration
 
 private val DarkColors = darkColorScheme(
@@ -52,11 +49,3 @@ fun App() {
         }
     }
 }
-
-@KoinApplication(modules = [StatsUiModule::class])
-class StatsUIApplication
-
-@Module
-@Configuration
-@ComponentScan("com.anjo.statisticsui")
-class StatsUiModule

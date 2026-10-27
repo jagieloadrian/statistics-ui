@@ -1,4 +1,4 @@
-package com.anjo.statisticsui.presentation.common
+package com.anjo.statisticsui.ui.common
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +16,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.navigation.NavHostController
+import com.anjo.statisticsui.model.Prefs
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.composables.icons.materialsymbols.MaterialSymbols
@@ -36,6 +38,9 @@ import com.composables.icons.materialsymbols.rounded.Delete
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+
+/** The signed-in user's preferences (zone, units, theme) for every widget renderer. */
+val LocalPrefs = compositionLocalOf { Prefs() }
 
 /** Like [runCatching], but lets coroutine cancellation through. */
 suspend fun <T> catching(block: suspend () -> T): Result<T> =

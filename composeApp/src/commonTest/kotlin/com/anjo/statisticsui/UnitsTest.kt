@@ -1,6 +1,6 @@
 package com.anjo.statisticsui
 
-import com.anjo.statisticsui.presentation.dashboard.unitDisplay
+import com.anjo.statisticsui.model.unitDisplay
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals

@@ -1,4 +1,4 @@
-package com.anjo.statisticsui.presentation.home
+package com.anjo.statisticsui.ui.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -45,18 +45,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.anjo.statisticsui.api.DefinitionSummary
 import com.anjo.statisticsui.api.PlatformApi
-import com.anjo.statisticsui.api.Prefs
 import com.anjo.statisticsui.auth.Session
 import com.anjo.statisticsui.model.DataTypeTile
+import com.anjo.statisticsui.model.DefinitionSummary
+import com.anjo.statisticsui.model.Prefs
 import com.anjo.statisticsui.model.ScreenIcons
 import com.anjo.statisticsui.navigation.Screen
-import com.anjo.statisticsui.presentation.account.AccountScreen
-import com.anjo.statisticsui.presentation.common.ErrorText
-import com.anjo.statisticsui.presentation.common.attempt
-import com.anjo.statisticsui.presentation.common.catching
-import com.anjo.statisticsui.presentation.dashboard.NewDashboardDialog
+import com.anjo.statisticsui.ui.account.AccountScreen
+import com.anjo.statisticsui.ui.common.ErrorText
+import com.anjo.statisticsui.ui.common.attempt
+import com.anjo.statisticsui.ui.common.catching
+import com.anjo.statisticsui.ui.dashboard.NewDashboardDialog
 import com.anjo.statisticsui.ui.theme.Colors
 import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.LARGE_PADDING

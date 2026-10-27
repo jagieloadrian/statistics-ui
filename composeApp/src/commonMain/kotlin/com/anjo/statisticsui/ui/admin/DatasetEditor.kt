@@ -1,4 +1,4 @@
-package com.anjo.statisticsui.presentation.admin
+package com.anjo.statisticsui.ui.admin
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,19 +25,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.anjo.statisticsui.api.Dataset
-import com.anjo.statisticsui.api.DefinitionSummary
-import com.anjo.statisticsui.api.Dimension
 import com.anjo.statisticsui.api.ApiException
-import com.anjo.statisticsui.api.Measure
 import com.anjo.statisticsui.api.PlatformApi
-import com.anjo.statisticsui.presentation.common.ConfirmButton
-import com.anjo.statisticsui.presentation.common.ErrorText
-import com.anjo.statisticsui.presentation.common.Field
-import com.anjo.statisticsui.presentation.common.ListEditor
-import com.anjo.statisticsui.presentation.common.Picker
-import com.anjo.statisticsui.presentation.common.ScreenHeader
-import com.anjo.statisticsui.presentation.common.attempt
+import com.anjo.statisticsui.model.Dataset
+import com.anjo.statisticsui.model.DefinitionSummary
+import com.anjo.statisticsui.model.Dimension
+import com.anjo.statisticsui.model.Measure
+import com.anjo.statisticsui.ui.common.ConfirmButton
+import com.anjo.statisticsui.ui.common.ErrorText
+import com.anjo.statisticsui.ui.common.Field
+import com.anjo.statisticsui.ui.common.ListEditor
+import com.anjo.statisticsui.ui.common.Picker
+import com.anjo.statisticsui.ui.common.ScreenHeader
+import com.anjo.statisticsui.ui.common.attempt
 import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING

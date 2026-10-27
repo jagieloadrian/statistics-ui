@@ -2,6 +2,27 @@ package com.anjo.statisticsui.api
 
 import com.anjo.statisticsui.auth.Session
 import com.anjo.statisticsui.configuration.AppConfig
+import com.anjo.statisticsui.model.ApiError
+import com.anjo.statisticsui.model.Credential
+import com.anjo.statisticsui.model.Dashboard
+import com.anjo.statisticsui.model.Dataset
+import com.anjo.statisticsui.model.DefinitionSummary
+import com.anjo.statisticsui.model.DimensionValue
+import com.anjo.statisticsui.model.ImportResult
+import com.anjo.statisticsui.model.LoginRequest
+import com.anjo.statisticsui.model.LoginResponse
+import com.anjo.statisticsui.model.MappingTestRequest
+import com.anjo.statisticsui.model.MappingTestResult
+import com.anjo.statisticsui.model.NewUser
+import com.anjo.statisticsui.model.PasswordChange
+import com.anjo.statisticsui.model.Prefs
+import com.anjo.statisticsui.model.Query
+import com.anjo.statisticsui.model.QueryResult
+import com.anjo.statisticsui.model.Shares
+import com.anjo.statisticsui.model.Source
+import com.anjo.statisticsui.model.SourceStatus
+import com.anjo.statisticsui.model.User
+import com.anjo.statisticsui.model.UserUpdate
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.HttpRequestBuilder

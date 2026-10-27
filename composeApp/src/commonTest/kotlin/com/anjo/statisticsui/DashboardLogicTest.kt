@@ -1,15 +1,15 @@
 package com.anjo.statisticsui
 
-import com.anjo.statisticsui.api.FieldSpec
-import com.anjo.statisticsui.api.QueryResult
-import com.anjo.statisticsui.api.Rule
-import com.anjo.statisticsui.api.Series
-import com.anjo.statisticsui.api.TimestampSpec
-import com.anjo.statisticsui.presentation.admin.rows
-import com.anjo.statisticsui.presentation.admin.withRows
-import com.anjo.statisticsui.presentation.dashboard.ChartLine
-import com.anjo.statisticsui.presentation.dashboard.formatNumber
-import com.anjo.statisticsui.presentation.dashboard.lineChartData
+import com.anjo.statisticsui.model.ChartLine
+import com.anjo.statisticsui.model.FieldSpec
+import com.anjo.statisticsui.model.QueryResult
+import com.anjo.statisticsui.model.Rule
+import com.anjo.statisticsui.model.Series
+import com.anjo.statisticsui.model.TimestampSpec
+import com.anjo.statisticsui.ui.admin.rows
+import com.anjo.statisticsui.ui.admin.withRows
+import com.anjo.statisticsui.ui.dashboard.formatNumber
+import com.anjo.statisticsui.ui.dashboard.lineChartData
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlin.test.Test

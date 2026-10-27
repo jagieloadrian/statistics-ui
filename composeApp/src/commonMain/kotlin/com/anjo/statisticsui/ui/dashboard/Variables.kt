@@ -1,4 +1,4 @@
-package com.anjo.statisticsui.presentation.dashboard
+package com.anjo.statisticsui.ui.dashboard
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,30 +21,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.anjo.statisticsui.api.Dashboard
-import com.anjo.statisticsui.api.DimensionValue
 import com.anjo.statisticsui.api.PlatformApi
-import com.anjo.statisticsui.api.Query
-import com.anjo.statisticsui.api.Variable
-import com.anjo.statisticsui.presentation.common.Field
-import com.anjo.statisticsui.presentation.common.Picker
-import com.anjo.statisticsui.presentation.common.catching
+import com.anjo.statisticsui.model.Dashboard
+import com.anjo.statisticsui.model.DimensionValue
+import com.anjo.statisticsui.model.Query
+import com.anjo.statisticsui.model.TimeRange
+import com.anjo.statisticsui.model.Variable
+import com.anjo.statisticsui.model.VariableValue
+import com.anjo.statisticsui.ui.common.Field
+import com.anjo.statisticsui.ui.common.Picker
+import com.anjo.statisticsui.ui.common.catching
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import kotlinx.coroutines.delay
-import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Instant
-
-/** Selected value(s) of a dashboard variable; a bucket variable uses the first. */
-typealias VariableValue = List<String>
-
-data class TimeRange(val from: Instant, val to: Instant) {
-    companion object {
-        fun last(duration: Duration, now: Instant = Clock.System.now()) = TimeRange(now - duration, now)
-    }
-}
 
 /** Starting dashboard range: the `timeRange` variable's default, else `defaultRange`, else 24 h. */
 fun initialDuration(dashboard: Dashboard): Duration =

@@ -1,13 +1,13 @@
 package com.anjo.statisticsui
 
-import com.anjo.statisticsui.api.Dashboard
-import com.anjo.statisticsui.api.Query
-import com.anjo.statisticsui.api.RelativeRange
-import com.anjo.statisticsui.api.Variable
-import com.anjo.statisticsui.presentation.dashboard.TimeRange
-import com.anjo.statisticsui.presentation.dashboard.initialDuration
-import com.anjo.statisticsui.presentation.dashboard.resolve
-import com.anjo.statisticsui.presentation.dashboard.resolveText
+import com.anjo.statisticsui.model.Dashboard
+import com.anjo.statisticsui.model.Query
+import com.anjo.statisticsui.model.RelativeRange
+import com.anjo.statisticsui.model.TimeRange
+import com.anjo.statisticsui.model.Variable
+import com.anjo.statisticsui.ui.dashboard.initialDuration
+import com.anjo.statisticsui.ui.dashboard.resolve
+import com.anjo.statisticsui.ui.dashboard.resolveText
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

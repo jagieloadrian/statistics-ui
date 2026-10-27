@@ -1,8 +1,8 @@
 package com.anjo.statisticsui
 
-import com.anjo.statisticsui.api.Query
-import com.anjo.statisticsui.api.Widget
-import com.anjo.statisticsui.presentation.dashboard.layoutRows
+import com.anjo.statisticsui.model.Query
+import com.anjo.statisticsui.model.Widget
+import com.anjo.statisticsui.ui.dashboard.layoutRows
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

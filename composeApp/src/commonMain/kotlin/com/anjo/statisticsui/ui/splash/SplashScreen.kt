@@ -1,4 +1,4 @@
-package com.anjo.statisticsui.presentation.splash
+package com.anjo.statisticsui.ui.splash
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing

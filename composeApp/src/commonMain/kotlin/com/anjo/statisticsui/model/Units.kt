@@ -1,4 +1,4 @@
-package com.anjo.statisticsui.presentation.dashboard
+package com.anjo.statisticsui.model
 
 /** metric [from] → imperial [to]: `to = from × factor + offset`. */
 private class Conversion(val from: String, val to: String, val factor: Double, val offset: Double = 0.0)

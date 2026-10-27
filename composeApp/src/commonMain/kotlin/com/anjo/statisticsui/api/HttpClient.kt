@@ -1,4 +1,4 @@
-package com.anjo.statisticsui.service.rest.client
+package com.anjo.statisticsui.api
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO

@@ -1,4 +1,4 @@
-package com.anjo.statisticsui.presentation.login
+package com.anjo.statisticsui.ui.login
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,10 +23,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.anjo.statisticsui.api.PlatformApi
-import com.anjo.statisticsui.api.User
-import com.anjo.statisticsui.presentation.common.ErrorText
-import com.anjo.statisticsui.presentation.common.Field
-import com.anjo.statisticsui.presentation.common.attempt
+import com.anjo.statisticsui.model.User
+import com.anjo.statisticsui.ui.common.ErrorText
+import com.anjo.statisticsui.ui.common.Field
+import com.anjo.statisticsui.ui.common.attempt
 import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import org.koin.compose.koinInject

@@ -1,4 +1,4 @@
-package com.anjo.statisticsui.presentation.admin
+package com.anjo.statisticsui.ui.admin
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,24 +36,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.anjo.statisticsui.api.DefinitionSummary
-import com.anjo.statisticsui.api.FieldSpec
-import com.anjo.statisticsui.api.ImportResult
-import com.anjo.statisticsui.api.MappingTestRequest
-import com.anjo.statisticsui.api.MappingTestResult
 import com.anjo.statisticsui.api.PlatformApi
-import com.anjo.statisticsui.api.Rule
-import com.anjo.statisticsui.api.Source
-import com.anjo.statisticsui.api.SourceStatus
-import com.anjo.statisticsui.api.platformJson
-import com.anjo.statisticsui.presentation.common.ConfirmButton
-import com.anjo.statisticsui.presentation.common.ErrorText
-import com.anjo.statisticsui.presentation.common.Field
-import com.anjo.statisticsui.presentation.common.ListEditor
-import com.anjo.statisticsui.presentation.common.Picker
-import com.anjo.statisticsui.presentation.common.ScreenHeader
-import com.anjo.statisticsui.presentation.common.attempt
-import com.anjo.statisticsui.presentation.common.catching
+import com.anjo.statisticsui.model.DefinitionSummary
+import com.anjo.statisticsui.model.FieldSpec
+import com.anjo.statisticsui.model.ImportResult
+import com.anjo.statisticsui.model.MapRow
+import com.anjo.statisticsui.model.MappingTestRequest
+import com.anjo.statisticsui.model.MappingTestResult
+import com.anjo.statisticsui.model.Rule
+import com.anjo.statisticsui.model.Source
+import com.anjo.statisticsui.model.SourceStatus
+import com.anjo.statisticsui.ui.common.ConfirmButton
+import com.anjo.statisticsui.ui.common.ErrorText
+import com.anjo.statisticsui.ui.common.Field
+import com.anjo.statisticsui.ui.common.ListEditor
+import com.anjo.statisticsui.ui.common.Picker
+import com.anjo.statisticsui.ui.common.ScreenHeader
+import com.anjo.statisticsui.ui.common.attempt
+import com.anjo.statisticsui.ui.common.catching
 import com.anjo.statisticsui.ui.theme.Colors
 import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
@@ -62,7 +62,11 @@ import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Refresh
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import org.koin.compose.koinInject
+
+/** Used for the JSON text areas (advanced mapping, sample payloads, records). */
+private val platformJson = Json { ignoreUnknownKeys = true; prettyPrint = true }
 
 /** Source states from data-model.md (source status state machine). */
 private val STATE_COLORS = mapOf(
@@ -120,17 +124,6 @@ fun SourcesScreen(navController: NavHostController, api: PlatformApi = koinInjec
     }
     if (bundleOpen) BundleDialog(api) { bundleOpen = false; reload() }
 }
-
-/** One simple-editor row = one entry of `dims` (dim = true) or `vals` of the first mapping rule. */
-internal data class MapRow(
-    val target: String = "",
-    val dim: Boolean = false,
-    val path: String = "",
-    val required: Boolean = true,
-    val min: String = "",
-    val max: String = "",
-    val spec: FieldSpec = FieldSpec(),
-)
 
 private fun row(target: String, spec: FieldSpec, dim: Boolean) =
     MapRow(target, dim, spec.path.orEmpty(), spec.required, spec.min?.toString().orEmpty(), spec.max?.toString().orEmpty(), spec)

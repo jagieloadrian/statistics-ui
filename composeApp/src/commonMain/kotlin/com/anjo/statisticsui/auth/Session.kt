@@ -1,17 +1,10 @@
 package com.anjo.statisticsui.auth
 
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.anjo.statisticsui.api.Prefs
-import com.anjo.statisticsui.api.User
+import com.anjo.statisticsui.model.User
 import org.koin.core.annotation.Singleton
-
-/** Bearer token persisted across restarts (desktop: java.util.prefs, web: localStorage); null removes it. */
-expect fun loadToken(): String?
-
-expect fun saveToken(token: String?)
 
 /** Signed-in state; Compose state so screens react to sign-in, sign-out and changed preferences. */
 @Singleton
@@ -35,6 +28,3 @@ class Session {
         user = null
     }
 }
-
-/** The signed-in user's preferences (zone, units, theme) for every widget renderer. */
-val LocalPrefs = compositionLocalOf { Prefs() }

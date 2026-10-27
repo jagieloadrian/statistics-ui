@@ -1,4 +1,4 @@
-package com.anjo.statisticsui.presentation.dashboard
+package com.anjo.statisticsui.ui.dashboard
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
@@ -31,12 +31,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anjo.statisticsui.api.ApiException
-import com.anjo.statisticsui.api.QueryResult
-import com.anjo.statisticsui.api.Threshold
-import com.anjo.statisticsui.api.Widget
-import com.anjo.statisticsui.api.WidgetOptions
-import com.anjo.statisticsui.auth.LocalPrefs
-import com.anjo.statisticsui.presentation.common.ErrorText
+import com.anjo.statisticsui.model.ChartLine
+import com.anjo.statisticsui.model.LineChartData
+import com.anjo.statisticsui.model.QueryResult
+import com.anjo.statisticsui.model.Threshold
+import com.anjo.statisticsui.model.UnitDisplay
+import com.anjo.statisticsui.model.Widget
+import com.anjo.statisticsui.model.WidgetOptions
+import com.anjo.statisticsui.model.unitDisplay
+import com.anjo.statisticsui.ui.common.ErrorText
+import com.anjo.statisticsui.ui.common.LocalPrefs
 import com.anjo.statisticsui.ui.theme.Colors
 import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
@@ -91,10 +95,6 @@ fun Widget(widget: Widget, result: Result<QueryResult>?, modifier: Modifier = Mo
         data?.bucket?.takeIf { it.isNotBlank() }?.let { Text("Bucket: $it", color = Color.Gray, fontSize = 11.sp) }
     }
 }
-
-internal data class ChartLine(val name: String, val column: String, val points: List<Pair<Int, Float>>)
-
-internal class LineChartData(val labels: List<String>, val lines: List<ChartLine>, val min: Float, val max: Float)
 
 /**
  * One line per series × measure column, x = [xColumn] (`options.x`, default `ts`); all lines share the merged x values
