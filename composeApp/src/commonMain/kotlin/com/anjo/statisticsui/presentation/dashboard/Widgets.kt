@@ -40,6 +40,7 @@ import com.anjo.statisticsui.presentation.common.ErrorText
 import com.anjo.statisticsui.ui.theme.Colors
 import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
+import com.himanshoe.charty.color.ChartyColor
 import com.himanshoe.charty.color.ChartyColors
 import com.himanshoe.charty.common.ChartScaffold
 import com.himanshoe.charty.common.axis.AxisConfig
@@ -146,8 +147,8 @@ private fun SeriesChart(result: QueryResult, widget: Widget, zone: TimeZone, dis
             xLabels = chart.labels,
             yAxisConfig = AxisConfig(minValue = min, maxValue = max, drawAxisAtZero = false),
             config = ChartScaffoldConfig(
-                axisColor = Color.Gray,
-                gridColor = Color.Gray.copy(alpha = 0.2f),
+                axisColor = ChartyColor.Solid(Color.Gray),
+                gridColor = ChartyColor.Solid(Color.Gray.copy(alpha = 0.2f)),
                 labelTextStyle = TextStyle(color = Color.LightGray, fontSize = 10.sp),
             ),
         ) { ctx ->
