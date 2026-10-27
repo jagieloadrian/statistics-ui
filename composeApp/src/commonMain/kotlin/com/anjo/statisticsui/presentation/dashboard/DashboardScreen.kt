@@ -36,6 +36,7 @@ import com.anjo.statisticsui.api.Dashboard
 import com.anjo.statisticsui.api.PlatformApi
 import com.anjo.statisticsui.api.QueryResult
 import com.anjo.statisticsui.api.Widget
+import com.anjo.statisticsui.auth.Session
 import com.anjo.statisticsui.presentation.common.ErrorText
 import com.anjo.statisticsui.presentation.common.Field
 import com.anjo.statisticsui.presentation.common.ScreenHeader
@@ -69,7 +70,7 @@ internal fun layoutRows(widgets: List<Widget>): List<List<Widget>> =
 private fun Widget.span() = w.coerceIn(1, COLUMNS)
 
 @Composable
-fun DashboardScreen(id: String, navController: NavHostController, api: PlatformApi = koinInject()) {
+fun DashboardScreen(id: String, navController: NavHostController, api: PlatformApi = koinInject(), session: Session = koinInject()) {
     var dashboard by remember { mutableStateOf<Dashboard?>(null) }
     var range by remember { mutableStateOf(1.days) }
     var values by remember { mutableStateOf(emptyMap<String, VariableValue>()) }
@@ -112,9 +113,12 @@ fun DashboardScreen(id: String, navController: NavHostController, api: PlatformA
                         modifier = Modifier.padding(end = SMALL_PADDING)
                     )
                 }
-                Button(onClick = { editing = true }, enabled = dashboard != null) {
-                    Icon(MaterialSymbols.Rounded.Edit, contentDescription = null)
-                    Text("Edit")
+                // ponytail: owner isn't in the dashboard JSON, so an editor sees Edit on others' dashboards and gets the 403 on save
+                if (session.canEdit) {
+                    Button(onClick = { editing = true }, enabled = dashboard != null) {
+                        Icon(MaterialSymbols.Rounded.Edit, contentDescription = null)
+                        Text("Edit")
+                    }
                 }
             }
         }
@@ -151,7 +155,7 @@ fun DashboardScreen(id: String, navController: NavHostController, api: PlatformA
                         ) {
                             Column(Modifier.fillMaxSize().padding(SMALL_MEDIUM_PADDING)) {
                                 Text(resolveText(w.title.ifBlank { w.id }, values), style = MaterialTheme.typography.titleMedium,
-                                    color = Color.White, modifier = Modifier.padding(bottom = SMALL_PADDING))
+                                    color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(bottom = SMALL_PADDING))
                                 Widget(w, results[w.id], Modifier.weight(1f))
                             }
                         }

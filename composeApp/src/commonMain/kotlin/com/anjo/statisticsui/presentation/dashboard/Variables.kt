@@ -105,6 +105,7 @@ private fun DimensionPicker(variable: Variable, selected: VariableValue, api: Pl
     var open by remember { mutableStateOf(false) }
     var search by remember { mutableStateOf("") }
     var options by remember { mutableStateOf(emptyList<DimensionValue>()) }
+    val zone = displayZone()
     LaunchedEffect(open, search) {
         if (!open) return@LaunchedEffect
         delay(250.milliseconds) // debounce typing
@@ -120,7 +121,7 @@ private fun DimensionPicker(variable: Variable, selected: VariableValue, api: Pl
                     text = {
                         Column {
                             Text(dv.value)
-                            Text("${dv.firstSeen.shortTime()} – ${dv.lastSeen.shortTime()} · ${dv.count} records",
+                            Text("${dv.firstSeen.shortTime(zone)} – ${dv.lastSeen.shortTime(zone)} · ${dv.count} records",
                                 style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                         }
                     },

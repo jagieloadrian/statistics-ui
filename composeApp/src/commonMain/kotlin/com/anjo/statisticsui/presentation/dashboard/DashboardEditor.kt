@@ -36,6 +36,7 @@ import com.anjo.statisticsui.api.Query
 import com.anjo.statisticsui.api.QueryMeasure
 import com.anjo.statisticsui.api.RelativeRange
 import com.anjo.statisticsui.api.Threshold
+import com.anjo.statisticsui.api.User
 import com.anjo.statisticsui.api.Variable
 import com.anjo.statisticsui.api.Widget
 import com.anjo.statisticsui.api.WidgetOptions
@@ -61,6 +62,7 @@ private val BUCKETS = listOf("auto", "raw", "none", "1m", "5m", "10m", "30m", "1
 private val AGGS = listOf("", "avg", "min", "max", "sum", "count", "first", "last", "at_max", "at_min")
 private val VARIABLE_TYPES = listOf("dimension", "timeRange", "bucket")
 private val SIZES = (1..12).map { it.toString() }
+private val VISIBILITIES = listOf("private", "users", "all")
 
 /** Edits the whole dashboard definition locally; nothing is stored until Save (one PUT). */
 @Composable
@@ -69,9 +71,17 @@ fun DashboardEditor(initial: Dashboard, onSave: suspend (Dashboard) -> Unit, onC
     var open by remember(initial) { mutableStateOf<Int?>(null) } // index of the widget whose form is shown
     var datasetIds by remember { mutableStateOf(emptyList<String>()) }
     val datasets = remember { mutableStateMapOf<String, Dataset>() } // measure/dimension names for the pickers
+    var users by remember { mutableStateOf(emptyList<User>()) }
+    var shared by remember(initial) { mutableStateOf(emptySet<Long>()) }
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) { attempt({ error = it }) { datasetIds = api.list("datasets").map { it.id } } }
+    LaunchedEffect(initial.id) {
+        attempt({ error = it }) {
+            users = api.users()
+            shared = api.shares(initial.id).toSet()
+        }
+    }
     val referenced = (dashboard.widgets.map { it.query.dataset } + dashboard.variables.mapNotNull { it.dataset }).filter { it.isNotBlank() }.toSet()
     LaunchedEffect(referenced) {
         referenced.filter { it !in datasets }.forEach { id -> catching { api.dataset(id) }.onSuccess { datasets[id] = it } }
@@ -87,6 +97,20 @@ fun DashboardEditor(initial: Dashboard, onSave: suspend (Dashboard) -> Unit, onC
             }
             NumberField("Refresh seconds (empty = off)", dashboard.refreshSeconds?.toDouble(), Modifier.weight(1f)) {
                 dashboard = dashboard.copy(refreshSeconds = it?.toInt())
+            }
+            Text("Visible to", color = Color.Gray)
+            Picker(dashboard.visibility, VISIBILITIES) { dashboard = dashboard.copy(visibility = it) }
+        }
+        if (dashboard.visibility == "users") {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+                Text("Shared with", color = Color.Gray, modifier = Modifier.align(Alignment.CenterVertically))
+                users.forEach { u ->
+                    FilterChip(
+                        selected = u.id in shared,
+                        onClick = { shared = if (u.id in shared) shared - u.id else shared + u.id },
+                        label = { Text(u.name.ifBlank { u.email }) }
+                    )
+                }
             }
         }
 
@@ -108,7 +132,7 @@ fun DashboardEditor(initial: Dashboard, onSave: suspend (Dashboard) -> Unit, onC
             }
         }
 
-        Text("Widgets", style = MaterialTheme.typography.titleMedium, color = Color.White, modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING))
+        Text("Widgets", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING))
         widgets.forEachIndexed { i, w ->
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = { open = if (open == i) null else i }, modifier = Modifier.weight(1f)) {
@@ -141,7 +165,13 @@ fun DashboardEditor(initial: Dashboard, onSave: suspend (Dashboard) -> Unit, onC
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-            Button(onClick = { scope.attempt({ error = it }) { onSave(dashboard) } }) { Text("Save") }
+            Button(onClick = {
+                scope.attempt({ error = it }) {
+                    // shares first: onSave closes the editor, which cancels this scope
+                    if (dashboard.visibility == "users") api.putShares(dashboard.id, shared.toList())
+                    onSave(dashboard)
+                }
+            }) { Text("Save") }
             TextButton(onClick = onCancel) { Text("Cancel") }
         }
         ErrorText(error)
@@ -203,7 +233,7 @@ private fun WidgetForm(w: Widget, variables: List<Variable>, datasetIds: List<St
             }
         }
 
-        Text("Options", style = MaterialTheme.typography.titleSmall, color = Color.White)
+        Text("Options", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
             Text("x", color = Color.Gray)
             Picker(o.x ?: "ts", fields) { setOptions(o.copy(x = it.takeUnless { x -> x == "ts" })) }

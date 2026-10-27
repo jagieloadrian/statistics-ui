@@ -202,7 +202,7 @@ private fun SourceForm(initial: Source, isNew: Boolean, existingIds: List<String
                 }
             }
 
-            Text("Advanced: full mapping JSON", style = MaterialTheme.typography.titleMedium, color = Color.White,
+            Text("Advanced: full mapping JSON", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING))
             Field("Mapping", mappingJson, Modifier.fillMaxWidth().height(220.dp), singleLine = false) { mappingJson = it }
             TextButton(onClick = {
@@ -238,7 +238,7 @@ private fun SourceOps(source: Source, api: PlatformApi, mapping: () -> List<Rule
 
     Column(modifier.fillMaxHeight().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-            Text("Status", style = MaterialTheme.typography.titleMedium, color = Color.White, modifier = Modifier.weight(1f))
+            Text("Status", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
             Text("Paused", color = Color.Gray)
             Switch(checked = source.paused, onCheckedChange = onPause)
             IconButton(onClick = { refresh() }) { Icon(MaterialSymbols.Rounded.Refresh, contentDescription = "Refresh", tint = Color.Gray) }
@@ -254,16 +254,16 @@ private fun SourceOps(source: Source, api: PlatformApi, mapping: () -> List<Rule
             }
         }
 
-        Text("Credential", style = MaterialTheme.typography.titleMedium, color = Color.White)
+        Text("Credential", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
         ConfirmButton("Rotate credential", "Click again: the current token stops working") {
             scope.attempt({ error = it }) { token = api.rotateCredential(source.id) }
         }
         token?.let {
             Text("New token, shown only once — copy it now:", color = Colors.LIGHT_ORANGE)
-            SelectionContainer { Text(it, color = Color.White) }
+            SelectionContainer { Text(it, color = MaterialTheme.colorScheme.onSurface) }
         }
 
-        Text("Test mapping", style = MaterialTheme.typography.titleMedium, color = Color.White)
+        Text("Test mapping", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
         Field("Sample payload (JSON)", sample, Modifier.fillMaxWidth().height(160.dp), singleLine = false) { sample = it }
         Button(onClick = {
             scope.attempt({ error = it }) {
@@ -272,7 +272,7 @@ private fun SourceOps(source: Source, api: PlatformApi, mapping: () -> List<Rule
         }) { Text("Test mapping") }
         test?.let { t ->
             Text("${t.records.size} record(s)", color = Color.LightGray)
-            t.records.forEach { SelectionContainer { Text(it.toString(), color = Color.White, style = MaterialTheme.typography.bodySmall) } }
+            t.records.forEach { SelectionContainer { Text(it.toString(), color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodySmall) } }
             t.errors.forEach { Text(it, color = MaterialTheme.colorScheme.error) }
         }
         ErrorText(error)

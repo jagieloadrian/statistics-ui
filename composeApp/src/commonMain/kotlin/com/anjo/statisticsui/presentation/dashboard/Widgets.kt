@@ -35,6 +35,7 @@ import com.anjo.statisticsui.api.QueryResult
 import com.anjo.statisticsui.api.Threshold
 import com.anjo.statisticsui.api.Widget
 import com.anjo.statisticsui.api.WidgetOptions
+import com.anjo.statisticsui.auth.LocalPrefs
 import com.anjo.statisticsui.presentation.common.ErrorText
 import com.anjo.statisticsui.ui.theme.Colors
 import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
@@ -43,6 +44,9 @@ import com.himanshoe.charty.color.ChartyColors
 import com.himanshoe.charty.common.ChartScaffold
 import com.himanshoe.charty.common.axis.AxisConfig
 import com.himanshoe.charty.common.config.ChartScaffoldConfig
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
@@ -51,6 +55,7 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.roundToLong
+import kotlin.time.Instant
 
 private val PALETTE = ChartyColors.ModernPalette.value + ChartyColors.NaturePalette.value
 private const val MAX_TABLE_ROWS = 200
@@ -61,6 +66,8 @@ private const val GAUGE_SWEEP = 240f
 @Composable
 fun Widget(widget: Widget, result: Result<QueryResult>?, modifier: Modifier = Modifier) {
     val data = result?.getOrNull()
+    val zone = displayZone()
+    val display = unitDisplay(widget.options.unit, LocalPrefs.current.units)
     Column(modifier) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             val error = result?.exceptionOrNull()
@@ -73,10 +80,10 @@ fun Widget(widget: Widget, result: Result<QueryResult>?, modifier: Modifier = Mo
                 }
                 data == null -> ErrorText(error?.message ?: "Query failed")
                 data.series.all { it.rows.isEmpty() } -> Text("No data in range", color = Color.Gray)
-                widget.type in setOf("line", "area", "bar") -> SeriesChart(data, widget)
-                widget.type == "stat" -> StatWidget(data, widget.options)
-                widget.type == "gauge" -> GaugeWidget(data, widget.options)
-                widget.type == "table" -> TableWidget(data, widget.options)
+                widget.type in setOf("line", "area", "bar") -> SeriesChart(data, widget, zone, display)
+                widget.type == "stat" -> StatWidget(data, widget.options, zone, display)
+                widget.type == "gauge" -> GaugeWidget(data, widget.options, display)
+                widget.type == "table" -> TableWidget(data, widget.options, zone)
                 else -> Text("Widget type '${widget.type}' is not supported yet", color = Color.Gray)
             }
         }
@@ -92,12 +99,13 @@ internal class LineChartData(val labels: List<String>, val lines: List<ChartLine
  * One line per series × measure column, x = [xColumn] (`options.x`, default `ts`); all lines share the merged x values
  * as positions, sorted numerically when numeric (e.g. `generation`), else as text (ISO timestamps).
  */
-internal fun lineChartData(result: QueryResult, xColumn: String = "ts"): LineChartData? {
+internal fun lineChartData(result: QueryResult, xColumn: String = "ts", zone: TimeZone = TimeZone.UTC,
+                           display: UnitDisplay = UnitDisplay(null)): LineChartData? {
     val raw = result.series.flatMap { s ->
         val x = s.columns.indexOf(xColumn)
         if (x < 0) emptyList() else s.columns.indices.filter { it != x && s.columns[it] != "ts" }.map { c ->
             ChartLine((s.dims.values + s.columns[c]).joinToString(" · "), s.columns[c], emptyList()) to
-                s.rows.mapNotNull { r -> r[c].number()?.let { r[x].text() to it.toFloat() } }
+                s.rows.mapNotNull { r -> r[c].number()?.let { r[x].text() to display.convert(it).toFloat() } }
         }
     }
     // ponytail: x = index of the merged x values (evenly spaced), fine for bucketed data; proportional axis if gaps matter
@@ -108,7 +116,7 @@ internal fun lineChartData(result: QueryResult, xColumn: String = "ts"): LineCha
     val values = raw.flatMap { (_, points) -> points.map { it.second } }
     val step = (xs.size / 6).coerceAtLeast(1)
     return LineChartData(
-        labels = xs.mapIndexed { i, x -> if (i % step == 0) x.toDoubleOrNull()?.let { formatNumber(it) } ?: x.shortTime() else "" },
+        labels = xs.mapIndexed { i, x -> if (i % step == 0) x.toDoubleOrNull()?.let { formatNumber(it) } ?: x.shortTime(zone) else "" },
         lines = raw.map { (line, points) -> line.copy(points = points.map { (x, v) -> index.getValue(x) to v }.sortedBy { it.first }) },
         min = values.min(),
         max = values.max().let { if (it == values.min()) it + 1 else it },
@@ -117,9 +125,9 @@ internal fun lineChartData(result: QueryResult, xColumn: String = "ts"): LineCha
 
 /** `line`, `area` or `bar`; charty's MultilineChart paints every line with one brush, so series are drawn on its scaffold. */
 @Composable
-private fun SeriesChart(result: QueryResult, widget: Widget) {
+private fun SeriesChart(result: QueryResult, widget: Widget, zone: TimeZone, display: UnitDisplay) {
     val options = widget.options
-    val chart = remember(result, options.x) { lineChartData(result, options.x ?: "ts") }
+    val chart = remember(result, options.x, zone, display.unit) { lineChartData(result, options.x ?: "ts", zone, display) }
     if (chart == null) {
         Text("No data in range", color = Color.Gray)
         return
@@ -127,8 +135,8 @@ private fun SeriesChart(result: QueryResult, widget: Widget) {
     val bar = widget.type == "bar"
     val area = widget.type == "area"
     // bars grow from zero, so zero must be on the axis
-    val min = options.min?.toFloat() ?: if (bar) minOf(chart.min, 0f) else chart.min
-    val max = (options.max?.toFloat() ?: if (bar) maxOf(chart.max, 0f) else chart.max).let { if (it <= min) min + 1 else it }
+    val min = options.min?.let { display.convert(it).toFloat() } ?: if (bar) minOf(chart.min, 0f) else chart.min
+    val max = (options.max?.let { display.convert(it).toFloat() } ?: if (bar) maxOf(chart.max, 0f) else chart.max).let { if (it <= min) min + 1 else it }
     val colors = chart.lines.mapIndexed { i, line ->
         (options.colors[line.column] ?: options.colors[line.name])?.let(::parseColor) ?: PALETTE[i % PALETTE.size]
     }
@@ -168,7 +176,7 @@ private fun SeriesChart(result: QueryResult, widget: Widget) {
             }
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-            val unit = options.unit?.let { " ($it)" }.orEmpty()
+            val unit = display.unit?.let { " ($it)" }.orEmpty()
             chart.lines.forEachIndexed { i, line -> Text("● ${line.name}$unit", color = colors[i], fontSize = 12.sp) }
         }
     }
@@ -181,17 +189,17 @@ internal fun statValues(result: QueryResult): List<Pair<String, JsonElement>> = 
 }
 
 @Composable
-private fun StatWidget(result: QueryResult, options: WidgetOptions) {
+private fun StatWidget(result: QueryResult, options: WidgetOptions, zone: TimeZone, display: UnitDisplay) {
     val values = remember(result) { statValues(result) }
     FlowRow(horizontalArrangement = Arrangement.spacedBy(MEDIUM_PADDING), verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
         values.forEach { (label, value) ->
             val number = value.number()
             Column {
                 Text(
-                    number?.let { formatValue(it, options) } ?: value.format(),
+                    number?.let { formatValue(it, options, display) } ?: value.format(zone = zone),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color = number?.let { thresholdColor(it, options.thresholds) } ?: Color.White
+                    color = number?.let { thresholdColor(it, options.thresholds) } ?: MaterialTheme.colorScheme.onSurface
                 )
                 Text(label, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
             }
@@ -201,7 +209,7 @@ private fun StatWidget(result: QueryResult, options: WidgetOptions) {
 
 /** 240° arc per numeric value between `options.min`/`max` (default 0–100); thresholds tint the track and the value. */
 @Composable
-private fun GaugeWidget(result: QueryResult, options: WidgetOptions) {
+private fun GaugeWidget(result: QueryResult, options: WidgetOptions, display: UnitDisplay) {
     val values = remember(result) { statValues(result).mapNotNull { (label, v) -> v.number()?.let { label to it } } }
     val min = options.min ?: 0.0
     val max = (options.max ?: 100.0).let { if (it <= min) min + 1 else it }
@@ -226,7 +234,7 @@ private fun GaugeWidget(result: QueryResult, options: WidgetOptions) {
                         }
                         drawArc(color, GAUGE_START, sweep(v), false, topLeft, arcSize, style = Stroke(width, cap = StrokeCap.Round))
                     }
-                    Text(formatValue(v, options), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(formatValue(v, options, display), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
                 Text(label, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
             }
@@ -235,13 +243,13 @@ private fun GaugeWidget(result: QueryResult, options: WidgetOptions) {
 }
 
 @Composable
-private fun TableWidget(result: QueryResult, options: WidgetOptions) {
-    val (header, rows) = remember(result, options.decimals) {
+private fun TableWidget(result: QueryResult, options: WidgetOptions, zone: TimeZone) {
+    val (header, rows) = remember(result, options.decimals, zone) {
         val dims = result.series.flatMap { it.dims.keys }.distinct()
         val columns = result.series.flatMap { it.columns }.distinct()
         dims + columns to result.series.flatMap { s ->
             s.rows.map { r ->
-                dims.map { s.dims[it].orEmpty() } + columns.map { c -> r.getOrNull(s.columns.indexOf(c))?.format(options.decimals).orEmpty() }
+                dims.map { s.dims[it].orEmpty() } + columns.map { c -> r.getOrNull(s.columns.indexOf(c))?.format(options.decimals, zone).orEmpty() }
             }
         }
     }
@@ -263,7 +271,7 @@ private fun TableRow(cells: List<String>, header: Boolean = false) {
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = if (header) FontWeight.Bold else FontWeight.Normal,
-                color = if (header) Color.Gray else Color.White,
+                color = if (header) Color.Gray else MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -274,14 +282,16 @@ private fun JsonElement.text() = (this as? JsonPrimitive)?.content ?: toString()
 private fun JsonElement.number(): Double? =
     (this as? JsonPrimitive)?.let { it.doubleOrNull ?: it.booleanOrNull?.let { b -> if (b) 1.0 else 0.0 } }
 
-private fun JsonElement.format(decimals: Int? = null): String {
+private fun JsonElement.format(decimals: Int? = null, zone: TimeZone = TimeZone.UTC): String {
     val p = this as? JsonPrimitive ?: return toString()
     if (p is JsonNull) return ""
     val d = if (p.isString) null else p.doubleOrNull
-    return d?.let { formatNumber(it, decimals) } ?: p.content.shortTime()
+    return d?.let { formatNumber(it, decimals) } ?: p.content.shortTime(zone)
 }
 
-private fun formatValue(v: Double, options: WidgetOptions) = formatNumber(v, options.decimals) + options.unit?.let { " $it" }.orEmpty()
+/** Stored value in the user's unit system (thresholds and gauge range stay in the declared unit). */
+private fun formatValue(v: Double, options: WidgetOptions, display: UnitDisplay) =
+    formatNumber(display.convert(v), options.decimals) + display.unit?.let { " $it" }.orEmpty()
 
 /** Exactly [decimals] places when given; otherwise whole numbers without decimals and others rounded to 2 places. */
 internal fun formatNumber(d: Double, decimals: Int? = null): String {
@@ -303,6 +313,17 @@ private fun thresholdColor(v: Double, thresholds: List<Threshold>): Color? =
 internal fun parseColor(hex: String): Color? =
     hex.removePrefix("#").takeIf { it.length == 6 }?.toLongOrNull(16)?.let { Color(0xFF000000 or it) }
 
-/** `2026-10-26T13:05:00Z` → `10-26 13:05`; anything else unchanged. */
-internal fun String.shortTime() =
-    if (length >= 16 && this[4] == '-' && this[7] == '-' && this[10] == 'T') substring(5, 16).replace('T', ' ') else this
+/** The signed-in user's time zone, else the system zone. */
+@Composable
+internal fun displayZone(): TimeZone {
+    val id = LocalPrefs.current.timeZone
+    return remember(id) { id?.let { runCatching { TimeZone.of(it) }.getOrNull() } ?: TimeZone.currentSystemDefault() }
+}
+
+/** ISO instant `2026-10-26T13:05:00Z` → `10-26 13:05` in [zone]; anything else unchanged. */
+internal fun String.shortTime(zone: TimeZone = TimeZone.UTC): String {
+    if (!(length >= 16 && this[4] == '-' && this[7] == '-' && this[10] == 'T')) return this
+    val t = runCatching { Instant.parse(this).toLocalDateTime(zone) }.getOrNull() ?: return substring(5, 16).replace('T', ' ')
+    fun Int.two() = toString().padStart(2, '0')
+    return "${t.month.number.two()}-${t.day.two()} ${t.hour.two()}:${t.minute.two()}"
+}

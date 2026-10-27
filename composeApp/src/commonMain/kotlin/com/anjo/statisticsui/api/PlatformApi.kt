@@ -1,17 +1,20 @@
 package com.anjo.statisticsui.api
 
+import com.anjo.statisticsui.auth.Session
 import com.anjo.statisticsui.configuration.AppConfig
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.accept
+import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.parameter
 import io.ktor.client.request.request
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
-import io.ktor.http.HttpStatusCode
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.serialization.json.JsonElement
@@ -22,7 +25,44 @@ class ApiException(message: String, val status: Int) : Exception(message)
 
 /** Client for the platform API v2 (contracts/api-v2.md). `kind` = `datasets`, `sources` or `dashboards`. */
 @Singleton
-class PlatformApi(private val client: HttpClient, private val appConfig: AppConfig) {
+class PlatformApi(private val client: HttpClient, private val appConfig: AppConfig, private val session: Session) {
+
+    /** Stores the session on success; wrong credentials → 401 with one generic message, too many tries → 429. */
+    suspend fun login(email: String, password: String): User {
+        val answer: LoginResponse = request("auth/login") { json(HttpMethod.Post, LoginRequest(email, password)) }
+        session.signIn(answer.token, answer.user)
+        return answer.user
+    }
+
+    /** Ends the session locally even when the server cannot be reached. */
+    suspend fun logout() {
+        try {
+            request<Unit>("auth/logout") { method = HttpMethod.Post }
+        } finally {
+            session.signOut()
+        }
+    }
+
+    suspend fun me(): User = request<User>("me").also { session.user = it }
+
+    suspend fun putPrefs(prefs: Prefs): User = request<User>("me/prefs") { json(HttpMethod.Put, prefs) }.also { session.user = it }
+
+    /** Other sessions of the user are revoked; wrong current password or a new one under 10 chars → 400. */
+    suspend fun changePassword(current: String, new: String): Unit =
+        request("me/password") { json(HttpMethod.Put, PasswordChange(current, new)) }
+
+    suspend fun users(): List<User> = request("users")
+
+    suspend fun createUser(user: NewUser): User = request("users") { json(HttpMethod.Post, user) }
+
+    suspend fun updateUser(id: Long, update: UserUpdate): Unit = request("users/$id") { json(HttpMethod.Put, update) }
+
+    suspend fun deleteUser(id: Long): Unit = request("users/$id") { method = HttpMethod.Delete }
+
+    suspend fun shares(dashboardId: String): List<Long> = request<Shares>("dashboards/$dashboardId/shares").userIds
+
+    suspend fun putShares(dashboardId: String, userIds: List<Long>): Unit =
+        request("dashboards/$dashboardId/shares") { json(HttpMethod.Put, Shares(userIds)) }
 
     suspend fun list(kind: String): List<DefinitionSummary> = request(kind)
 
@@ -70,7 +110,7 @@ class PlatformApi(private val client: HttpClient, private val appConfig: AppConf
     /** 200 = imported; 400 with the same shape = nothing stored. Any other answer throws. */
     suspend fun importBundle(bundle: JsonElement): ImportResult {
         val response = client.request(url("import")) {
-            accept(ContentType.Application.Json)
+            authorize()
             json(HttpMethod.Post, bundle)
         }
         val result = if (response.status.isSuccess() || response.status == HttpStatusCode.BadRequest) {
@@ -81,20 +121,26 @@ class PlatformApi(private val client: HttpClient, private val appConfig: AppConf
 
     private fun url(path: String) = "${appConfig.backendUrl}/api/v2/$path"
 
+    private fun HttpRequestBuilder.authorize() {
+        accept(ContentType.Application.Json)
+        session.token?.let { bearerAuth(it) }
+    }
+
+    /** A 401 on a request that carried a token means it expired or was revoked: sign out (NavGraph shows login). */
+    private suspend fun HttpResponse.apiException(): ApiException {
+        if (status == HttpStatusCode.Unauthorized && call.request.headers[HttpHeaders.Authorization] != null) session.signOut()
+        val error = runCatching { body<ApiError>() }.getOrNull()
+        return ApiException(error?.let { (listOf(it.message) + it.details).joinToString("\n") } ?: "HTTP $status", status.value)
+    }
+
     private suspend inline fun <reified T> request(path: String, block: HttpRequestBuilder.() -> Unit = {}): T {
         val response = client.request(url(path)) {
-            accept(ContentType.Application.Json)
+            authorize()
             block()
         }
         if (!response.status.isSuccess()) throw response.apiException()
         return response.body()
     }
-}
-
-/** Message plus `details` (e.g. the referencing widgets of a 409) from the [ApiError] body. */
-private suspend fun HttpResponse.apiException(): ApiException {
-    val error = runCatching { body<ApiError>() }.getOrNull()
-    return ApiException(error?.let { (listOf(it.message) + it.details).joinToString("\n") } ?: "HTTP $status", status.value)
 }
 
 private inline fun <reified B : Any> HttpRequestBuilder.json(verb: HttpMethod, body: B) {

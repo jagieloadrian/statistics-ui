@@ -84,6 +84,10 @@ kotlin {
             implementation(libs.kotlin.logging.jvm)
             implementation(libs.logback.classic)
         }
+        webMain.dependencies {
+            // localStorage for the session token (TokenStore.web.kt)
+            implementation(libs.kotlinx.browser)
+        }
         jsMain.dependencies {
             implementation(libs.kotlin.logging.js)
         }

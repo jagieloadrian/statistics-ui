@@ -24,6 +24,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.navigation.NavHostController
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
@@ -55,13 +57,13 @@ fun CoroutineScope.attempt(onError: (String?) -> Unit, block: suspend CoroutineS
 fun ScreenHeader(title: String, navController: NavHostController, actions: @Composable () -> Unit = {}) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = { navController.popBackStack() }) {
-            Icon(MaterialSymbols.Rounded.Arrow_back, contentDescription = "Back", tint = Color.White)
+            Icon(MaterialSymbols.Rounded.Arrow_back, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
         }
         Text(
             text = title,
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f)
         )
         actions()
@@ -77,13 +79,14 @@ fun ErrorText(error: String?) {
 
 @Composable
 fun Field(label: String, value: String, modifier: Modifier = Modifier, enabled: Boolean = true, singleLine: Boolean = true,
-          onChange: (String) -> Unit) {
+          password: Boolean = false, onChange: (String) -> Unit) {
     OutlinedTextField(
         value = value,
         onValueChange = onChange,
         label = { Text(label) },
         enabled = enabled,
         singleLine = singleLine,
+        visualTransformation = if (password) PasswordVisualTransformation() else VisualTransformation.None,
         modifier = modifier
     )
 }
@@ -113,7 +116,7 @@ fun Picker(value: String, options: List<String>, modifier: Modifier = Modifier, 
 @Composable
 fun <T> ListEditor(title: String, items: List<T>, onChange: (List<T>) -> Unit, new: () -> T,
                    row: @Composable RowScope.(T, (T) -> Unit) -> Unit) {
-    Text(title, style = MaterialTheme.typography.titleMedium, color = Color.White,
+    Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING))
     items.forEachIndexed { i, item ->
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,

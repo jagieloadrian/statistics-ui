@@ -5,9 +5,11 @@ import com.anjo.statisticsui.navigation.Destination.CHARTS
 import com.anjo.statisticsui.navigation.Destination.DASHBOARD
 import com.anjo.statisticsui.navigation.Destination.DASHBOARD_VIEW
 import com.anjo.statisticsui.navigation.Destination.DATASETS
+import com.anjo.statisticsui.navigation.Destination.LOGIN
 import com.anjo.statisticsui.navigation.Destination.MAIN
 import com.anjo.statisticsui.navigation.Destination.SOURCES
 import com.anjo.statisticsui.navigation.Destination.SPLASH
+import com.anjo.statisticsui.navigation.Destination.USERS
 
 object Destination {
     const val DASHBOARD = "dashboard"
@@ -18,6 +20,8 @@ object Destination {
     const val DASHBOARD_VIEW = "dashboard/{id}"
     const val SOURCES = "sources"
     const val DATASETS = "datasets"
+    const val LOGIN = "login"
+    const val USERS = "users"
 }
 
 
@@ -32,4 +36,6 @@ sealed class Screen(val route: String) {
     }
     data object Sources : Screen(SOURCES)
     data object Datasets : Screen(DATASETS)
+    data object Login : Screen(LOGIN)
+    data object Users : Screen(USERS)
 }
