@@ -1,6 +1,7 @@
 package com.anjo.statisticsui.model
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 @Serializable
 data class Bundle(
@@ -20,3 +21,6 @@ data class ImportResult(val created: Int, val updated: Int, val errors: List<Str
 
 @Serializable
 data class ApiError(val error: String, val message: String, val details: List<String> = emptyList())
+
+/** Used for the JSON text areas (advanced mapping, sample payloads, records). */
+internal val platformJson = Json { ignoreUnknownKeys = true; prettyPrint = true }

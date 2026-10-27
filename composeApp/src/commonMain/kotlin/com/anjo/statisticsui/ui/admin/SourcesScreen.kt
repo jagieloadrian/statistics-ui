@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.anjo.statisticsui.api.PlatformApi
 import com.anjo.statisticsui.model.DefinitionSummary
-import com.anjo.statisticsui.model.FieldSpec
 import com.anjo.statisticsui.model.ImportResult
 import com.anjo.statisticsui.model.MapRow
 import com.anjo.statisticsui.model.MappingTestRequest
@@ -46,6 +45,9 @@ import com.anjo.statisticsui.model.MappingTestResult
 import com.anjo.statisticsui.model.Rule
 import com.anjo.statisticsui.model.Source
 import com.anjo.statisticsui.model.SourceStatus
+import com.anjo.statisticsui.model.platformJson
+import com.anjo.statisticsui.model.rows
+import com.anjo.statisticsui.model.withRows
 import com.anjo.statisticsui.ui.common.ConfirmButton
 import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.common.Field
@@ -62,11 +64,7 @@ import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Refresh
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
 import org.koin.compose.koinInject
-
-/** Used for the JSON text areas (advanced mapping, sample payloads, records). */
-private val platformJson = Json { ignoreUnknownKeys = true; prettyPrint = true }
 
 /** Source states from data-model.md (source status state machine). */
 private val STATE_COLORS = mapOf(
@@ -123,23 +121,6 @@ fun SourcesScreen(navController: NavHostController, api: PlatformApi = koinInjec
         }
     }
     if (bundleOpen) BundleDialog(api) { bundleOpen = false; reload() }
-}
-
-private fun row(target: String, spec: FieldSpec, dim: Boolean) =
-    MapRow(target, dim, spec.path.orEmpty(), spec.required, spec.min?.toString().orEmpty(), spec.max?.toString().orEmpty(), spec)
-
-internal fun Rule?.rows(): List<MapRow> =
-    this?.let { r -> r.dims.map { row(it.key, it.value, true) } + r.vals.map { row(it.key, it.value, false) } }.orEmpty()
-
-/** Writes the rows into the first rule; its other fields (timestamp, identity, each, const) and later rules stay. */
-internal fun List<Rule>.withRows(rows: List<MapRow>): List<Rule> {
-    if (isEmpty() && rows.isEmpty()) return this // no mapping = native record format (FR-025)
-    fun MapRow.toSpec() = spec.copy(path = path.ifBlank { null }, required = required, min = min.toDoubleOrNull(), max = max.toDoubleOrNull())
-    val first = (firstOrNull() ?: Rule()).copy(
-        dims = rows.filter { it.dim }.associate { it.target to it.toSpec() },
-        vals = rows.filterNot { it.dim }.associate { it.target to it.toSpec() },
-    )
-    return listOf(first) + drop(1)
 }
 
 @Composable

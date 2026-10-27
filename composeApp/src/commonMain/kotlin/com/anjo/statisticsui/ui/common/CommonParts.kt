@@ -35,28 +35,9 @@ import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Add
 import com.composables.icons.materialsymbols.rounded.Arrow_back
 import com.composables.icons.materialsymbols.rounded.Delete
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 /** The signed-in user's preferences (zone, units, theme) for every widget renderer. */
 val LocalPrefs = compositionLocalOf { Prefs() }
-
-/** Like [runCatching], but lets coroutine cancellation through. */
-suspend fun <T> catching(block: suspend () -> T): Result<T> =
-    try {
-        Result.success(block())
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-/** Launches [block]; clears [onError] first and reports any failure message to it. */
-fun CoroutineScope.attempt(onError: (String?) -> Unit, block: suspend CoroutineScope.() -> Unit) = launch {
-    onError(null)
-    catching { block() }.onFailure { onError(it.message ?: it.toString()) }
-}
 
 @Composable
 fun ScreenHeader(title: String, navController: NavHostController, actions: @Composable () -> Unit = {}) {

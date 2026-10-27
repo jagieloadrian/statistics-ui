@@ -6,8 +6,8 @@ import com.anjo.statisticsui.model.QueryResult
 import com.anjo.statisticsui.model.Rule
 import com.anjo.statisticsui.model.Series
 import com.anjo.statisticsui.model.TimestampSpec
-import com.anjo.statisticsui.ui.admin.rows
-import com.anjo.statisticsui.ui.admin.withRows
+import com.anjo.statisticsui.model.rows
+import com.anjo.statisticsui.model.withRows
 import com.anjo.statisticsui.ui.dashboard.formatNumber
 import com.anjo.statisticsui.ui.dashboard.lineChartData
 import io.kotest.core.spec.style.FunSpec

@@ -261,5 +261,3 @@ private fun CsvField(label: String, values: List<String>, modifier: Modifier = M
     if (parse(text) != values) text = values.joinToString(", ") // changed from outside
     Field(label, text, modifier) { text = it; onChange(parse(it)) }
 }
-
-private fun <T> List<T>.swap(i: Int, j: Int) = toMutableList().also { it[i] = this[j]; it[j] = this[i] }

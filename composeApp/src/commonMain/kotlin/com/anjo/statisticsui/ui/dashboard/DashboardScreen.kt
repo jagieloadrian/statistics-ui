@@ -58,18 +58,7 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 
 private val RANGES = listOf("1h" to 1.hours, "24h" to 1.days, "7d" to 7.days, "30d" to 30.days)
-private const val COLUMNS = 12
 private val ROW_HEIGHT = 80.dp
-
-/** 12-column flow layout: widgets fill a row left to right; one that no longer fits starts the next row. */
-internal fun layoutRows(widgets: List<Widget>): List<List<Widget>> =
-    widgets.fold(mutableListOf<MutableList<Widget>>()) { rows, w ->
-        val last = rows.lastOrNull()
-        if (last != null && last.sumOf { it.span() } + w.span() <= COLUMNS) last += w else rows += mutableListOf(w)
-        rows
-    }
-
-private fun Widget.span() = w.coerceIn(1, COLUMNS)
 
 @Composable
 fun DashboardScreen(id: String, navController: NavHostController, api: PlatformApi = koinInject(), session: Session = koinInject()) {
