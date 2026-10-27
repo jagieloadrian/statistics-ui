@@ -51,11 +51,13 @@ fun AccountScreen(api: PlatformApi = koinInject(), session: Session = koinInject
     var repeat by remember { mutableStateOf("") }
     var passwordInfo by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
+    var localSignIn by remember { mutableStateOf(true) }
     val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         attempt({ prefsError = it }) {
             if (session.user == null) api.me()
             dashboards = api.list("dashboards").map { it.id }
+            localSignIn = api.authConfig().local
         }
     }
 
@@ -86,21 +88,24 @@ fun AccountScreen(api: PlatformApi = koinInject(), session: Session = koinInject
         prefsInfo?.let { Text(it, color = Color.Gray) }
         ErrorText(prefsError)
 
-        Text("Change password", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING))
-        Field("Current password", current, Modifier.width(420.dp), password = true) { current = it }
-        Field("New password (at least 10 characters)", new, Modifier.width(420.dp), password = true) { new = it }
-        Field("Repeat new password", repeat, Modifier.width(420.dp), password = true) { repeat = it }
-        if (repeat.isNotEmpty() && repeat != new) Text("Passwords differ", color = MaterialTheme.colorScheme.error)
-        Button(enabled = current.isNotEmpty() && new.length >= 10 && new == repeat, onClick = {
-            passwordInfo = null
-            scope.attempt({ passwordError = it }) {
-                api.changePassword(current, new)
-                current = ""; new = ""; repeat = ""
-                passwordInfo = "Password changed; your other sessions were signed out"
-            }
-        }) { Text("Change password") }
-        passwordInfo?.let { Text(it, color = Color.Gray) }
-        ErrorText(passwordError)
+        // provider-only accounts have no password; with local sign-in off nobody uses one
+        if (user?.hasPassword != false && localSignIn) {
+            Text("Change password", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING))
+            Field("Current password", current, Modifier.width(420.dp), password = true) { current = it }
+            Field("New password (at least 10 characters)", new, Modifier.width(420.dp), password = true) { new = it }
+            Field("Repeat new password", repeat, Modifier.width(420.dp), password = true) { repeat = it }
+            if (repeat.isNotEmpty() && repeat != new) Text("Passwords differ", color = MaterialTheme.colorScheme.error)
+            Button(enabled = current.isNotEmpty() && new.length >= 10 && new == repeat, onClick = {
+                passwordInfo = null
+                scope.attempt({ passwordError = it }) {
+                    api.changePassword(current, new)
+                    current = ""; new = ""; repeat = ""
+                    passwordInfo = "Password changed; your other sessions were signed out"
+                }
+            }) { Text("Change password") }
+            passwordInfo?.let { Text(it, color = Color.Gray) }
+            ErrorText(passwordError)
+        }
     }
 }
