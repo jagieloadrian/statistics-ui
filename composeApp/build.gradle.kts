@@ -4,6 +4,7 @@ import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 
 plugins {
     alias(libs.plugins.kotlinSerialization)
@@ -19,13 +20,23 @@ kotlin {
     jvm()
 
     js {
-        browser()
+        browser {
+            commonWebpackConfig {
+                // UI dev server on 8081, backend keeps 8080 (CORS_HOSTS default)
+                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).copy(port = 8081)
+            }
+        }
         binaries.executable()
     }
 
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
-        browser()
+        browser {
+            commonWebpackConfig {
+                // UI dev server on 8081, backend keeps 8080 (CORS_HOSTS default)
+                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).copy(port = 8081)
+            }
+        }
         binaries.executable()
     }
 

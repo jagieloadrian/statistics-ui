@@ -53,8 +53,6 @@ import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_SMALL_PADDING
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Arrow_forward
-import com.composables.icons.materialsymbols.rounded.Coronavirus
-import com.composables.icons.materialsymbols.rounded.Thermostat
 
 
 @Composable
@@ -116,24 +114,7 @@ fun MainLayout(navController: NavHostController) {
 
 @Composable
 fun DashboardContent(navController: NavHostController) {
-    val tiles = listOf(
-        DataTypeTile(
-            id = "temp",
-            title = "Temperature",
-            icon = MaterialSymbols.Rounded.Thermostat,
-            primaryColor = Color(0xFFFF7043),
-            secondaryColor = Color(0xFFFFAB91),
-            route = Screen.TemperatureDetails.route,
-        ),
-        DataTypeTile(
-            id = "epidemic",
-            title = "Epidemic",
-            icon = MaterialSymbols.Rounded.Coronavirus,
-            primaryColor = Color(0xFFEF5350),
-            secondaryColor = Color(0xFFE57373),
-            route = Screen.EpidemicDetails.route,
-        )
-    )
+    val tiles = emptyList<DataTypeTile>()
 
     Column(modifier = Modifier.fillMaxSize().padding(LARGE_MEDIUM_PADDING)) {
         Text(
