@@ -1,55 +1,45 @@
-This is a Kotlin Multiplatform project targeting Web, Desktop (JVM).
+# Statistics-UI
 
-* [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./composeApp/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./composeApp/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./composeApp/src/jvmMain/kotlin)
-    folder is the appropriate location.
+Compose Multiplatform frontend (desktop JVM, web) of the universal statistics platform. Backend and the platform
+spec live in the `StatisticsService` repo (spec 004).
 
-### Build and Run Desktop (JVM) Application
+## Backend URL
 
-To build and run the development version of the desktop app, use the run configuration from the run widget
-in your IDE’s toolbar or run it directly from the terminal:
-- on macOS/Linux
-  ```shell
-  ./gradlew :composeApp:run
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :composeApp:run
-  ```
+The app calls `http://127.0.0.1:8080/api/v2`, set in `composeApp/build.gradle.kts`:
 
-### Build and Run Web Application
+```kotlin
+buildkonfig { defaultConfigs { buildConfigField(STRING, "backendurl", "http://127.0.0.1:8080") } }
+```
 
-To build and run the development version of the web app, use the run configuration from the run widget
-in your IDE's toolbar or run it directly from the terminal:
-- for the Wasm target (faster, modern browsers):
-  - on macOS/Linux
-    ```shell
-    ./gradlew :composeApp:wasmJsBrowserDevelopmentRun
-    ```
-  - on Windows
-    ```shell
-    .\gradlew.bat :composeApp:wasmJsBrowserDevelopmentRun
-    ```
-- for the JS target (slower, supports older browsers):
-  - on macOS/Linux
-    ```shell
-    ./gradlew :composeApp:jsBrowserDevelopmentRun
-    ```
-  - on Windows
-    ```shell
-    .\gradlew.bat :composeApp:jsBrowserDevelopmentRun
-    ```
+Start the backend first (see its README): PostgreSQL, then
+`ADMIN_EMAIL=admin@local ADMIN_PASSWORD='change-me-now' ./gradlew run` in `StatisticsService`.
 
----
+## Run
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html),
-[Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform/#compose-multiplatform),
-[Kotlin/Wasm](https://kotl.in/wasm/)…
+Desktop (JVM):
 
-We would appreciate your feedback on Compose/Web and Kotlin/Wasm in the public Slack channel [#compose-web](https://slack-chats.kotlinlang.org/c/compose-web).
-If you face any issues, please report them on [YouTrack](https://youtrack.jetbrains.com/newIssue?project=CMP).
+```shell
+./gradlew :composeApp:run
+```
+
+Tests: `./gradlew :composeApp:jvmTest`.
+
+Web: `./gradlew :composeApp:wasmJsBrowserDevelopmentRun` (or `jsBrowserDevelopmentRun`) serves the UI on
+port 8081, the origin the backend allows by default (`CORS_HOSTS=localhost:8081`). Both web targets currently fail
+to compile with a Kotlin compiler crash ([KT-82395](https://youtrack.jetbrains.com/issue/KT-82395),
+`No file found for source null`), so use the desktop app until it is fixed.
+
+## Sign in
+
+Sign in with the bootstrap admin (`ADMIN_EMAIL` / `ADMIN_PASSWORD`, created on the backend's first start while there
+are no users). The token is kept between runs (desktop: Java preferences, web: `localStorage`). Sign out from the drawer.
+
+Admins add other accounts under **Users** with an initial password:
+
+| Role | Can |
+|------|-----|
+| viewer | open dashboards shared with them or with everyone |
+| editor | also create dashboards and edit their own, share them |
+| admin | everything: sources, datasets, users, export/import |
+
+**Account** sets time zone, units (metric/imperial), theme, home dashboard (opened after sign-in) and the password.

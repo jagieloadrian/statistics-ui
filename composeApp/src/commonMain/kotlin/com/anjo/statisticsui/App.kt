@@ -1,47 +1,49 @@
 package com.anjo.statisticsui
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.material3.Surface
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.Color
+import androidx.navigation.compose.rememberNavController
+import com.anjo.statisticsui.auth.Session
+import com.anjo.statisticsui.di.StatsUIApplication
+import com.anjo.statisticsui.model.Prefs
+import com.anjo.statisticsui.navigation.NavGraph
+import com.anjo.statisticsui.ui.common.LocalPrefs
+import org.koin.compose.KoinApplication
+import org.koin.compose.koinInject
+import org.koin.plugin.module.dsl.koinConfiguration
 
-import statistics_ui.composeapp.generated.resources.Res
-import statistics_ui.composeapp.generated.resources.compose_multiplatform
+private val DarkColors = darkColorScheme(
+    background = Color(0xFF1E1E2C),
+    surface = Color(0xFF2D2D44),
+    primary = Color(0xFF4DD0E1),
+    onSurface = Color.White
+)
+private val LightColors = lightColorScheme(primary = Color(0xFF00838F))
 
 @Composable
-@Preview
 fun App() {
-    MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
-            }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
+    // Simple startup
+    KoinApplication(
+            configuration = koinConfiguration<StatsUIApplication>()
+    ) {
+        val prefs = koinInject<Session>().user?.prefs ?: Prefs()
+        val dark = when (prefs.theme) {
+            "light" -> false
+            "dark" -> true
+            else -> isSystemInDarkTheme()
+        }
+        MaterialTheme(colorScheme = if (dark) DarkColors else LightColors) {
+            CompositionLocalProvider(LocalPrefs provides prefs) {
+                // Surface gives every destination the theme background (only MainLayout had one).
+                Surface(color = MaterialTheme.colorScheme.background) {
+                    val controller = rememberNavController()
+                    NavGraph(controller)
                 }
             }
         }
