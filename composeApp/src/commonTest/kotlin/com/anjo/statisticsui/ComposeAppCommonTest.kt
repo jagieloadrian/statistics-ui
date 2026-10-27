@@ -1,12 +1,11 @@
 package com.anjo.statisticsui
 
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
 
-class ComposeAppCommonTest {
+class ComposeAppCommonTest : FunSpec({
 
-    @Test
-    fun example() {
-        assertEquals(3, 1 + 2)
+    test("example") {
+        1 + 2 shouldBe 3
     }
-}
+})

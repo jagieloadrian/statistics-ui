@@ -75,8 +75,15 @@ kotlin {
             implementation(libs.koin.compose.viewmodel)
         }
         commonTest.dependencies {
-            implementation(libs.kotlin.test)
+            // ponytail: no io.kotest/KSP plugins, so js/wasm tests compile but are not discovered; add both to run them there
+            implementation(libs.kotest.framework.engine)
+            implementation(libs.kotest.assertions.core)
             implementation(libs.koin.test)
+            // no test uses it: pins koin-test's kotlin-test to the compiler version, js/wasm reject the older klib
+            implementation(libs.kotlin.test)
+        }
+        jvmTest.dependencies {
+            implementation(libs.kotest.runner.junit5)
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
@@ -95,6 +102,10 @@ kotlin {
             implementation(libs.kotlin.logging.wasmjs)
         }
     }
+}
+
+tasks.named<Test>("jvmTest") {
+    useJUnitPlatform()
 }
 
 buildkonfig {
