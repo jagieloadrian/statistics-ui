@@ -12,7 +12,14 @@ data class Prefs(
 )
 
 @Serializable
-data class User(val id: Long, val email: String, val name: String = "", val role: String, val prefs: Prefs = Prefs())
+data class User(
+    val id: Long,
+    val email: String,
+    val name: String = "",
+    val role: String,
+    val prefs: Prefs = Prefs(),
+    val hasPassword: Boolean = true,
+)
 
 @Serializable
 data class LoginRequest(val email: String, val password: String)
@@ -28,3 +35,19 @@ data class NewUser(val email: String, val name: String = "", val role: String, v
 
 @Serializable
 data class UserUpdate(val name: String? = null, val role: String? = null)
+
+/** Enabled sign-in methods; [oidc] is null when the backend has no sign-in provider. */
+@Serializable
+data class AuthConfig(val local: Boolean = true, val oidc: OidcInfo? = null)
+
+@Serializable
+data class OidcInfo(val name: String)
+
+@Serializable
+data class OidcStartRequest(val redirectUri: String)
+
+@Serializable
+data class OidcStart(val authorizationUrl: String, val state: String, val codeVerifier: String)
+
+@Serializable
+data class OidcLoginRequest(val code: String, val codeVerifier: String, val redirectUri: String)

@@ -3,6 +3,7 @@ package com.anjo.statisticsui.api
 import com.anjo.statisticsui.auth.Session
 import com.anjo.statisticsui.configuration.AppConfig
 import com.anjo.statisticsui.model.ApiError
+import com.anjo.statisticsui.model.AuthConfig
 import com.anjo.statisticsui.model.Credential
 import com.anjo.statisticsui.model.Dashboard
 import com.anjo.statisticsui.model.Dataset
@@ -14,6 +15,9 @@ import com.anjo.statisticsui.model.LoginResponse
 import com.anjo.statisticsui.model.MappingTestRequest
 import com.anjo.statisticsui.model.MappingTestResult
 import com.anjo.statisticsui.model.NewUser
+import com.anjo.statisticsui.model.OidcLoginRequest
+import com.anjo.statisticsui.model.OidcStart
+import com.anjo.statisticsui.model.OidcStartRequest
 import com.anjo.statisticsui.model.PasswordChange
 import com.anjo.statisticsui.model.Prefs
 import com.anjo.statisticsui.model.Query
@@ -51,6 +55,19 @@ class PlatformApi(private val client: HttpClient, private val appConfig: AppConf
     /** Stores the session on success; wrong credentials → 401 with one generic message, too many tries → 429. */
     suspend fun login(email: String, password: String): User {
         val answer: LoginResponse = request("auth/login") { json(HttpMethod.Post, LoginRequest(email, password)) }
+        session.signIn(answer.token, answer.user)
+        return answer.user
+    }
+
+    suspend fun authConfig(): AuthConfig = request("auth/config")
+
+    /** Provider unreachable → 503 "Sign-in provider unavailable". */
+    suspend fun oidcStart(redirectUri: String): OidcStart =
+        request("auth/oidc/start") { json(HttpMethod.Post, OidcStartRequest(redirectUri)) }
+
+    /** Finishes provider sign-in and stores the session, like [login]. */
+    suspend fun oidcLogin(code: String, codeVerifier: String, redirectUri: String): User {
+        val answer: LoginResponse = request("auth/oidc") { json(HttpMethod.Post, OidcLoginRequest(code, codeVerifier, redirectUri)) }
         session.signIn(answer.token, answer.user)
         return answer.user
     }
