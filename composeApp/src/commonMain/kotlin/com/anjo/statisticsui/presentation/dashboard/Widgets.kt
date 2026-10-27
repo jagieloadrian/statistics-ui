@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.anjo.statisticsui.api.QueryResult
 import com.anjo.statisticsui.api.Widget
 import com.anjo.statisticsui.presentation.common.ErrorText
+import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.himanshoe.charty.color.ChartyColors
 import com.himanshoe.charty.common.ChartScaffold
@@ -48,67 +50,109 @@ fun Widget(widget: Widget, result: Result<QueryResult>?) {
     when {
         result == null -> CircularProgressIndicator()
         data == null -> ErrorText(result.exceptionOrNull()?.message ?: "Query failed")
-        widget.type == "line" -> LineWidget(data, widget.h)
+        widget.type == "line" || widget.type == "bar" -> SeriesChart(data, widget)
+        widget.type == "stat" -> StatWidget(data)
         widget.type == "table" -> TableWidget(data)
         else -> Text("Widget type '${widget.type}' is not supported yet", color = Color.Gray)
     }
+    data?.bucket?.takeIf { it.isNotBlank() }?.let { Text("Bucket: $it", color = Color.Gray, fontSize = 11.sp) }
 }
 
 internal class LineChartData(val labels: List<String>, val lines: List<Pair<String, List<Pair<Int, Float>>>>, val min: Float, val max: Float)
 
-/** One line per series × measure column, x = `ts`; all lines share the merged, sorted `ts` values as x positions. */
-internal fun lineChartData(result: QueryResult): LineChartData? {
+/**
+ * One line per series × measure column, x = [xColumn] (`options.x`, default `ts`); all lines share the merged x values
+ * as positions, sorted numerically when numeric (e.g. `generation`), else as text (ISO timestamps).
+ */
+internal fun lineChartData(result: QueryResult, xColumn: String = "ts"): LineChartData? {
     val raw = result.series.flatMap { s ->
-        val x = s.columns.indexOf("ts")
-        if (x < 0) emptyList() else s.columns.indices.filter { it != x }.map { c ->
-            (s.dims.values + s.columns[c]).joinToString(" · ") to s.rows.mapNotNull { r -> r[c].number()?.let { r[x].text() to it } }
+        val x = s.columns.indexOf(xColumn)
+        if (x < 0) emptyList() else s.columns.indices.filter { it != x && s.columns[it] != "ts" }.map { c ->
+            (s.dims.values + s.columns[c]).joinToString(" · ") to
+                s.rows.mapNotNull { r -> r[c].number()?.let { r[x].text() to it.toFloat() } }
         }
     }
-    // ponytail: x = index of the merged timestamps (evenly spaced), fine for bucketed data; proportional time axis if gaps matter
-    val xs = raw.flatMap { (_, points) -> points.map { it.first } }.distinct().sorted()
+    // ponytail: x = index of the merged x values (evenly spaced), fine for bucketed data; proportional axis if gaps matter
+    val xs = raw.flatMap { (_, points) -> points.map { it.first } }.distinct()
+        .sortedWith(compareBy<String> { it.toDoubleOrNull() }.thenBy { it })
     if (xs.isEmpty()) return null
     val index = xs.withIndex().associate { (i, x) -> x to i }
     val values = raw.flatMap { (_, points) -> points.map { it.second } }
     val step = (xs.size / 6).coerceAtLeast(1)
     return LineChartData(
-        labels = xs.mapIndexed { i, x -> if (i % step == 0) x.shortTime() else "" },
+        labels = xs.mapIndexed { i, x -> if (i % step == 0) x.toDoubleOrNull()?.let(::formatNumber) ?: x.shortTime() else "" },
         lines = raw.map { (name, points) -> name to points.map { (x, v) -> index.getValue(x) to v }.sortedBy { it.first } },
         min = values.min(),
         max = values.max().let { if (it == values.min()) it + 1 else it },
     )
 }
 
+/** `line` or `bar`; charty's MultilineChart paints every line with one brush, so series are drawn on its scaffold. */
 @Composable
-private fun LineWidget(result: QueryResult, h: Int) {
-    val chart = remember(result) { lineChartData(result) }
+private fun SeriesChart(result: QueryResult, widget: Widget) {
+    val chart = remember(result, widget.options.x) { lineChartData(result, widget.options.x ?: "ts") }
     if (chart == null) {
         Text("No data in range", color = Color.Gray)
         return
     }
-    // charty's MultilineChart paints every line with one brush, so lines are drawn on its scaffold here
+    val bar = widget.type == "bar"
+    // bars grow from zero, so zero must be on the axis
+    val min = if (bar) minOf(chart.min, 0f) else chart.min
+    val max = if (bar) maxOf(chart.max, 0f) else chart.max
     ChartScaffold(
-        modifier = Modifier.fillMaxWidth().height((h * 70).dp),
+        modifier = Modifier.fillMaxWidth().height((widget.h * 70).dp),
         xLabels = chart.labels,
-        yAxisConfig = AxisConfig(minValue = chart.min, maxValue = chart.max, drawAxisAtZero = false),
+        yAxisConfig = AxisConfig(minValue = min, maxValue = max, drawAxisAtZero = false),
         config = ChartScaffoldConfig(
             axisColor = Color.Gray,
             gridColor = Color.Gray.copy(alpha = 0.2f),
             labelTextStyle = TextStyle(color = Color.LightGray, fontSize = 10.sp),
         ),
     ) { ctx ->
+        val slot = ctx.width / chart.labels.size
+        val barWidth = slot * 0.8f / chart.lines.size
+        val zero = ctx.convertValueToYPosition(0f)
         chart.lines.forEachIndexed { i, (_, points) ->
             val color = PALETTE[i % PALETTE.size]
             val path = Path()
             points.forEachIndexed { n, (x, v) ->
                 val p = Offset(ctx.calculateCenteredXPosition(x, chart.labels.size), ctx.convertValueToYPosition(v))
-                if (n == 0) path.moveTo(p.x, p.y) else path.lineTo(p.x, p.y)
-                if (chart.labels.size <= 60) drawCircle(color, 3.dp.toPx(), p)
+                if (bar) {
+                    val left = ctx.left + slot * x + slot * 0.1f + barWidth * i
+                    drawRect(color, Offset(left, minOf(p.y, zero)), Size(barWidth, abs(zero - p.y)))
+                } else {
+                    if (n == 0) path.moveTo(p.x, p.y) else path.lineTo(p.x, p.y)
+                    if (chart.labels.size <= 60) drawCircle(color, 3.dp.toPx(), p)
+                }
             }
-            drawPath(path, color, style = Stroke(width = 2.dp.toPx()))
+            if (!bar) drawPath(path, color, style = Stroke(width = 2.dp.toPx()))
         }
     }
     FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
         chart.lines.forEachIndexed { i, (name, _) -> Text("● $name", color = PALETTE[i % PALETTE.size], fontSize = 12.sp) }
+    }
+}
+
+/** One value per column of each series' last row; the label is the column name (= the measure's `as`). */
+internal fun statValues(result: QueryResult): List<Pair<String, JsonElement>> = result.series.flatMap { s ->
+    val row = s.rows.lastOrNull() ?: return@flatMap emptyList()
+    s.columns.indices.filter { s.columns[it] != "ts" }.map { c -> (s.dims.values + s.columns[c]).joinToString(" · ") to row[c] }
+}
+
+@Composable
+private fun StatWidget(result: QueryResult) {
+    val values = remember(result) { statValues(result) }
+    if (values.isEmpty()) {
+        Text("No data in range", color = Color.Gray)
+        return
+    }
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(MEDIUM_PADDING), verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+        values.forEach { (label, value) ->
+            Column {
+                Text(value.format(), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(label, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+            }
+        }
     }
 }
 
@@ -151,19 +195,19 @@ private fun TableRow(cells: List<String>, header: Boolean = false) {
 
 private fun JsonElement.text() = (this as? JsonPrimitive)?.content ?: toString()
 
-private fun JsonElement.number(): Float? =
-    (this as? JsonPrimitive)?.let { it.doubleOrNull ?: it.booleanOrNull?.let { b -> if (b) 1.0 else 0.0 } }?.toFloat()
+private fun JsonElement.number(): Double? =
+    (this as? JsonPrimitive)?.let { it.doubleOrNull ?: it.booleanOrNull?.let { b -> if (b) 1.0 else 0.0 } }
 
 private fun JsonElement.format(): String {
     val p = this as? JsonPrimitive ?: return toString()
     if (p is JsonNull) return ""
     val d = if (p.isString) null else p.doubleOrNull
-    return when {
-        d == null -> p.content
-        d % 1.0 == 0.0 && abs(d) < 1e15 -> d.toLong().toString()
-        else -> ((d * 100).roundToLong() / 100.0).toString()
-    }
+    return d?.let(::formatNumber) ?: p.content.shortTime()
 }
 
+/** Whole numbers without decimals, others rounded to 2 places. */
+private fun formatNumber(d: Double): String =
+    if (d % 1.0 == 0.0 && abs(d) < 1e15) d.toLong().toString() else ((d * 100).roundToLong() / 100.0).toString()
+
 /** `2026-10-26T13:05:00Z` → `10-26 13:05`; anything else unchanged. */
-private fun String.shortTime() = if (length >= 16 && this[10] == 'T') substring(5, 16).replace('T', ' ') else this
+internal fun String.shortTime() = if (length >= 16 && this[4] == '-' && this[7] == '-' && this[10] == 'T') substring(5, 16).replace('T', ' ') else this

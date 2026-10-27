@@ -54,8 +54,6 @@ import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Add
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
-import kotlin.time.Clock
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 
@@ -68,6 +66,7 @@ private val WIDGET_TYPES = listOf("line", "table")
 fun DashboardScreen(id: String, navController: NavHostController, api: PlatformApi = koinInject()) {
     var dashboard by remember { mutableStateOf<Dashboard?>(null) }
     var range by remember { mutableStateOf(1.days) }
+    var values by remember { mutableStateOf(emptyMap<String, VariableValue>()) }
     var adding by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val results = remember { mutableStateMapOf<String, Result<QueryResult>>() }
@@ -75,19 +74,18 @@ fun DashboardScreen(id: String, navController: NavHostController, api: PlatformA
     LaunchedEffect(id) {
         attempt({ error = it }) {
             val loaded = api.dashboard(id)
-            range = loaded.defaultRange?.let { runCatching { Duration.parseIsoString(it.last) }.getOrNull() } ?: 1.days
+            values = initialValues(loaded, api)
+            range = initialDuration(loaded)
             dashboard = loaded
         }
     }
     // the dashboard range sets from/to on every widget query; widget definitions never carry their own
-    LaunchedEffect(dashboard, range) {
+    LaunchedEffect(dashboard, range, values) {
         val current = dashboard ?: return@LaunchedEffect
         results.clear()
-        val now = Clock.System.now()
-        val from = (now - range).toString()
-        val to = now.toString()
+        val timeRange = TimeRange.last(range)
         current.widgets.forEach { w ->
-            launch { results[w.id] = catching { api.query(w.query.copy(from = from, to = to)) } }
+            launch { results[w.id] = catching { api.query(resolve(w.query, values, timeRange)) } }
         }
     }
 
@@ -108,6 +106,7 @@ fun DashboardScreen(id: String, navController: NavHostController, api: PlatformA
         }
         ErrorText(error)
         dashboard?.let { current ->
+            VariableBar(current, values, api) { name, value -> values = values + (name to value) }
             if (current.widgets.isEmpty()) Text("No widgets yet. Add one.", color = Color.Gray)
             LazyColumn(verticalArrangement = Arrangement.spacedBy(SMALL_MEDIUM_PADDING)) {
                 items(current.widgets, key = { it.id }) { w ->
@@ -116,7 +115,7 @@ fun DashboardScreen(id: String, navController: NavHostController, api: PlatformA
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Column(Modifier.fillMaxWidth().padding(SMALL_MEDIUM_PADDING)) {
-                            Text(w.title.ifBlank { w.id }, style = MaterialTheme.typography.titleMedium, color = Color.White,
+                            Text(resolveText(w.title.ifBlank { w.id }, values), style = MaterialTheme.typography.titleMedium, color = Color.White,
                                 modifier = Modifier.padding(bottom = SMALL_PADDING))
                             Widget(w, results[w.id])
                         }

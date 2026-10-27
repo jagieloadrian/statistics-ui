@@ -33,6 +33,17 @@ class DashboardLogicTest {
     }
 
     @Test
+    fun lineChartUsesNumericXAndSkipsTs() {
+        val result = QueryResult(series = listOf(Series(columns = listOf("ts", "generation", "infected"), rows = listOf(
+            listOf(JsonPrimitive("2026-10-26T00:00:10Z"), JsonPrimitive(10), JsonPrimitive(5)),
+            listOf(JsonPrimitive("2026-10-26T00:00:09Z"), JsonPrimitive(9), JsonPrimitive(4)),
+        ))))
+        val chart = assertNotNull(lineChartData(result, "generation"))
+        assertEquals(listOf("9", "10"), chart.labels)
+        assertEquals(listOf("infected" to listOf(0 to 4f, 1 to 5f)), chart.lines)
+    }
+
+    @Test
     fun mappingRowsRoundTrip() {
         val rule = Rule(
             timestamp = TimestampSpec("timestamp"),
