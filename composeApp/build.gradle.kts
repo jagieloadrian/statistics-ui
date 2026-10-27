@@ -120,6 +120,8 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "com.anjo.statisticsui"
             packageVersion = "1.0.0"
+            // loopback receiver for provider sign-in (ProviderSignIn.jvm.kt)
+            modules("jdk.httpserver")
         }
     }
 }

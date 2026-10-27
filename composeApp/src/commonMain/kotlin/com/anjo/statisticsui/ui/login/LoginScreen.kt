@@ -34,6 +34,7 @@ import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.attempt
 import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
+import kotlinx.coroutines.Job
 import org.koin.compose.koinInject
 
 /**
@@ -47,6 +48,7 @@ fun LoginScreen(onSignedIn: (User) -> Unit, api: PlatformApi = koinInject()) {
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var config by remember { mutableStateOf<AuthConfig?>(null) }
+    var providerJob by remember { mutableStateOf<Job?>(null) }
     val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         attempt({ error = it }) {
@@ -80,16 +82,15 @@ fun LoginScreen(onSignedIn: (User) -> Unit, api: PlatformApi = koinInject()) {
                     ) { Text("Sign in") }
                 }
                 config?.oidc?.let { provider ->
-                    OutlinedButton(
+                    if (providerJob != null) {
+                        // desktop waits for the system browser; web is leaving the page
+                        Text("Waiting for the browser…", color = MaterialTheme.colorScheme.onSurface)
+                        OutlinedButton(onClick = { providerJob?.cancel() }, modifier = Modifier.fillMaxWidth()) { Text("Cancel") }
+                    } else OutlinedButton(
                         onClick = {
-                            scope.attempt({ error = it }) {
-                                busy = true
-                                try {
-                                    providerSignIn(api)?.let(onSignedIn)
-                                } finally {
-                                    busy = false
-                                }
-                            }
+                            scope.attempt({ error = it }) { providerSignIn(api)?.let(onSignedIn) }
+                                .also { providerJob = it }
+                                .invokeOnCompletion { providerJob = null }
                         },
                         enabled = !busy,
                         modifier = Modifier.fillMaxWidth()
