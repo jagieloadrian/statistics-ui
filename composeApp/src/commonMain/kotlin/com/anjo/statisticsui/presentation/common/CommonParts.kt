@@ -1,7 +1,10 @@
 package com.anjo.statisticsui.presentation.common
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -11,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,9 +25,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavHostController
+import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Add
 import com.composables.icons.materialsymbols.rounded.Arrow_back
+import com.composables.icons.materialsymbols.rounded.Delete
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -100,4 +107,34 @@ fun Picker(value: String, options: List<String>, modifier: Modifier = Modifier, 
             }
         }
     }
+}
+
+/** Editable rows of [items] with remove buttons and an "Add" button; [row] edits one item. */
+@Composable
+fun <T> ListEditor(title: String, items: List<T>, onChange: (List<T>) -> Unit, new: () -> T,
+                   row: @Composable RowScope.(T, (T) -> Unit) -> Unit) {
+    Text(title, style = MaterialTheme.typography.titleMedium, color = Color.White,
+        modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING))
+    items.forEachIndexed { i, item ->
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+            row(item) { changed -> onChange(items.mapIndexed { j, old -> if (j == i) changed else old }) }
+            IconButton(onClick = { onChange(items.filterIndexed { j, _ -> j != i }) }) {
+                Icon(MaterialSymbols.Rounded.Delete, contentDescription = "Remove", tint = Color.Gray)
+            }
+        }
+    }
+    TextButton(onClick = { onChange(items + new()) }) {
+        Icon(MaterialSymbols.Rounded.Add, contentDescription = null)
+        Text("Add")
+    }
+}
+
+/** Text field for an optional number; keeps half-typed text such as `1.` or `-` until it parses. */
+@Composable
+fun NumberField(label: String, value: Double?, modifier: Modifier = Modifier, onChange: (Double?) -> Unit) {
+    fun Double.plain() = if (this % 1.0 == 0.0) toLong().toString() else toString()
+    var text by remember { mutableStateOf(value?.plain().orEmpty()) }
+    if (text.toDoubleOrNull() != value) text = value?.plain().orEmpty() // changed from outside
+    Field(label, text, modifier) { text = it; onChange(it.toDoubleOrNull()) }
 }

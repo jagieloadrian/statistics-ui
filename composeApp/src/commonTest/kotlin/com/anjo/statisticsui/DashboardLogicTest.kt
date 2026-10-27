@@ -7,6 +7,8 @@ import com.anjo.statisticsui.api.Series
 import com.anjo.statisticsui.api.TimestampSpec
 import com.anjo.statisticsui.presentation.admin.rows
 import com.anjo.statisticsui.presentation.admin.withRows
+import com.anjo.statisticsui.presentation.dashboard.ChartLine
+import com.anjo.statisticsui.presentation.dashboard.formatNumber
 import com.anjo.statisticsui.presentation.dashboard.lineChartData
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
@@ -27,7 +29,7 @@ class DashboardLogicTest {
         ))
         val chart = assertNotNull(lineChartData(result))
         assertEquals(listOf("10-26 00:00", "10-26 01:00", "10-26 02:00"), chart.labels) // null value dropped
-        assertEquals(listOf("a · t" to listOf(0 to 1f, 1 to 2f), "b · t" to listOf(2 to 5f)), chart.lines)
+        assertEquals(listOf(ChartLine("a · t", "t", listOf(0 to 1f, 1 to 2f)), ChartLine("b · t", "t", listOf(2 to 5f))), chart.lines)
         assertEquals(1f to 5f, chart.min to chart.max)
         assertNull(lineChartData(QueryResult(series = listOf(Series(columns = listOf("t"), rows = listOf(listOf(JsonPrimitive(1))))))))
     }
@@ -40,7 +42,12 @@ class DashboardLogicTest {
         ))))
         val chart = assertNotNull(lineChartData(result, "generation"))
         assertEquals(listOf("9", "10"), chart.labels)
-        assertEquals(listOf("infected" to listOf(0 to 4f, 1 to 5f)), chart.lines)
+        assertEquals(listOf(ChartLine("infected", "infected", listOf(0 to 4f, 1 to 5f))), chart.lines)
+    }
+
+    @Test
+    fun decimalsAreFixed() {
+        assertEquals(listOf("21.3", "-0.50", "3", "21.35"), listOf(formatNumber(21.25, 1), formatNumber(-0.5, 2), formatNumber(2.6, 0), formatNumber(21.349)))
     }
 
     @Test

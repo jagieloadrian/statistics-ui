@@ -12,11 +12,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -36,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.anjo.statisticsui.api.DefinitionSummary
 import com.anjo.statisticsui.api.FieldSpec
+import com.anjo.statisticsui.api.ImportResult
 import com.anjo.statisticsui.api.MappingTestRequest
 import com.anjo.statisticsui.api.MappingTestResult
 import com.anjo.statisticsui.api.PlatformApi
@@ -46,6 +49,7 @@ import com.anjo.statisticsui.api.platformJson
 import com.anjo.statisticsui.presentation.common.ConfirmButton
 import com.anjo.statisticsui.presentation.common.ErrorText
 import com.anjo.statisticsui.presentation.common.Field
+import com.anjo.statisticsui.presentation.common.ListEditor
 import com.anjo.statisticsui.presentation.common.Picker
 import com.anjo.statisticsui.presentation.common.ScreenHeader
 import com.anjo.statisticsui.presentation.common.attempt
@@ -77,6 +81,7 @@ fun SourcesScreen(navController: NavHostController, api: PlatformApi = koinInjec
     var selected by remember { mutableStateOf<Source?>(null) }
     var isNew by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var bundleOpen by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val reload = {
         scope.attempt({ error = it }) {
@@ -88,7 +93,9 @@ fun SourcesScreen(navController: NavHostController, api: PlatformApi = koinInjec
     LaunchedEffect(Unit) { reload() }
 
     Column(Modifier.fillMaxSize().padding(LARGE_MEDIUM_PADDING)) {
-        ScreenHeader("Sources", navController)
+        ScreenHeader("Sources", navController) {
+            OutlinedButton(onClick = { bundleOpen = true }) { Text("Export / import") }
+        }
         ErrorText(error)
         Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(MEDIUM_PADDING)) {
             AdminList(
@@ -111,6 +118,7 @@ fun SourcesScreen(navController: NavHostController, api: PlatformApi = koinInjec
             }
         }
     }
+    if (bundleOpen) BundleDialog(api) { bundleOpen = false; reload() }
 }
 
 /** One simple-editor row = one entry of `dims` (dim = true) or `vals` of the first mapping rule. */
@@ -269,6 +277,44 @@ private fun SourceOps(source: Source, api: PlatformApi, mapping: () -> List<Rule
         }
         ErrorText(error)
     }
+}
+
+/** Export shows the whole bundle as copyable JSON; import posts pasted JSON and shows `{created, updated, errors}`. */
+@Composable
+private fun BundleDialog(api: PlatformApi, onDismiss: () -> Unit) {
+    var text by remember { mutableStateOf("") }
+    var result by remember { mutableStateOf<ImportResult?>(null) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Export / import") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+                Field("Bundle JSON", text, Modifier.fillMaxWidth().height(360.dp), singleLine = false) { text = it }
+                result?.let { r ->
+                    Text(
+                        if (r.errors.isEmpty()) "Imported: ${r.created} created, ${r.updated} updated"
+                        else "Nothing imported (${r.errors.size} errors):",
+                        color = Color.LightGray
+                    )
+                    r.errors.forEach { Text(it, color = MaterialTheme.colorScheme.error) }
+                }
+                ErrorText(error)
+            }
+        },
+        confirmButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+                OutlinedButton(onClick = {
+                    scope.attempt({ error = it }) { result = null; text = platformJson.encodeToString(api.exportBundle()) }
+                }) { Text("Export") }
+                Button(enabled = text.isNotBlank(), onClick = {
+                    scope.attempt({ error = it }) { result = api.importBundle(platformJson.parseToJsonElement(text)) }
+                }) { Text("Import") }
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } }
+    )
 }
 
 @Composable

@@ -8,13 +8,17 @@ import io.ktor.client.request.accept
 import io.ktor.client.request.parameter
 import io.ktor.client.request.request
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.HttpMethod
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import kotlinx.serialization.json.JsonElement
 import org.koin.core.annotation.Singleton
 
-class ApiException(message: String) : Exception(message)
+/** Non-2xx answer; [status] lets callers react to e.g. 409 (references, retry with `force`). */
+class ApiException(message: String, val status: Int) : Exception(message)
 
 /** Client for the platform API v2 (contracts/api-v2.md). `kind` = `datasets`, `sources` or `dashboards`. */
 @Singleton
@@ -22,7 +26,9 @@ class PlatformApi(private val client: HttpClient, private val appConfig: AppConf
 
     suspend fun list(kind: String): List<DefinitionSummary> = request(kind)
 
-    suspend fun delete(kind: String, id: String): Unit = request("$kind/$id") { method = HttpMethod.Delete }
+    /** [force] overrides the 409 reference guard (dataset still used by widgets, variables or sources). */
+    suspend fun delete(kind: String, id: String, force: Boolean = false): Unit =
+        request("$kind/$id") { method = HttpMethod.Delete; if (force) parameter("force", true) }
 
     suspend fun dataset(id: String): Dataset = request("datasets/$id")
 
@@ -30,7 +36,10 @@ class PlatformApi(private val client: HttpClient, private val appConfig: AppConf
 
     suspend fun dashboard(id: String): Dashboard = request("dashboards/$id")
 
-    suspend fun putDataset(dataset: Dataset): Unit = request("datasets/${dataset.id}") { json(HttpMethod.Put, dataset) }
+    suspend fun putDataset(dataset: Dataset, force: Boolean = false): Unit = request("datasets/${dataset.id}") {
+        json(HttpMethod.Put, dataset)
+        if (force) parameter("force", true)
+    }
 
     suspend fun putSource(source: Source): Unit = request("sources/${source.id}") { json(HttpMethod.Put, source) }
 
@@ -55,17 +64,37 @@ class PlatformApi(private val client: HttpClient, private val appConfig: AppConf
         parameter("offset", offset)
     }
 
+    /** Raw JSON so the copy shown to the user keeps every field. */
+    suspend fun exportBundle(): JsonElement = request("export")
+
+    /** 200 = imported; 400 with the same shape = nothing stored. Any other answer throws. */
+    suspend fun importBundle(bundle: JsonElement): ImportResult {
+        val response = client.request(url("import")) {
+            accept(ContentType.Application.Json)
+            json(HttpMethod.Post, bundle)
+        }
+        val result = if (response.status.isSuccess() || response.status == HttpStatusCode.BadRequest) {
+            runCatching { response.body<ImportResult>() }.getOrNull()
+        } else null
+        return result ?: throw response.apiException()
+    }
+
+    private fun url(path: String) = "${appConfig.backendUrl}/api/v2/$path"
+
     private suspend inline fun <reified T> request(path: String, block: HttpRequestBuilder.() -> Unit = {}): T {
-        val response = client.request("${appConfig.backendUrl}/api/v2/$path") {
+        val response = client.request(url(path)) {
             accept(ContentType.Application.Json)
             block()
         }
-        if (!response.status.isSuccess()) {
-            val error = runCatching { response.body<ApiError>() }.getOrNull()
-            throw ApiException(error?.let { (listOf(it.message) + it.details).joinToString("\n") } ?: "HTTP ${response.status}")
-        }
+        if (!response.status.isSuccess()) throw response.apiException()
         return response.body()
     }
+}
+
+/** Message plus `details` (e.g. the referencing widgets of a 409) from the [ApiError] body. */
+private suspend fun HttpResponse.apiException(): ApiException {
+    val error = runCatching { body<ApiError>() }.getOrNull()
+    return ApiException(error?.let { (listOf(it.message) + it.details).joinToString("\n") } ?: "HTTP $status", status.value)
 }
 
 private inline fun <reified B : Any> HttpRequestBuilder.json(verb: HttpMethod, body: B) {

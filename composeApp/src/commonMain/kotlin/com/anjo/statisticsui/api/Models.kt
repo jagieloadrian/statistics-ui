@@ -182,5 +182,9 @@ data class MappingTestResult(val records: List<JsonElement> = emptyList(), val e
 @Serializable
 data class Credential(val token: String)
 
+/** `POST /import` answer; `created`/`updated` have no defaults so an [ApiError] body never decodes as one. */
+@Serializable
+data class ImportResult(val created: Int, val updated: Int, val errors: List<String> = emptyList())
+
 @Serializable
 data class ApiError(val error: String, val message: String, val details: List<String> = emptyList())
