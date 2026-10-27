@@ -9,6 +9,10 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.savedstate.read
+import com.anjo.statisticsui.presentation.admin.DatasetsScreen
+import com.anjo.statisticsui.presentation.admin.SourcesScreen
+import com.anjo.statisticsui.presentation.dashboard.DashboardScreen
 import com.anjo.statisticsui.presentation.home.DashboardContent
 import com.anjo.statisticsui.presentation.home.MainLayout
 import com.anjo.statisticsui.presentation.home.PlaceholderScreen
@@ -31,6 +35,15 @@ fun NavGraph(navController: NavHostController, startDestination: String = Screen
         }
         composable(Screen.Dashboard.route) {
             DashboardContent(navController)
+        }
+        composable(Screen.DashboardView.route) { entry ->
+            DashboardScreen(entry.arguments?.read { getStringOrNull("id") }.orEmpty(), navController)
+        }
+        composable(Screen.Sources.route) {
+            SourcesScreen(navController)
+        }
+        composable(Screen.Datasets.route) {
+            DatasetsScreen(navController)
         }
         composable(Screen.Charts.route) {
             PlaceholderScreen("Charts")

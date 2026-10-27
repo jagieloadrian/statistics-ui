@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -30,6 +31,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,9 +43,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.anjo.statisticsui.api.DefinitionSummary
+import com.anjo.statisticsui.api.PlatformApi
 import com.anjo.statisticsui.model.DataTypeTile
 import com.anjo.statisticsui.model.ScreenIcons
 import com.anjo.statisticsui.navigation.Screen
+import com.anjo.statisticsui.presentation.common.ErrorText
+import com.anjo.statisticsui.presentation.common.attempt
+import com.anjo.statisticsui.presentation.dashboard.NewDashboardDialog
+import com.anjo.statisticsui.ui.theme.Colors
 import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.LARGE_PADDING
 import com.anjo.statisticsui.ui.theme.LARGE_SMALL_PADDING
@@ -52,7 +60,12 @@ import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_SMALL_PADDING
 import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Add
 import com.composables.icons.materialsymbols.rounded.Arrow_forward
+import com.composables.icons.materialsymbols.rounded.Dashboard
+import com.composables.icons.materialsymbols.rounded.Database
+import com.composables.icons.materialsymbols.rounded.Sensors
+import org.koin.compose.koinInject
 
 
 @Composable
@@ -113,8 +126,20 @@ fun MainLayout(navController: NavHostController) {
 }
 
 @Composable
-fun DashboardContent(navController: NavHostController) {
-    val tiles = emptyList<DataTypeTile>()
+fun DashboardContent(navController: NavHostController, api: PlatformApi = koinInject()) {
+    var dashboards by remember { mutableStateOf(emptyList<DefinitionSummary>()) }
+    var creating by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) { attempt({ error = it }) { dashboards = api.list("dashboards") } }
+
+    val primary = MaterialTheme.colorScheme.primary
+    val tiles = dashboards.map {
+        DataTypeTile(it.id, it.label?.ifBlank { null } ?: it.id, MaterialSymbols.Rounded.Dashboard, primary, primary,
+            Screen.DashboardView.route(it.id))
+    } + listOf(
+        DataTypeTile("sources", "Sources", MaterialSymbols.Rounded.Sensors, Colors.LIGHT_ORANGE, Colors.LIGHT_ORANGE, Screen.Sources.route),
+        DataTypeTile("datasets", "Datasets", MaterialSymbols.Rounded.Database, Colors.LIGHT_RED, Colors.LIGHT_RED, Screen.Datasets.route),
+    )
 
     Column(modifier = Modifier.fillMaxSize().padding(LARGE_MEDIUM_PADDING)) {
         Text(
@@ -123,12 +148,22 @@ fun DashboardContent(navController: NavHostController) {
             color = Color.White,
             fontWeight = FontWeight.Bold
         )
-        Text(
-            text = "Choose category to analyze",
-            style = MaterialTheme.typography.bodyLarge,
-            color = Color.Gray,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(top = SMALL_PADDING, bottom = LARGE_MEDIUM_PADDING)
-        )
+        ) {
+            Text(
+                text = "Choose a dashboard",
+                style = MaterialTheme.typography.bodyLarge,
+                color = Color.Gray,
+                modifier = Modifier.weight(1f)
+            )
+            Button(onClick = { creating = true }) {
+                Icon(MaterialSymbols.Rounded.Add, contentDescription = null)
+                Text("New dashboard")
+            }
+        }
+        ErrorText(error)
 
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 200.dp),
@@ -141,6 +176,14 @@ fun DashboardContent(navController: NavHostController) {
                 }
             }
         }
+    }
+
+    if (creating) {
+        NewDashboardDialog(
+            existingIds = dashboards.map { it.id },
+            onDismiss = { creating = false },
+            onCreated = { id -> creating = false; navController.navigate(Screen.DashboardView.route(id)) }
+        )
     }
 }
 
