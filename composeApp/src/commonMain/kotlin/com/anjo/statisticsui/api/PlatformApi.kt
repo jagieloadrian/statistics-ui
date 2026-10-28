@@ -79,12 +79,10 @@ class PlatformApi(
         return answer.user
     }
 
-    suspend fun logout() {
-        try {
-            request<Unit>("auth/logout") { method = HttpMethod.Post }
-        } finally {
-            session.signOut()
-        }
+    suspend fun logout(): Result<Unit> {
+        val serverRevocation = runSuspendCatching { request<Unit>("auth/logout") { method = HttpMethod.Post } }
+        session.signOut()
+        return serverRevocation
     }
 
     suspend fun me(): User = request<User>("me").also { session.user = it }
@@ -180,7 +178,7 @@ class PlatformApi(
             }
         val result =
             if (response.status.isSuccess() || response.status == HttpStatusCode.BadRequest) {
-                runCatching { response.body<ImportResult>() }.getOrNull()
+                runSuspendCatching { response.body<ImportResult>() }.getOrNull()
             } else {
                 null
             }
@@ -196,7 +194,7 @@ class PlatformApi(
 
     private suspend fun HttpResponse.apiException(): ApiException {
         if (status == HttpStatusCode.Unauthorized && call.request.headers[HttpHeaders.Authorization] != null) session.signOut()
-        val error = runCatching { body<ApiError>() }.getOrNull()
+        val error = runSuspendCatching { body<ApiError>() }.getOrNull()
         return ApiException(error?.let { (listOf(it.message) + it.details).joinToString("\n") } ?: "HTTP $status", status.value)
     }
 

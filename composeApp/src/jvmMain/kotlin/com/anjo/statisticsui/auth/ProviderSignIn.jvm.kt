@@ -45,9 +45,9 @@ internal class Loopback(
     }
 
     suspend fun awaitCode(state: String): String {
-        val c = withTimeoutOrNull(timeout) { callback.await() } ?: throw Exception("No answer from the browser, try again")
-        c.error?.let { throw Exception(it) }
-        if (c.code == null || c.state != state) throw Exception("Sign-in expired, try again")
+        val c = withTimeoutOrNull(timeout) { callback.await() } ?: error("No answer from the browser, try again")
+        c.error?.let { error(it) }
+        if (c.code == null || c.state != state) error("Sign-in expired, try again")
         return c.code
     }
 

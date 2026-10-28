@@ -46,6 +46,7 @@ import com.himanshoe.charty.color.ChartyColors
 import com.himanshoe.charty.common.ChartScaffold
 import com.himanshoe.charty.common.axis.AxisConfig
 import com.himanshoe.charty.common.config.ChartScaffoldConfig
+import kotlinx.datetime.IllegalTimeZoneException
 import kotlinx.datetime.TimeZone
 import kotlin.math.abs
 
@@ -306,5 +307,12 @@ private fun TableRow(
 @Composable
 internal fun displayZone(): TimeZone {
     val id = LocalPrefs.current.timeZone
-    return remember(id) { id?.let { runCatching { TimeZone.of(it) }.getOrNull() } ?: TimeZone.currentSystemDefault() }
+    return remember(id) { id?.let(::timeZoneOrNull) ?: TimeZone.currentSystemDefault() }
 }
+
+private fun timeZoneOrNull(id: String): TimeZone? =
+    try {
+        TimeZone.of(id)
+    } catch (e: IllegalTimeZoneException) {
+        null
+    }

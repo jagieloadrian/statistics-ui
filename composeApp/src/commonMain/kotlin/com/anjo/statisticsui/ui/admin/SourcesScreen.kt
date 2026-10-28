@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.anjo.statisticsui.api.PlatformApi
+import com.anjo.statisticsui.api.runSuspendCatching
 import com.anjo.statisticsui.model.DefinitionSummary
 import com.anjo.statisticsui.model.ImportResult
 import com.anjo.statisticsui.model.MapRow
@@ -55,7 +56,6 @@ import com.anjo.statisticsui.ui.common.ListEditor
 import com.anjo.statisticsui.ui.common.Picker
 import com.anjo.statisticsui.ui.common.ScreenHeader
 import com.anjo.statisticsui.ui.common.attempt
-import com.anjo.statisticsui.ui.common.runSuspendCatching
 import com.anjo.statisticsui.ui.theme.Colors
 import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
@@ -92,7 +92,14 @@ fun SourcesScreen(
         scope.attempt({ error = it }) {
             datasets = api.list("datasets").map { it.id }
             sources = api.list("sources")
-            sources.forEach { s -> launch { runSuspendCatching { api.sourceStatus(s.id) }.onSuccess { states[s.id] = it.state } } }
+            sources.forEach { s ->
+                launch {
+                    runSuspendCatching { api.sourceStatus(s.id) }.fold({ states[s.id] = it.state }, {
+                        error =
+                            it.message
+                    })
+                }
+            }
         }
     }
     LaunchedEffect(Unit) { reload() }

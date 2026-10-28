@@ -55,7 +55,6 @@ import com.anjo.statisticsui.navigation.Screen
 import com.anjo.statisticsui.ui.account.AccountScreen
 import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.common.attempt
-import com.anjo.statisticsui.ui.common.runSuspendCatching
 import com.anjo.statisticsui.ui.dashboard.NewDashboardDialog
 import com.anjo.statisticsui.ui.theme.Colors
 import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
@@ -134,7 +133,7 @@ fun MainLayout(
                 NavigationDrawerItem(
                     label = { Text("Sign out") },
                     selected = false,
-                    onClick = { scope.launch { runSuspendCatching { api.logout() } } },
+                    onClick = { scope.launch { api.logout() } },
                     icon = { Icon(MaterialSymbols.Rounded.Logout, contentDescription = null) },
                     modifier = Modifier.padding(horizontal = LARGE_SMALL_PADDING, vertical = SMALL_PADDING),
                 )

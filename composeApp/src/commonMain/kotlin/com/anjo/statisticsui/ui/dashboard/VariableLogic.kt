@@ -1,17 +1,17 @@
 package com.anjo.statisticsui.ui.dashboard
 
 import com.anjo.statisticsui.api.PlatformApi
+import com.anjo.statisticsui.api.runSuspendCatching
 import com.anjo.statisticsui.model.Dashboard
 import com.anjo.statisticsui.model.Query
 import com.anjo.statisticsui.model.TimeRange
 import com.anjo.statisticsui.model.VariableValue
-import com.anjo.statisticsui.ui.common.runSuspendCatching
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 
 fun initialDuration(dashboard: Dashboard): Duration =
     listOfNotNull(dashboard.variables.firstOrNull { it.type == "timeRange" }?.default, dashboard.defaultRange?.last)
-        .firstNotNullOfOrNull { runCatching { Duration.parseIsoString(it) }.getOrNull() } ?: 1.days
+        .firstNotNullOfOrNull { Duration.parseIsoStringOrNull(it) } ?: 1.days
 
 private fun placeholder(value: String) = value.takeIf { it.startsWith("$") }?.substring(1)
 

@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.anjo.statisticsui.api.PlatformApi
+import com.anjo.statisticsui.api.runSuspendCatching
 import com.anjo.statisticsui.model.Dashboard
 import com.anjo.statisticsui.model.Dataset
 import com.anjo.statisticsui.model.Query
@@ -46,7 +47,6 @@ import com.anjo.statisticsui.ui.common.ListEditor
 import com.anjo.statisticsui.ui.common.NumberField
 import com.anjo.statisticsui.ui.common.Picker
 import com.anjo.statisticsui.ui.common.attempt
-import com.anjo.statisticsui.ui.common.runSuspendCatching
 import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
@@ -93,7 +93,12 @@ fun DashboardEditor(
             } + dashboard.variables.mapNotNull { it.dataset }
         ).filter { it.isNotBlank() }.toSet()
     LaunchedEffect(referenced) {
-        referenced.filter { it !in datasets }.forEach { id -> runSuspendCatching { api.dataset(id) }.onSuccess { datasets[id] = it } }
+        referenced.filter { it !in datasets }.forEach { id ->
+            runSuspendCatching { api.dataset(id) }.fold({ datasets[id] = it }, {
+                error =
+                    it.message
+            })
+        }
     }
     val widgets = dashboard.widgets
 

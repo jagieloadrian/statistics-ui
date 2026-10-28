@@ -1,17 +1,8 @@
 package com.anjo.statisticsui.ui.common
 
-import kotlinx.coroutines.CancellationException
+import com.anjo.statisticsui.api.runSuspendCatching
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-
-suspend fun <T> runSuspendCatching(block: suspend () -> T): Result<T> =
-    try {
-        Result.success(block())
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
 
 fun CoroutineScope.attempt(
     onError: (String?) -> Unit,

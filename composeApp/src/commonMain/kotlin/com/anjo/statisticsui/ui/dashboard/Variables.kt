@@ -22,13 +22,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.anjo.statisticsui.api.PlatformApi
+import com.anjo.statisticsui.api.runSuspendCatching
 import com.anjo.statisticsui.model.Dashboard
 import com.anjo.statisticsui.model.DimensionValue
 import com.anjo.statisticsui.model.Variable
 import com.anjo.statisticsui.model.VariableValue
+import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.Picker
-import com.anjo.statisticsui.ui.common.runSuspendCatching
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
@@ -70,20 +71,19 @@ private fun DimensionPicker(
 ) {
     var open by remember { mutableStateOf(false) }
     var search by remember { mutableStateOf("") }
-    var options by remember { mutableStateOf(emptyList<DimensionValue>()) }
+    var options by remember { mutableStateOf(Result.success(emptyList<DimensionValue>())) }
     val zone = displayZone()
     LaunchedEffect(open, search) {
         if (!open) return@LaunchedEffect
         delay(SEARCH_DEBOUNCE)
-        options =
-            runSuspendCatching { api.dimensionValues(variable.dataset.orEmpty(), variable.dimension.orEmpty(), search) }
-                .getOrDefault(emptyList())
+        options = runSuspendCatching { api.dimensionValues(variable.dataset.orEmpty(), variable.dimension.orEmpty(), search) }
     }
     Box {
         OutlinedButton(onClick = { open = true }) { Text("${variable.name}: ${selected.joinToString().ifBlank { "all" }}") }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             Field("Search", search, Modifier.padding(horizontal = SMALL_PADDING)) { search = it }
-            options.forEach { dv ->
+            ErrorText(options.exceptionOrNull()?.message)
+            options.getOrDefault(emptyList()).forEach { dv ->
                 DropdownMenuItem(
                     text = {
                         Column {

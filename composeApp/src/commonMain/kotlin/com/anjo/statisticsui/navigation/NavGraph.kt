@@ -12,12 +12,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.savedstate.read
 import com.anjo.statisticsui.api.PlatformApi
+import com.anjo.statisticsui.api.runSuspendCatching
 import com.anjo.statisticsui.auth.Session
 import com.anjo.statisticsui.model.User
 import com.anjo.statisticsui.ui.admin.DatasetsScreen
 import com.anjo.statisticsui.ui.admin.SourcesScreen
 import com.anjo.statisticsui.ui.admin.UsersScreen
-import com.anjo.statisticsui.ui.common.runSuspendCatching
 import com.anjo.statisticsui.ui.dashboard.DashboardScreen
 import com.anjo.statisticsui.ui.home.MainLayout
 import com.anjo.statisticsui.ui.login.LoginScreen

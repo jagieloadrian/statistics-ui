@@ -43,15 +43,19 @@ internal fun lineChartData(
             .flatMap { (_, points) -> points.map { it.first } }
             .distinct()
             .sortedWith(compareBy<String> { it.toDoubleOrNull() }.thenBy { it })
-    if (xs.isEmpty()) return null
-    val index = xs.withIndex().associate { (i, x) -> x to i }
     val values = raw.flatMap { (_, points) -> points.map { it.second } }
+    val min = values.minOrNull() ?: return null
+    val max = values.max()
+    val position = xs.withIndex().associate { (i, x) -> x to i }
     val step = (xs.size / 6).coerceAtLeast(1)
     return LineChartData(
         labels = xs.mapIndexed { i, x -> if (i % step == 0) x.toDoubleOrNull()?.let { formatNumber(it) } ?: x.shortTime(zone) else "" },
-        lines = raw.map { (line, points) -> line.copy(points = points.map { (x, v) -> index.getValue(x) to v }.sortedBy { it.first }) },
-        min = values.min(),
-        max = values.max().let { if (it == values.min()) it + 1 else it },
+        lines =
+            raw.map { (line, points) ->
+                line.copy(points = points.mapNotNull { (x, v) -> position[x]?.let { it to v } }.sortedBy { it.first })
+            },
+        min = min,
+        max = if (max == min) max + 1 else max,
     )
 }
 
@@ -117,7 +121,7 @@ internal fun parseColor(hex: String): Color? =
 
 internal fun String.shortTime(zone: TimeZone = TimeZone.UTC): String {
     if (!(length >= 16 && this[4] == '-' && this[7] == '-' && this[10] == 'T')) return this
-    val t = runCatching { Instant.parse(this).toLocalDateTime(zone) }.getOrNull() ?: return substring(5, 16).replace('T', ' ')
+    val t = Instant.parseOrNull(this)?.toLocalDateTime(zone) ?: return substring(5, 16).replace('T', ' ')
 
     fun Int.two() = toString().padStart(2, '0')
     return "${t.month.number.two()}-${t.day.two()} ${t.hour.two()}:${t.minute.two()}"
