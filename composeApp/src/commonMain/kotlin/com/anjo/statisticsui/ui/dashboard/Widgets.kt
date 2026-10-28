@@ -75,13 +75,13 @@ fun Widget(
                         Text(
                             error.message.orEmpty(),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                         )
                     }
                 }
 
                 data == null -> {
-                    ErrorText(error?.message ?: "Query failed")
+                    ErrorText(error?.message ?: "Couldn't load this widget. Try again later.")
                 }
 
                 data.series.all { it.rows.isEmpty() } -> {
@@ -213,7 +213,7 @@ private fun StatWidget(
                     fontWeight = FontWeight.Bold,
                     color = number?.let { thresholdColor(it, options.thresholds) } ?: MaterialTheme.colorScheme.onSurface,
                 )
-                Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -265,7 +265,7 @@ private fun GaugeWidget(
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
-                Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -311,7 +311,7 @@ private fun TableRow(
             Text(
                 it,
                 modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = if (header) FontWeight.Bold else FontWeight.Normal,
                 color = if (header) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
             )

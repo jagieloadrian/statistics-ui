@@ -15,7 +15,6 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -28,11 +27,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.anjo.statisticsui.model.MapRow
 import com.anjo.statisticsui.model.Rule
 import com.anjo.statisticsui.model.Source
+import com.anjo.statisticsui.ui.common.CheckboxField
 import com.anjo.statisticsui.ui.common.ConfirmButton
 import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.common.Field
@@ -66,6 +67,7 @@ fun SourcesScreen(
                 selectedId = state.selectedId,
                 onSelect = state::select,
                 onNew = state::startNew,
+                newText = "New source",
                 badge = { id -> state.states[id]?.let { StateChip(it) } },
             )
             state.selected?.let { source ->
@@ -93,22 +95,21 @@ private fun SourceForm(
     Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(MEDIUM_PADDING)) {
         Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState())) {
             Row(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-                Field("Id", source.id, Modifier.weight(1f), enabled = form.isNew, error = errors["id"]) { form.edit(source.copy(id = it)) }
+                Field("ID", source.id, Modifier.weight(1f), enabled = form.isNew, error = errors["id"]) { form.edit(source.copy(id = it)) }
                 Field("Label", source.label.orEmpty(), Modifier.weight(1f)) { form.edit(source.copy(label = it.ifBlank { null })) }
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-                Text("Dataset", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Picker(source.dataset, datasets) { form.edit(source.copy(dataset = it)) }
-                Field("Rate limit / s", form.rate, error = errors["rate"]) { form.rate = it }
+                Picker("Dataset", source.dataset, datasets) { form.edit(source.copy(dataset = it)) }
+                Field("Rate limit per second", form.rate, keyboardType = KeyboardType.Decimal, error = errors["rate"]) { form.rate = it }
             }
             ErrorText(errors["dataset"]?.let { "Dataset: $it" })
             Text(
                 "Push address: /api/v2/ingest/${source.id}",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
             )
 
-            ListEditor("Mapping (first rule)", form.rows, form::editRows, { MapRow() }) { row, set -> MappingRow(row, set) }
+            ListEditor("Mapping (first rule)", "Add field", form.rows, form::editRows, { MapRow() }) { row, set -> MappingRow(row, set) }
 
             Text(
                 "Advanced: full mapping JSON",
@@ -117,7 +118,7 @@ private fun SourceForm(
                 modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING),
             )
             Field(
-                "Mapping",
+                "Mapping JSON",
                 form.mappingJson,
                 Modifier.fillMaxWidth().height(220.dp),
                 singleLine = false,
@@ -126,8 +127,8 @@ private fun SourceForm(
             TextButton(onClick = form::applyJson) { Text("Apply JSON") }
 
             Row(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-                Button(onClick = { form.save(onSaved) }) { Text("Save") }
-                if (!form.isNew) ConfirmButton("Delete", "Click again to delete") { form.delete(onDeleted) }
+                Button(onClick = { form.save(onSaved) }) { Text("Save source") }
+                if (!form.isNew) ConfirmButton("Delete source", "Click again to delete ${source.id}") { form.delete(onDeleted) }
             }
             ErrorText(form.error)
         }
@@ -149,11 +150,9 @@ private fun RowScope.MappingRow(
 ) {
     Field("Target", row.target, Modifier.weight(1f)) { set(row.copy(target = it)) }
     Field("Path", row.path, Modifier.weight(1.5f)) { set(row.copy(path = it)) }
-    Checkbox(row.dim, { set(row.copy(dim = it)) })
-    Text("dim", color = MaterialTheme.colorScheme.onSurfaceVariant)
+    CheckboxField("Dimension", row.dim) { set(row.copy(dim = it)) }
     if (!row.dim) {
-        Checkbox(row.required, { set(row.copy(required = it)) })
-        Text("required", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        CheckboxField("Required", row.required) { set(row.copy(required = it)) }
         Field("Min", row.min, Modifier.weight(0.7f)) { set(row.copy(min = it)) }
         Field("Max", row.max, Modifier.weight(0.7f)) { set(row.copy(max = it)) }
     }
@@ -198,13 +197,13 @@ private fun SourceOps(
                 Text(
                     "${rejection.at}  ${rejection.reason}",
                     color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                 )
                 rejection.excerpt?.let {
                     Text(
                         it,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                     )
                 }
             }
@@ -230,7 +229,7 @@ private fun SourceOps(
             Text("${test.records.size} record(s)", color = MaterialTheme.colorScheme.onSurfaceVariant)
             test.records.forEach {
                 SelectionContainer {
-                    Text(it.toString(), color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodySmall)
+                    Text(it.toString(), color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
                 }
             }
             test.errors.forEach { Text(it, color = MaterialTheme.colorScheme.error) }

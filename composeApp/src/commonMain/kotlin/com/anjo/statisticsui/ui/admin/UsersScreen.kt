@@ -15,14 +15,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.navigation.NavHostController
 import com.anjo.statisticsui.ui.common.ConfirmButton
 import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.Picker
 import com.anjo.statisticsui.ui.common.ScreenHeader
+import com.anjo.statisticsui.ui.common.SectionTitle
 import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
-import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.anjo.statisticsui.validation.MIN_PASSWORD_LENGTH
 import com.anjo.statisticsui.validation.ROLES
@@ -39,33 +40,35 @@ fun UsersScreen(
         verticalArrangement = Arrangement.spacedBy(SMALL_PADDING),
     ) {
         ScreenHeader("Users", navController)
-        Text("Invite", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+        SectionTitle("Invite")
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
         ) {
             val errors = state.errors
-            Field("Email", state.email, Modifier.weight(1f), error = errors["email"]) { state.email = it }
-            Field("Name", state.name, Modifier.weight(1f)) { state.name = it }
-            Picker(state.role, ROLES) { state.role = it }
             Field(
-                "Initial password (≥ $MIN_PASSWORD_LENGTH characters)",
+                "Email",
+                state.email,
+                Modifier.weight(1f),
+                keyboardType = KeyboardType.Email,
+                error = errors["email"],
+            ) { state.email = it }
+            Field("Name", state.name, Modifier.weight(1f)) { state.name = it }
+            Picker("Role", state.role, ROLES) { state.role = it }
+            Field(
+                "Initial password",
                 state.password,
                 Modifier.weight(1f),
                 password = true,
+                help = "At least $MIN_PASSWORD_LENGTH characters",
                 error = errors["password"],
             ) { state.password = it }
-            Button(onClick = state::create) { Text("Create") }
+            Button(onClick = state::create) { Text("Create user") }
         }
         ErrorText(state.error)
 
-        Text(
-            "Accounts",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING),
-        )
+        SectionTitle("Accounts")
         state.users.forEach { user ->
             Row(
                 Modifier.fillMaxWidth(),
@@ -74,7 +77,7 @@ fun UsersScreen(
             ) {
                 Text(user.email, Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface)
                 Text(user.name, Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Picker(user.role, ROLES) { state.changeRole(user, it) }
+                Picker("Role", user.role, ROLES) { state.changeRole(user, it) }
                 ConfirmButton("Delete", "Click again to delete ${user.email}") { state.delete(user) }
             }
         }

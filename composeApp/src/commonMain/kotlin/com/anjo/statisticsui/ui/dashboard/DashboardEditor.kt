@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -37,13 +36,14 @@ import com.anjo.statisticsui.model.Threshold
 import com.anjo.statisticsui.model.Variable
 import com.anjo.statisticsui.model.Widget
 import com.anjo.statisticsui.model.WidgetOptions
+import com.anjo.statisticsui.ui.common.CheckboxField
 import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.ListEditor
 import com.anjo.statisticsui.ui.common.NumberField
 import com.anjo.statisticsui.ui.common.Picker
+import com.anjo.statisticsui.ui.common.SectionTitle
 import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
-import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Add
@@ -72,20 +72,18 @@ fun DashboardEditor(
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
         DashboardSettings(state)
-        ListEditor("Variables", dashboard.variables, { state.dashboard = dashboard.copy(variables = it) }, { Variable("", "dimension") }) {
-            variable,
-            set,
-            ->
+        ListEditor(
+            "Variables",
+            "Add variable",
+            dashboard.variables,
+            { state.dashboard = dashboard.copy(variables = it) },
+            { Variable("", "dimension") },
+        ) { variable, set ->
             VariableRow(variable, state.datasetIds, state.datasets, set)
         }
         ErrorText(state.errors["variables"])
 
-        Text(
-            "Widgets",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING),
-        )
+        SectionTitle("Widgets")
         dashboard.widgets.forEachIndexed { index, widget -> WidgetEntry(state, index, widget) }
         ErrorText(state.errors["widgets"])
         TextButton(onClick = state::addWidget) {
@@ -94,7 +92,7 @@ fun DashboardEditor(
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-            Button(onClick = { state.save(onSave) }) { Text("Save") }
+            Button(onClick = { state.save(onSave) }) { Text("Save dashboard") }
             TextButton(onClick = onCancel) { Text("Cancel") }
         }
         ErrorText(state.error)
@@ -104,21 +102,24 @@ fun DashboardEditor(
 @Composable
 private fun DashboardSettings(state: DashboardEditorState) {
     val dashboard = state.dashboard
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-        Field("Title", dashboard.title, Modifier.weight(1f)) { state.dashboard = dashboard.copy(title = it) }
-        Field("Default range (ISO-8601, e.g. P1D)", dashboard.defaultRange?.last.orEmpty(), Modifier.weight(1f)) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+        Field("Title", dashboard.title) { state.dashboard = dashboard.copy(title = it) }
+        Field(
+            "Default range",
+            dashboard.defaultRange?.last.orEmpty(),
+            help = "ISO-8601 duration, for example P1D",
+        ) {
             state.dashboard = dashboard.copy(defaultRange = it.trim().ifBlank { null }?.let(::RelativeRange))
         }
         NumberField(
-            "Refresh seconds (empty = off)",
+            "Refresh every (seconds)",
             dashboard.refreshSeconds?.toDouble(),
-            Modifier.weight(1f),
+            help = "Leave empty to turn off",
             error = state.errors["refresh"],
         ) {
             state.dashboard = dashboard.copy(refreshSeconds = it?.toInt())
         }
-        Text("Visible to", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Picker(dashboard.visibility, VISIBILITIES) { state.dashboard = dashboard.copy(visibility = it) }
+        Picker("Visible to", dashboard.visibility, VISIBILITIES) { state.dashboard = dashboard.copy(visibility = it) }
     }
     if (dashboard.visibility == "users") {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
@@ -142,26 +143,27 @@ private fun RowScope.VariableRow(
     set: (Variable) -> Unit,
 ) {
     Field("Name", variable.name, Modifier.weight(1f)) { set(variable.copy(name = it)) }
-    Picker(variable.type, VARIABLE_TYPES) { set(variable.copy(type = it)) }
+    Picker("Type", variable.type, VARIABLE_TYPES) { set(variable.copy(type = it)) }
     when (variable.type) {
         "dimension" -> {
-            Picker(variable.dataset.orEmpty(), datasetIds) { set(variable.copy(dataset = it, dimension = null)) }
-            Picker(variable.dimension.orEmpty(), datasets[variable.dataset]?.dimensions?.map { it.name }.orEmpty()) {
+            Picker("Dataset", variable.dataset.orEmpty(), datasetIds) { set(variable.copy(dataset = it, dimension = null)) }
+            Picker("Dimension", variable.dimension.orEmpty(), datasets[variable.dataset]?.dimensions?.map { it.name }.orEmpty()) {
                 set(variable.copy(dimension = it))
             }
-            Checkbox(variable.multi, { set(variable.copy(multi = it)) })
-            Text("multi", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            CheckboxField("Multiple values", variable.multi) { set(variable.copy(multi = it)) }
         }
 
         "timeRange" -> {
-            Field("Default (e.g. P7D)", variable.default.orEmpty(), Modifier.weight(1f)) {
+            Field("Default range", variable.default.orEmpty(), Modifier.weight(1f), help = "For example P7D") {
                 set(variable.copy(default = it.trim().ifBlank { null }))
             }
         }
 
         "bucket" -> {
-            CsvField("Options, e.g. raw, 1m, 1h", variable.options, Modifier.weight(2f)) { set(variable.copy(options = it)) }
-            Picker(variable.default.orEmpty(), variable.options) { set(variable.copy(default = it)) }
+            CsvField("Options", variable.options, Modifier.weight(2f), help = "Comma-separated, for example raw, 1m, 1h") {
+                set(variable.copy(options = it))
+            }
+            Picker("Default", variable.default.orEmpty(), variable.options) { set(variable.copy(default = it)) }
         }
     }
 }
@@ -217,48 +219,47 @@ private fun WidgetForm(
     fun setOptions(options: WidgetOptions) = onChange(w.copy(options = options))
 
     Column(Modifier.padding(start = MEDIUM_PADDING), verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-            Field("Title (\$variable allowed)", w.title, Modifier.weight(1f)) { onChange(w.copy(title = it)) }
-            Text("Type", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Picker(w.type, WIDGET_TYPES) { onChange(w.copy(type = it)) }
-            Text("Width", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Picker(w.w.toString(), SIZES) { onChange(w.copy(w = it.toInt())) }
-            Text("Height", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Picker(w.h.toString(), SIZES) { onChange(w.copy(h = it.toInt())) }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+            Field("Title", w.title, help = "Can include \$variable") { onChange(w.copy(title = it)) }
+            Picker("Type", w.type, WIDGET_TYPES) { onChange(w.copy(type = it)) }
+            Picker("Width", w.w.toString(), SIZES) { onChange(w.copy(w = it.toInt())) }
+            Picker("Height", w.h.toString(), SIZES) { onChange(w.copy(h = it.toInt())) }
         }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-            Text("Dataset", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Picker(q.dataset, datasetIds) { setQuery(q.copy(dataset = it)) }
-            Text("Bucket", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Picker(q.bucket, BUCKETS + variables.filter { it.type == "bucket" }.map { "$" + it.name }) { setQuery(q.copy(bucket = it)) }
-            NumberField("Max points (auto bucket)", q.maxPoints.toDouble()) { it?.let { n -> setQuery(q.copy(maxPoints = n.toInt())) } }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+            Picker("Dataset", q.dataset, datasetIds) { setQuery(q.copy(dataset = it)) }
+            Picker("Bucket", q.bucket, BUCKETS + variables.filter { it.type == "bucket" }.map { "$" + it.name }) {
+                setQuery(q.copy(bucket = it))
+            }
+            NumberField("Max points", q.maxPoints.toDouble(), help = "Used by the auto bucket") {
+                it?.let { n -> setQuery(q.copy(maxPoints = n.toInt())) }
+            }
         }
 
         ListEditor(
             "Measures",
+            "Add measure",
             q.measures,
             { setQuery(q.copy(measures = it)) },
             { QueryMeasure(measures.firstOrNull().orEmpty()) },
         ) { m, set ->
-            Picker(m.field, fields) { set(m.copy(field = it)) }
-            Text("agg", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Picker(m.agg.orEmpty(), AGGS) { set(m.copy(agg = it.ifBlank { null })) }
+            Picker("Field", m.field, fields) { set(m.copy(field = it)) }
+            Picker("Aggregation", m.agg.orEmpty(), AGGS) { set(m.copy(agg = it.ifBlank { null })) }
             if (m.agg == "at_max" || m.agg == "at_min") {
-                Text("by", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Picker(m.by.orEmpty(), measures) { set(m.copy(by = it)) }
+                Picker("By measure", m.by.orEmpty(), measures) { set(m.copy(by = it)) }
             }
-            Field("as", m.alias.orEmpty(), Modifier.weight(1f)) { set(m.copy(alias = it.trim().ifBlank { null })) }
+            Field("Alias", m.alias.orEmpty(), Modifier.weight(1f)) { set(m.copy(alias = it.trim().ifBlank { null })) }
         }
         ListEditor(
             "Filter",
+            "Add filter",
             q.filter.toList(),
             { setQuery(q.copy(filter = it.toMap())) },
             { dims.firstOrNull { it !in q.filter }.orEmpty() to emptyList() },
         ) { (dim, allowed), set ->
-            Picker(dim, dims) { set(it to allowed) }
-            CsvField("Values (\$variable allowed)", allowed, Modifier.weight(1f)) { set(dim to it) }
+            Picker("Dimension", dim, dims) { set(it to allowed) }
+            CsvField("Values", allowed, Modifier.weight(1f), help = "Comma-separated, can include \$variable") { set(dim to it) }
         }
-        Text("Group by", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("Group by", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
             dims.forEach { dim ->
                 val on = dim in q.groupBy
@@ -271,21 +272,28 @@ private fun WidgetForm(
         }
 
         Text("Options", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-            Text("x", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Picker(o.x ?: "ts", fields) { setOptions(o.copy(x = it.takeUnless { x -> x == "ts" })) }
-            Field("Unit", o.unit.orEmpty(), Modifier.weight(1f)) { setOptions(o.copy(unit = it.ifBlank { null })) }
-            NumberField("Decimals", o.decimals?.toDouble(), Modifier.weight(1f)) { setOptions(o.copy(decimals = it?.toInt())) }
-            NumberField("Min", o.min, Modifier.weight(1f)) { setOptions(o.copy(min = it)) }
-            NumberField("Max", o.max, Modifier.weight(1f)) { setOptions(o.copy(max = it)) }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+            Picker("X axis", o.x ?: "ts", fields) { setOptions(o.copy(x = it.takeUnless { x -> x == "ts" })) }
+            Field("Unit", o.unit.orEmpty()) { setOptions(o.copy(unit = it.ifBlank { null })) }
+            NumberField("Decimals", o.decimals?.toDouble()) { setOptions(o.copy(decimals = it?.toInt())) }
+            NumberField("Min", o.min) { setOptions(o.copy(min = it)) }
+            NumberField("Max", o.max) { setOptions(o.copy(max = it)) }
         }
-        ListEditor("Colors", o.colors.toList(), { setOptions(o.copy(colors = it.toMap())) }, { "" to "#4DD0E1" }) { (name, color), set ->
+        ListEditor("Colors", "Add color", o.colors.toList(), {
+            setOptions(o.copy(colors = it.toMap()))
+        }, { "" to "#4DD0E1" }) { (name, color), set ->
             Field("Series or measure", name, Modifier.weight(1f)) { set(it to color) }
-            Field("Color #RRGGBB", color, Modifier.weight(1f)) { set(name to it) }
+            Field("Color", color, Modifier.weight(1f), help = "#RRGGBB") { set(name to it) }
         }
-        ListEditor("Thresholds", o.thresholds, { setOptions(o.copy(thresholds = it)) }, { Threshold(0.0, "#EF5350") }) { t, set ->
+        ListEditor(
+            "Thresholds",
+            "Add threshold",
+            o.thresholds,
+            { setOptions(o.copy(thresholds = it)) },
+            { Threshold(0.0, "#EF5350") },
+        ) { t, set ->
             NumberField("From value", t.value, Modifier.weight(1f)) { it?.let { v -> set(t.copy(value = v)) } }
-            Field("Color #RRGGBB", t.color, Modifier.weight(1f)) { set(t.copy(color = it)) }
+            Field("Color", t.color, Modifier.weight(1f), help = "#RRGGBB") { set(t.copy(color = it)) }
         }
     }
 }
@@ -295,13 +303,14 @@ private fun CsvField(
     label: String,
     values: List<String>,
     modifier: Modifier = Modifier,
+    help: String? = null,
     onChange: (List<String>) -> Unit,
 ) {
     fun parse(text: String) = text.split(',').map { it.trim() }.filter { it.isNotEmpty() }
     var text by remember { mutableStateOf(values.joinToString(", ")) }
     val changedOutside = parse(text) != values
     if (changedOutside) text = values.joinToString(", ")
-    Field(label, text, modifier) {
+    Field(label, text, modifier, help = help) {
         text = it
         onChange(parse(it))
     }

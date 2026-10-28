@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.anjo.statisticsui.model.Dataset
@@ -55,6 +56,7 @@ fun DatasetsScreen(
                 selectedId = state.selectedId,
                 onSelect = state::select,
                 onNew = state::startNew,
+                newText = "New dataset",
             )
             state.selected?.let { dataset ->
                 DatasetForm(
@@ -79,19 +81,26 @@ private fun DatasetForm(
     val errors = form.errors
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Row(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-            Field("Id", dataset.id, enabled = isNew, error = errors["id"]) { form.dataset = dataset.copy(id = it) }
+            Field("ID", dataset.id, enabled = isNew, error = errors["id"]) { form.dataset = dataset.copy(id = it) }
             Field("Label", dataset.label.orEmpty()) { form.dataset = dataset.copy(label = it.ifBlank { null }) }
         }
 
-        ListEditor("Measures", dataset.measures, { form.dataset = dataset.copy(measures = it) }, { Measure("") }) { measure, set ->
+        ListEditor(
+            "Measures",
+            "Add measure",
+            dataset.measures,
+            { form.dataset = dataset.copy(measures = it) },
+            { Measure("") },
+        ) { measure, set ->
             Field("Name", measure.name, Modifier.weight(1f)) { set(measure.copy(name = it)) }
-            Picker(measure.type, MEASURE_TYPES) { set(measure.copy(type = it)) }
+            Picker("Type", measure.type, MEASURE_TYPES) { set(measure.copy(type = it)) }
             Field("Unit", measure.unit.orEmpty(), Modifier.weight(1f)) { set(measure.copy(unit = it.ifBlank { null })) }
             Field("Label", measure.label.orEmpty(), Modifier.weight(1f)) { set(measure.copy(label = it.ifBlank { null })) }
         }
 
         ListEditor(
             "Dimensions",
+            "Add dimension",
             dataset.dimensions,
             { form.dataset = dataset.copy(dimensions = it) },
             { Dimension("") },
@@ -100,24 +109,28 @@ private fun DatasetForm(
             Field("Label", dimension.label.orEmpty(), Modifier.weight(1f)) { set(dimension.copy(label = it.ifBlank { null })) }
         }
 
-        ListEditor("Calculated measures", form.calculated, { form.calculated = it }, { "" to "" }) { (name, expression), set ->
+        ListEditor("Calculated measures", "Add calculated measure", form.calculated, {
+            form.calculated = it
+        }, { "" to "" }) { (name, expression), set ->
             Field("Name", name, Modifier.weight(1f)) { set(it to expression) }
-            Field("Expression, e.g. (recovered + dead) / population", expression, Modifier.weight(3f)) { set(name to it) }
+            Field("Expression", expression, Modifier.weight(3f), help = "For example (recovered + dead) / population") { set(name to it) }
         }
 
         ErrorText(errors["names"])
         Field(
-            "Retention days (empty = keep forever)",
+            "Retention in days",
             form.retention,
             Modifier.padding(top = SMALL_MEDIUM_PADDING),
+            keyboardType = KeyboardType.Number,
+            help = "Leave empty to keep records forever",
             error = errors["retention"],
         ) {
             form.retention = it
         }
 
         Row(Modifier.padding(top = SMALL_MEDIUM_PADDING), horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-            Button(onClick = { form.save(onSave) }) { Text("Save") }
-            if (!isNew) ConfirmButton("Delete", "Click again: deletes the dataset and all its records") { form.delete(onDelete) }
+            Button(onClick = { form.save(onSave) }) { Text("Save dataset") }
+            if (!isNew) ConfirmButton("Delete dataset", "Click again: deletes the dataset and all its records") { form.delete(onDelete) }
             form.retry?.let { (label, run) -> OutlinedButton(onClick = { form.runRetry(run) }) { Text(label) } }
         }
         ErrorText(form.error)
@@ -130,12 +143,13 @@ fun AdminList(
     selectedId: String?,
     onSelect: (String) -> Unit,
     onNew: () -> Unit,
+    newText: String,
     badge: @Composable (String) -> Unit = {},
 ) {
     Column(Modifier.width(260.dp).fillMaxHeight().verticalScroll(rememberScrollState())) {
         Button(onClick = onNew) {
             Icon(MaterialSymbols.Rounded.Add, contentDescription = null)
-            Text("New")
+            Text(newText)
         }
         Spacer(Modifier.padding(top = SMALL_PADDING))
         items.forEach { item ->

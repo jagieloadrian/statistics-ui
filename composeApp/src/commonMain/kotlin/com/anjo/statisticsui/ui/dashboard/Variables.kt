@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
@@ -14,7 +13,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.anjo.statisticsui.model.Dashboard
 import com.anjo.statisticsui.model.DimensionValue
@@ -40,10 +38,7 @@ fun VariableBar(
                 }
 
                 "bucket" -> {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("${variable.name}: ", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Picker(selected.firstOrNull().orEmpty(), variable.options) { onChange(variable.name, listOf(it)) }
-                    }
+                    Picker(variable.name, selected.firstOrNull().orEmpty(), variable.options) { onChange(variable.name, listOf(it)) }
                 }
             }
         }
@@ -91,7 +86,7 @@ private fun DimensionOption(
                 Text(option.value)
                 Text(
                     "${option.firstSeen.shortTime(zone)} – ${option.lastSeen.shortTime(zone)} · ${option.count} records",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }

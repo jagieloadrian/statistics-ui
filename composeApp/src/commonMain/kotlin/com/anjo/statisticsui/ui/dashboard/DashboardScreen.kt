@@ -70,7 +70,7 @@ fun DashboardScreen(
                 if (session.canEdit) {
                     Button(onClick = { state.editing = true }, enabled = dashboard != null) {
                         Icon(MaterialSymbols.Rounded.Edit, contentDescription = null)
-                        Text("Edit")
+                        Text("Edit dashboard")
                     }
                 }
             }
@@ -149,13 +149,13 @@ fun NewDashboardDialog(
         title = { Text("New dashboard") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-                Field("Id (letters, digits, - and _)", state.id, error = state.errors["id"]) { state.id = it }
+                Field("ID", state.id, help = "Letters, digits, - and _", error = state.errors["id"]) { state.id = it }
                 Field("Title", state.title) { state.title = it }
                 ErrorText(state.error)
             }
         },
         confirmButton = {
-            Button(onClick = { state.create(onCreated) }) { Text("Create") }
+            Button(onClick = { state.create(onCreated) }) { Text("Create dashboard") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )

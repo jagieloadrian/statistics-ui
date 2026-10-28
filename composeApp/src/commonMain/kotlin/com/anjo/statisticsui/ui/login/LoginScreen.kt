@@ -18,6 +18,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.anjo.statisticsui.model.User
 import com.anjo.statisticsui.ui.common.ErrorText
@@ -47,7 +48,10 @@ fun LoginScreen(
                 Text("Sign in", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                 if (state.showsPasswordForm) {
                     val errors = state.errors
-                    Field("Email", state.email, Modifier.fillMaxWidth(), error = errors["email"]) { state.email = it }
+                    Field("Email", state.email, Modifier.fillMaxWidth(), keyboardType = KeyboardType.Email, error = errors["email"]) {
+                        state.email =
+                            it
+                    }
                     Field("Password", state.password, Modifier.fillMaxWidth(), password = true, error = errors["password"]) {
                         state.password = it
                     }
