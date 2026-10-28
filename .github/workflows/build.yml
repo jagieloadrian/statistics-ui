@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     permissions:
-      contents: read
+      contents: write # deploy step commits the new image tag to .devops/k8s
       packages: write
     steps:
       - uses: actions/checkout@v7
@@ -60,3 +60,13 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ghcr.io/jagieloadrian/statistics-ui:${{ steps.tag.outputs.tag }}
+
+      # Flux reads .devops/k8s from main; a push made with GITHUB_TOKEN does not trigger another run.
+      - name: Deploy (bump image tag)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          sed -i -E "s#(image: ghcr.io/jagieloadrian/statistics-ui):[^[:space:]]+#\1:${{ steps.tag.outputs.tag }}#" .devops/k8s/*.yaml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -am "chore(deploy): ${{ steps.tag.outputs.tag }}"
+          git pull --rebase && git push

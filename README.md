@@ -68,10 +68,10 @@ on the origin it loaded the UI from.
   `logger`, `traceId` from `traceparent`), errors on stderr, graceful stop on SIGQUIT, `.wasm` served as
   `application/wasm`. linux/amd64 and linux/arm64; the Dockerfile has no `RUN`, so buildx needs no emulation.
 - **Manifests:** `.devops/k8s` (ServiceAccount, Deployment, Service, HTTPRoute, AuthorizationPolicy, namespace
-  `apps`) is the `apps/statistics-ui/` directory for the `homelab` repo; `.devops/flux/image-automation.yaml`
-  holds the ImageRepository and ImagePolicy for `clusters/home/image-automation.yaml`.
+  `apps`) is read directly by Flux from `main` of this repo (registered in homelab-infra
+  `clusters/home/apps/statistics-ui.yaml`).
 - **CI:** `.github/workflows/build.yml` pushes `main-<yyyyMMddHHmmss>-<sha7>` on main and `<semver>` on `v*` tags,
-  never `latest`; Flux picks up new `main-…` tags through the `$imagepolicy` marker in the Deployment.
+  never `latest`; on main it then commits the new tag to `.devops/k8s`, which Flux rolls out.
 
 Local image build:
 
