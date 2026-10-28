@@ -1,4 +1,4 @@
-package com.anjo.statisticsui
+package com.anjo.statisticsui.validation
 
 import com.anjo.statisticsui.model.Dashboard
 import com.anjo.statisticsui.model.Dataset
@@ -8,17 +8,6 @@ import com.anjo.statisticsui.model.Query
 import com.anjo.statisticsui.model.Source
 import com.anjo.statisticsui.model.Variable
 import com.anjo.statisticsui.model.Widget
-import com.anjo.statisticsui.validation.dashboardErrors
-import com.anjo.statisticsui.validation.datasetErrors
-import com.anjo.statisticsui.validation.emailError
-import com.anjo.statisticsui.validation.idError
-import com.anjo.statisticsui.validation.jsonError
-import com.anjo.statisticsui.validation.loginErrors
-import com.anjo.statisticsui.validation.newDashboardErrors
-import com.anjo.statisticsui.validation.newUserErrors
-import com.anjo.statisticsui.validation.passwordChangeErrors
-import com.anjo.statisticsui.validation.positiveWholeNumber
-import com.anjo.statisticsui.validation.sourceErrors
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.maps.shouldContainKey
