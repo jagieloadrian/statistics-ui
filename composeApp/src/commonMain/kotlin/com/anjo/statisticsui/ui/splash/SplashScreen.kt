@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -38,7 +39,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap.Companion.Round
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_SMALL_PADDING
@@ -72,7 +72,7 @@ fun SplashScreen(onAnimationFinished: () -> Unit) {
             )
         }
 
-        delay(4000)
+        delay(1000)
         onAnimationFinished()
     }
 
@@ -82,7 +82,7 @@ fun SplashScreen(onAnimationFinished: () -> Unit) {
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color(0xFF1E1E2C), Color(0xFF2D2D44)),
+                        colors = listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.surfaceContainer),
                     ),
                 ),
         contentAlignment = Alignment.Center,
@@ -93,6 +93,7 @@ fun SplashScreen(onAnimationFinished: () -> Unit) {
         ) {
             StatsLogo(
                 progress = barAnimation.value,
+                lineColor = MaterialTheme.colorScheme.onBackground,
                 modifier =
                     Modifier
                         .size(120.dp)
@@ -104,17 +105,16 @@ fun SplashScreen(onAnimationFinished: () -> Unit) {
 
             Text(
                 text = "StatsFlow",
-                color = Color.White,
-                fontSize = 32.sp,
+                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 2.sp,
                 modifier = Modifier.alpha(alpha.value),
             )
 
             Text(
                 text = "Your data in one place",
-                color = Color(0xFFAAAAAA),
-                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyLarge,
                 modifier =
                     Modifier
                         .padding(top = SMALL_PADDING)
@@ -137,6 +137,7 @@ fun SplashScreen(onAnimationFinished: () -> Unit) {
 @Composable
 fun StatsLogo(
     progress: Float,
+    lineColor: Color,
     modifier: Modifier = Modifier,
 ) {
     Canvas(modifier = modifier) {
@@ -172,7 +173,7 @@ fun StatsLogo(
         if (progress > 0.5f) {
             val lineAlpha = (progress - 0.5f) * 2
             drawLine(
-                color = Color.White.copy(alpha = lineAlpha),
+                color = lineColor.copy(alpha = lineAlpha),
                 start = Offset(0f, baseHeight * 0.8f),
                 end = Offset(size.width, baseHeight * 0.2f),
                 strokeWidth = SMALL_SMALL_PADDING.toPx(),
@@ -216,6 +217,6 @@ fun Dot(alpha: Float) {
             Modifier
                 .size(10.dp)
                 .alpha(alpha)
-                .background(Color.White, shape = RoundedCornerShape(50)),
+                .background(MaterialTheme.colorScheme.onSurfaceVariant, shape = RoundedCornerShape(50)),
     )
 }

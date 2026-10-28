@@ -15,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.anjo.statisticsui.ui.common.ErrorText
@@ -46,24 +45,29 @@ fun AccountScreen(state: AccountState = rememberAccountState()) {
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
         )
-        state.user?.let { Text("${it.name.ifBlank { it.email }} · ${it.email} · ${it.role}", color = Color.Gray) }
+        state.user?.let {
+            Text(
+                "${it.name.ifBlank { it.email }} · ${it.email} · ${it.role}",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
 
         SectionTitle("Preferences")
         Field("Time zone, e.g. Europe/Warsaw (empty = this device)", prefs.timeZone.orEmpty(), Modifier.width(FIELD_WIDTH)) {
             state.prefs = prefs.copy(timeZone = it.trim().ifBlank { null })
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-            Text("Units", color = Color.Gray)
+            Text("Units", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Picker(prefs.units, UNITS) { state.prefs = prefs.copy(units = it) }
-            Text("Theme", color = Color.Gray)
+            Text("Theme", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Picker(prefs.theme, THEMES) { state.prefs = prefs.copy(theme = it) }
-            Text("Home dashboard", color = Color.Gray)
+            Text("Home dashboard", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Picker(prefs.homeDashboard ?: NO_HOME, listOf(NO_HOME) + state.dashboards) {
                 state.prefs = prefs.copy(homeDashboard = it.takeUnless { home -> home == NO_HOME })
             }
         }
         Button(onClick = state::savePrefs) { Text("Save preferences") }
-        state.prefsInfo?.let { Text(it, color = Color.Gray) }
+        state.prefsInfo?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         ErrorText(state.prefsError)
 
         if (state.canChangePassword) PasswordForm(state)
@@ -78,7 +82,7 @@ private fun PasswordForm(state: AccountState) {
     PasswordField("New password (at least $MIN_PASSWORD_LENGTH characters)", state.newPassword, errors["new"]) { state.newPassword = it }
     PasswordField("Repeat new password", state.repeatedPassword, errors["repeated"]) { state.repeatedPassword = it }
     Button(onClick = state::changePassword) { Text("Change password") }
-    state.passwordInfo?.let { Text(it, color = Color.Gray) }
+    state.passwordInfo?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     ErrorText(state.passwordError)
 }
 

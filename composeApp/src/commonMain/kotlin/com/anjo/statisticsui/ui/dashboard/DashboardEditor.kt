@@ -117,12 +117,12 @@ private fun DashboardSettings(state: DashboardEditorState) {
         ) {
             state.dashboard = dashboard.copy(refreshSeconds = it?.toInt())
         }
-        Text("Visible to", color = Color.Gray)
+        Text("Visible to", color = MaterialTheme.colorScheme.onSurfaceVariant)
         Picker(dashboard.visibility, VISIBILITIES) { state.dashboard = dashboard.copy(visibility = it) }
     }
     if (dashboard.visibility == "users") {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-            Text("Shared with", color = Color.Gray, modifier = Modifier.align(Alignment.CenterVertically))
+            Text("Shared with", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.align(Alignment.CenterVertically))
             state.users.forEach { user ->
                 FilterChip(
                     selected = user.id in state.shared,
@@ -150,7 +150,7 @@ private fun RowScope.VariableRow(
                 set(variable.copy(dimension = it))
             }
             Checkbox(variable.multi, { set(variable.copy(multi = it)) })
-            Text("multi", color = Color.Gray)
+            Text("multi", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         "timeRange" -> {
@@ -178,18 +178,22 @@ private fun WidgetEntry(
             Text("${widget.title.ifBlank { widget.id }} · ${widget.type} · ${widget.w}×${widget.h}", modifier = Modifier.fillMaxWidth())
         }
         IconButton(enabled = index > 0, onClick = { state.moveWidget(index, index - 1) }) {
-            Icon(MaterialSymbols.Rounded.Arrow_upward, contentDescription = "Move up", tint = Color.Gray)
+            Icon(MaterialSymbols.Rounded.Arrow_upward, contentDescription = "Move up", tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         IconButton(enabled = index < widgets.lastIndex, onClick = { state.moveWidget(index, index + 1) }) {
-            Icon(MaterialSymbols.Rounded.Arrow_downward, contentDescription = "Move down", tint = Color.Gray)
+            Icon(
+                MaterialSymbols.Rounded.Arrow_downward,
+                contentDescription = "Move down",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         IconButton(onClick = { state.removeWidget(index) }) {
-            Icon(MaterialSymbols.Rounded.Delete, contentDescription = "Delete", tint = Color.Gray)
+            Icon(MaterialSymbols.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
     if (state.expandedWidget == index) {
         WidgetForm(widget, state.dashboard.variables, state.datasetIds, state.datasets) { state.updateWidget(index, it) }
-        HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f))
+        HorizontalDivider()
     }
 }
 
@@ -215,17 +219,17 @@ private fun WidgetForm(
     Column(Modifier.padding(start = MEDIUM_PADDING), verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
             Field("Title (\$variable allowed)", w.title, Modifier.weight(1f)) { onChange(w.copy(title = it)) }
-            Text("Type", color = Color.Gray)
+            Text("Type", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Picker(w.type, WIDGET_TYPES) { onChange(w.copy(type = it)) }
-            Text("Width", color = Color.Gray)
+            Text("Width", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Picker(w.w.toString(), SIZES) { onChange(w.copy(w = it.toInt())) }
-            Text("Height", color = Color.Gray)
+            Text("Height", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Picker(w.h.toString(), SIZES) { onChange(w.copy(h = it.toInt())) }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-            Text("Dataset", color = Color.Gray)
+            Text("Dataset", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Picker(q.dataset, datasetIds) { setQuery(q.copy(dataset = it)) }
-            Text("Bucket", color = Color.Gray)
+            Text("Bucket", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Picker(q.bucket, BUCKETS + variables.filter { it.type == "bucket" }.map { "$" + it.name }) { setQuery(q.copy(bucket = it)) }
             NumberField("Max points (auto bucket)", q.maxPoints.toDouble()) { it?.let { n -> setQuery(q.copy(maxPoints = n.toInt())) } }
         }
@@ -237,10 +241,10 @@ private fun WidgetForm(
             { QueryMeasure(measures.firstOrNull().orEmpty()) },
         ) { m, set ->
             Picker(m.field, fields) { set(m.copy(field = it)) }
-            Text("agg", color = Color.Gray)
+            Text("agg", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Picker(m.agg.orEmpty(), AGGS) { set(m.copy(agg = it.ifBlank { null })) }
             if (m.agg == "at_max" || m.agg == "at_min") {
-                Text("by", color = Color.Gray)
+                Text("by", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Picker(m.by.orEmpty(), measures) { set(m.copy(by = it)) }
             }
             Field("as", m.alias.orEmpty(), Modifier.weight(1f)) { set(m.copy(alias = it.trim().ifBlank { null })) }
@@ -254,7 +258,7 @@ private fun WidgetForm(
             Picker(dim, dims) { set(it to allowed) }
             CsvField("Values (\$variable allowed)", allowed, Modifier.weight(1f)) { set(dim to it) }
         }
-        Text("Group by", color = Color.Gray)
+        Text("Group by", color = MaterialTheme.colorScheme.onSurfaceVariant)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
             dims.forEach { dim ->
                 val on = dim in q.groupBy
@@ -268,7 +272,7 @@ private fun WidgetForm(
 
         Text("Options", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-            Text("x", color = Color.Gray)
+            Text("x", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Picker(o.x ?: "ts", fields) { setOptions(o.copy(x = it.takeUnless { x -> x == "ts" })) }
             Field("Unit", o.unit.orEmpty(), Modifier.weight(1f)) { setOptions(o.copy(unit = it.ifBlank { null })) }
             NumberField("Decimals", o.decimals?.toDouble(), Modifier.weight(1f)) { setOptions(o.copy(decimals = it?.toInt())) }

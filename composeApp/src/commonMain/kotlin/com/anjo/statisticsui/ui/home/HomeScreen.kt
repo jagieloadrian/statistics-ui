@@ -25,7 +25,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationDrawerItem
-import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.PermanentDrawerSheet
 import androidx.compose.material3.PermanentNavigationDrawer
 import androidx.compose.material3.Scaffold
@@ -50,7 +49,6 @@ import com.anjo.statisticsui.navigation.Screen
 import com.anjo.statisticsui.ui.account.AccountScreen
 import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.dashboard.NewDashboardDialog
-import com.anjo.statisticsui.ui.theme.Colors
 import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.LARGE_PADDING
 import com.anjo.statisticsui.ui.theme.LARGE_SMALL_PADDING
@@ -70,9 +68,9 @@ import com.composables.icons.materialsymbols.rounded.Star
 
 private val ADMIN_TILES =
     listOf(
-        DataTypeTile("sources", "Sources", MaterialSymbols.Rounded.Sensors, Colors.LIGHT_ORANGE, Screen.Sources.route),
-        DataTypeTile("datasets", "Datasets", MaterialSymbols.Rounded.Database, Colors.LIGHT_RED, Screen.Datasets.route),
-        DataTypeTile("users", "Users", MaterialSymbols.Rounded.Group, Colors.LIGHT_RED, Screen.Users.route),
+        DataTypeTile("sources", "Sources", MaterialSymbols.Rounded.Sensors, Screen.Sources.route),
+        DataTypeTile("datasets", "Datasets", MaterialSymbols.Rounded.Database, Screen.Datasets.route),
+        DataTypeTile("users", "Users", MaterialSymbols.Rounded.Group, Screen.Users.route),
     )
 
 @Composable
@@ -97,7 +95,6 @@ fun MainLayout(
                     modifier = Modifier.padding(horizontal = MEDIUM_PADDING, vertical = SMALL_MEDIUM_PADDING),
                 )
                 HorizontalDivider(
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
                     modifier = Modifier.padding(horizontal = SMALL_MEDIUM_PADDING, vertical = SMALL_PADDING),
                 )
 
@@ -107,14 +104,6 @@ fun MainLayout(
                         selected = selectedScreenIcons == screen,
                         onClick = { selectedScreenIcons = screen },
                         icon = { Icon(screen.icon, contentDescription = null) },
-                        colors =
-                            NavigationDrawerItemDefaults.colors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                            ),
                         modifier = Modifier.padding(horizontal = LARGE_SMALL_PADDING, vertical = SMALL_SMALL_PADDING),
                     )
                 }
@@ -122,7 +111,7 @@ fun MainLayout(
                 state.email?.let {
                     Text(
                         it,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(horizontal = MEDIUM_PADDING),
                     )
@@ -158,14 +147,12 @@ fun DashboardContent(
     state: HomeState = rememberHomeState(),
 ) {
     LaunchedEffect(Unit) { state.load() }
-    val primary = MaterialTheme.colorScheme.primary
     val tiles =
         state.sortedDashboards.map {
             DataTypeTile(
                 it.id,
                 it.label?.ifBlank { null } ?: it.id,
                 MaterialSymbols.Rounded.Dashboard,
-                primary,
                 Screen.DashboardView.route(it.id),
             )
         }
@@ -185,7 +172,7 @@ fun DashboardContent(
             Text(
                 text = "Choose a dashboard",
                 style = MaterialTheme.typography.bodyLarge,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
             if (state.canCreate) {
@@ -249,7 +236,7 @@ fun DataTileCard(
                         Brush.verticalGradient(
                             colors =
                                 listOf(
-                                    tile.primaryColor.copy(alpha = 0.15f),
+                                    MaterialTheme.colorScheme.primaryContainer,
                                     Color.Transparent,
                                 ),
                         ),
@@ -265,14 +252,14 @@ fun DataTileCard(
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Surface(
                         shape = RoundedCornerShape(LARGE_SMALL_PADDING),
-                        color = tile.primaryColor.copy(alpha = 0.2f),
+                        color = MaterialTheme.colorScheme.primaryContainer,
                         modifier = Modifier.size(LARGE_PADDING),
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = tile.icon,
                                 contentDescription = tile.title,
-                                tint = tile.primaryColor,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier.size(LARGE_MEDIUM_PADDING),
                             )
                         }
@@ -283,7 +270,7 @@ fun DataTileCard(
                             Icon(
                                 MaterialSymbols.Rounded.Star,
                                 contentDescription = if (it) "Unfavourite" else "Favourite",
-                                tint = if (it) Colors.LIGHT_ORANGE else Color.Gray.copy(alpha = 0.5f),
+                                tint = if (it) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -304,7 +291,7 @@ fun DataTileCard(
                     Icon(
                         imageVector = MaterialSymbols.Rounded.Arrow_forward,
                         contentDescription = "Go",
-                        tint = Color.Gray.copy(alpha = 0.5f),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp),
                     )
                 }
@@ -322,7 +309,7 @@ fun PlaceholderScreen(text: String) {
         Text(
             text = text,
             style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

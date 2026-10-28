@@ -15,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
 import com.anjo.statisticsui.ui.common.ConfirmButton
 import com.anjo.statisticsui.ui.common.ErrorText
@@ -74,7 +73,7 @@ fun UsersScreen(
                 horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
             ) {
                 Text(user.email, Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface)
-                Text(user.name, Modifier.weight(1f), color = Color.Gray)
+                Text(user.name, Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Picker(user.role, ROLES) { state.changeRole(user, it) }
                 ConfirmButton("Delete", "Click again to delete ${user.email}") { state.delete(user) }
             }

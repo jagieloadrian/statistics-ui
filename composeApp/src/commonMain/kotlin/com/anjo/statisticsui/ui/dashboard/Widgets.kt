@@ -22,14 +22,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.anjo.statisticsui.api.ApiException
 import com.anjo.statisticsui.model.QueryResult
 import com.anjo.statisticsui.model.UnitDisplay
@@ -38,9 +35,9 @@ import com.anjo.statisticsui.model.WidgetOptions
 import com.anjo.statisticsui.model.unitDisplay
 import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.common.LocalPrefs
-import com.anjo.statisticsui.ui.theme.Colors
 import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
+import com.anjo.statisticsui.ui.theme.warning
 import com.himanshoe.charty.color.ChartyColor
 import com.himanshoe.charty.color.ChartyColors
 import com.himanshoe.charty.common.ChartScaffold
@@ -74,8 +71,12 @@ fun Widget(
 
                 (error as? ApiException)?.status == 400 -> {
                     Column {
-                        Text("Missing data definition", color = Colors.LIGHT_ORANGE, fontWeight = FontWeight.Bold)
-                        Text(error.message.orEmpty(), color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+                        Text("Missing data definition", color = MaterialTheme.colorScheme.warning, fontWeight = FontWeight.Bold)
+                        Text(
+                            error.message.orEmpty(),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
                     }
                 }
 
@@ -84,7 +85,7 @@ fun Widget(
                 }
 
                 data.series.all { it.rows.isEmpty() } -> {
-                    Text("No data in range", color = Color.Gray)
+                    Text("No data in range", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
                 widget.type in setOf("line", "area", "bar") -> {
@@ -104,11 +105,15 @@ fun Widget(
                 }
 
                 else -> {
-                    Text("Widget type '${widget.type}' is not supported yet", color = Color.Gray)
+                    Text("Widget type '${widget.type}' is not supported yet", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
-        data?.bucket?.takeIf { it.isNotBlank() }?.let { Text("Bucket: $it", color = Color.Gray, fontSize = 11.sp) }
+        data
+            ?.bucket
+            ?.takeIf {
+                it.isNotBlank()
+            }?.let { Text("Bucket: $it", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium) }
     }
 }
 
@@ -122,7 +127,7 @@ private fun SeriesChart(
     val options = widget.options
     val chart = remember(result, options.x, zone, display.unit) { lineChartData(result, options.x ?: "ts", zone, display) }
     if (chart == null) {
-        Text("No data in range", color = Color.Gray)
+        Text("No data in range", color = MaterialTheme.colorScheme.onSurfaceVariant)
         return
     }
     val bar = widget.type == "bar"
@@ -149,9 +154,9 @@ private fun SeriesChart(
             yAxisConfig = AxisConfig(minValue = min, maxValue = max, drawAxisAtZero = false),
             config =
                 ChartScaffoldConfig(
-                    axisColor = ChartyColor.Solid(Color.Gray),
-                    gridColor = ChartyColor.Solid(Color.Gray.copy(alpha = 0.2f)),
-                    labelTextStyle = TextStyle(color = Color.LightGray, fontSize = 10.sp),
+                    axisColor = ChartyColor.Solid(MaterialTheme.colorScheme.outline),
+                    gridColor = ChartyColor.Solid(MaterialTheme.colorScheme.outlineVariant),
+                    labelTextStyle = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
                 ),
         ) { ctx ->
             val slot = ctx.width / chart.labels.size
@@ -180,7 +185,12 @@ private fun SeriesChart(
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
             val unit = display.unit?.let { " ($it)" }.orEmpty()
-            chart.lines.forEachIndexed { i, line -> Text("● ${line.name}$unit", color = colors[i], fontSize = 12.sp) }
+            chart.lines.forEachIndexed {
+                i,
+                line,
+                ->
+                Text("● ${line.name}$unit", color = colors[i], style = MaterialTheme.typography.labelMedium)
+            }
         }
     }
 }
@@ -203,7 +213,7 @@ private fun StatWidget(
                     fontWeight = FontWeight.Bold,
                     color = number?.let { thresholdColor(it, options.thresholds) } ?: MaterialTheme.colorScheme.onSurface,
                 )
-                Text(label, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -224,13 +234,14 @@ private fun GaugeWidget(
     FlowRow(horizontalArrangement = Arrangement.spacedBy(MEDIUM_PADDING)) {
         values.forEach { (label, v) ->
             val color = thresholdColor(v, thresholds) ?: MaterialTheme.colorScheme.primary
+            val track = MaterialTheme.colorScheme.surfaceContainerHighest
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(Modifier.size(140.dp), contentAlignment = Alignment.Center) {
                     Canvas(Modifier.fillMaxSize()) {
                         val width = 12.dp.toPx()
                         val topLeft = Offset(width / 2, width / 2)
                         val arcSize = Size(size.width - width, size.height - width)
-                        drawArc(Color.Gray.copy(alpha = 0.3f), GAUGE_START, GAUGE_SWEEP, false, topLeft, arcSize, style = Stroke(width))
+                        drawArc(track, GAUGE_START, GAUGE_SWEEP, false, topLeft, arcSize, style = Stroke(width))
                         thresholds.forEachIndexed { i, t ->
                             val end = thresholds.getOrNull(i + 1)?.value ?: max
                             parseColor(t.color)?.let { c ->
@@ -254,7 +265,7 @@ private fun GaugeWidget(
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
-                Text(label, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -280,9 +291,13 @@ private fun TableWidget(
         }
     Column(Modifier.verticalScroll(rememberScrollState())) {
         TableRow(header, header = true)
-        HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f))
+        HorizontalDivider()
         rows.take(MAX_TABLE_ROWS).forEach { TableRow(it) }
-        if (rows.size > MAX_TABLE_ROWS) Text("… ${rows.size - MAX_TABLE_ROWS} more rows", color = Color.Gray)
+        if (rows.size >
+            MAX_TABLE_ROWS
+        ) {
+            Text("… ${rows.size - MAX_TABLE_ROWS} more rows", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
@@ -298,7 +313,7 @@ private fun TableRow(
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = if (header) FontWeight.Bold else FontWeight.Normal,
-                color = if (header) Color.Gray else MaterialTheme.colorScheme.onSurface,
+                color = if (header) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
             )
         }
     }

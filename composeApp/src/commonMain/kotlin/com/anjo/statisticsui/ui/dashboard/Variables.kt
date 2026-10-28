@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import com.anjo.statisticsui.model.Dashboard
 import com.anjo.statisticsui.model.DimensionValue
 import com.anjo.statisticsui.model.Variable
@@ -42,7 +41,7 @@ fun VariableBar(
 
                 "bucket" -> {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("${variable.name}: ", color = Color.Gray)
+                        Text("${variable.name}: ", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Picker(selected.firstOrNull().orEmpty(), variable.options) { onChange(variable.name, listOf(it)) }
                     }
                 }
@@ -93,7 +92,7 @@ private fun DimensionOption(
                 Text(
                     "${option.firstSeen.shortTime(zone)} – ${option.lastSeen.shortTime(zone)} · ${option.count} records",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         },

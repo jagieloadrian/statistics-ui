@@ -28,7 +28,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.anjo.statisticsui.model.MapRow
@@ -40,22 +39,14 @@ import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.ListEditor
 import com.anjo.statisticsui.ui.common.Picker
 import com.anjo.statisticsui.ui.common.ScreenHeader
-import com.anjo.statisticsui.ui.theme.Colors
 import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
+import com.anjo.statisticsui.ui.theme.success
+import com.anjo.statisticsui.ui.theme.warning
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Refresh
-
-private val STATE_COLORS =
-    mapOf(
-        "receiving" to Color(0xFF4CAF50),
-        "waiting-for-data" to Color.Gray,
-        "silent" to Colors.LIGHT_ORANGE,
-        "paused" to Color(0xFF90A4AE),
-        "erroring" to Colors.LIGHT_RED,
-    )
 
 @Composable
 fun SourcesScreen(
@@ -106,12 +97,16 @@ private fun SourceForm(
                 Field("Label", source.label.orEmpty(), Modifier.weight(1f)) { form.edit(source.copy(label = it.ifBlank { null })) }
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-                Text("Dataset", color = Color.Gray)
+                Text("Dataset", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Picker(source.dataset, datasets) { form.edit(source.copy(dataset = it)) }
                 Field("Rate limit / s", form.rate, error = errors["rate"]) { form.rate = it }
             }
             ErrorText(errors["dataset"]?.let { "Dataset: $it" })
-            Text("Push address: /api/v2/ingest/${source.id}", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+            Text(
+                "Push address: /api/v2/ingest/${source.id}",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall,
+            )
 
             ListEditor("Mapping (first rule)", form.rows, form::editRows, { MapRow() }) { row, set -> MappingRow(row, set) }
 
@@ -155,10 +150,10 @@ private fun RowScope.MappingRow(
     Field("Target", row.target, Modifier.weight(1f)) { set(row.copy(target = it)) }
     Field("Path", row.path, Modifier.weight(1.5f)) { set(row.copy(path = it)) }
     Checkbox(row.dim, { set(row.copy(dim = it)) })
-    Text("dim", color = Color.Gray)
+    Text("dim", color = MaterialTheme.colorScheme.onSurfaceVariant)
     if (!row.dim) {
         Checkbox(row.required, { set(row.copy(required = it)) })
-        Text("required", color = Color.Gray)
+        Text("required", color = MaterialTheme.colorScheme.onSurfaceVariant)
         Field("Min", row.min, Modifier.weight(0.7f)) { set(row.copy(min = it)) }
         Field("Max", row.max, Modifier.weight(0.7f)) { set(row.copy(max = it)) }
     }
@@ -182,27 +177,43 @@ private fun SourceOps(
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
             )
-            Text("Paused", color = Color.Gray)
+            Text("Paused", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Switch(checked = source.paused, onCheckedChange = onPause)
             IconButton(onClick = ops::refresh) {
-                Icon(MaterialSymbols.Rounded.Refresh, contentDescription = "Refresh", tint = Color.Gray)
+                Icon(MaterialSymbols.Rounded.Refresh, contentDescription = "Refresh", tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         ops.status?.let { status ->
             StateChip(status.state)
-            Text("Last record: ${status.lastRecordAt ?: "never"}", color = Color.LightGray)
-            Text("Accepted: ${status.accepted.hour} last hour, ${status.accepted.day} last day", color = Color.LightGray)
-            Text("Rejected: ${status.rejected.hour} last hour, ${status.rejected.day} last day", color = Color.LightGray)
+            Text("Last record: ${status.lastRecordAt ?: "never"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                "Accepted: ${status.accepted.hour} last hour, ${status.accepted.day} last day",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                "Rejected: ${status.rejected.hour} last hour, ${status.rejected.day} last day",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             status.rejections.forEach { rejection ->
-                Text("${rejection.at}  ${rejection.reason}", color = Colors.LIGHT_RED, style = MaterialTheme.typography.bodySmall)
-                rejection.excerpt?.let { Text(it, color = Color.Gray, style = MaterialTheme.typography.bodySmall) }
+                Text(
+                    "${rejection.at}  ${rejection.reason}",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                rejection.excerpt?.let {
+                    Text(
+                        it,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
         }
 
         Text("Credential", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
         ConfirmButton("Rotate credential", "Click again: the current token stops working", ops::rotateCredential)
         ops.token?.let {
-            Text("New token, shown only once — copy it now:", color = Colors.LIGHT_ORANGE)
+            Text("New token, shown only once — copy it now:", color = MaterialTheme.colorScheme.warning)
             SelectionContainer { Text(it, color = MaterialTheme.colorScheme.onSurface) }
         }
 
@@ -216,7 +227,7 @@ private fun SourceOps(
         ) { ops.sample = it }
         Button(onClick = { ops.testMapping(mapping) }) { Text("Test mapping") }
         ops.test?.let { test ->
-            Text("${test.records.size} record(s)", color = Color.LightGray)
+            Text("${test.records.size} record(s)", color = MaterialTheme.colorScheme.onSurfaceVariant)
             test.records.forEach {
                 SelectionContainer {
                     Text(it.toString(), color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodySmall)
@@ -252,7 +263,7 @@ private fun BundleDialog(
                         } else {
                             "Nothing imported (${result.errors.size} errors):"
                         },
-                        color = Color.LightGray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     result.errors.forEach { Text(it, color = MaterialTheme.colorScheme.error) }
                 }
@@ -271,12 +282,19 @@ private fun BundleDialog(
 
 @Composable
 private fun StateChip(state: String) {
-    val color = STATE_COLORS[state] ?: Color.Gray
-    Surface(shape = RoundedCornerShape(SMALL_PADDING), color = color.copy(alpha = 0.2f)) {
+    val colors = MaterialTheme.colorScheme
+    val color =
+        when (state) {
+            "receiving" -> colors.success
+            "silent" -> colors.warning
+            "erroring" -> colors.error
+            else -> colors.onSurfaceVariant
+        }
+    Surface(shape = RoundedCornerShape(SMALL_PADDING), color = colors.surfaceContainerHighest) {
         Text(
             state,
             color = color,
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelMedium,
             modifier = Modifier.padding(horizontal = SMALL_PADDING, vertical = 2.dp),
         )
     }

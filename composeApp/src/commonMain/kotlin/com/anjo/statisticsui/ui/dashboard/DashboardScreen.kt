@@ -23,7 +23,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.anjo.statisticsui.auth.Session
@@ -99,7 +98,7 @@ private fun DashboardView(
     onSelect: (String, VariableValue) -> Unit,
 ) {
     VariableBar(dashboard, values, onSelect)
-    if (dashboard.widgets.isEmpty()) Text("No widgets yet. Use Edit to add one.", color = Color.Gray)
+    if (dashboard.widgets.isEmpty()) Text("No widgets yet. Use Edit to add one.", color = MaterialTheme.colorScheme.onSurfaceVariant)
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = SMALL_PADDING),
         verticalArrangement = Arrangement.spacedBy(SMALL_MEDIUM_PADDING),
