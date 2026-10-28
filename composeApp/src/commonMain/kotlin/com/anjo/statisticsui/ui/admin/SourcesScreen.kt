@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -187,8 +188,8 @@ private fun RowScope.MappingRow(
     CheckboxField("Dimension", row.dim) { set(row.copy(dim = it)) }
     if (!row.dim) {
         CheckboxField("Required", row.required) { set(row.copy(required = it)) }
-        Field("Min", row.min, Modifier.weight(0.7f)) { set(row.copy(min = it)) }
-        Field("Max", row.max, Modifier.weight(0.7f)) { set(row.copy(max = it)) }
+        Field("Min", row.min, Modifier.width(NUMBER_WIDTH)) { set(row.copy(min = it)) }
+        Field("Max", row.max, Modifier.width(NUMBER_WIDTH)) { set(row.copy(max = it)) }
     }
 }
 
@@ -332,3 +333,6 @@ private fun StateChip(state: String) {
         )
     }
 }
+
+// Bounds are short numbers; a fixed width keeps them on one line with Required
+private val NUMBER_WIDTH = 120.dp

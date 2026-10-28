@@ -1,6 +1,7 @@
 package com.anjo.statisticsui.ui.common
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +21,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -259,14 +261,18 @@ fun <T> ListEditor(
 ) {
     SectionTitle(title)
     items.forEachIndexed { i, item ->
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
-        ) {
-            row(item) { changed -> onChange(items.mapIndexed { j, old -> if (j == i) changed else old }) }
-            IconButton(onClick = { onChange(items.filterIndexed { j, _ -> j != i }) }) {
-                Icon(MaterialSymbols.Rounded.Delete, contentDescription = "Remove", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        // Narrow windows wrap an item's fields instead of squeezing them; the container keeps a wrapped item together
+        Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, shape = MaterialTheme.shapes.medium) {
+            FlowRow(
+                Modifier.fillMaxWidth().padding(SMALL_PADDING),
+                itemVerticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
+                verticalArrangement = Arrangement.spacedBy(SMALL_PADDING),
+            ) {
+                row(item) { changed -> onChange(items.mapIndexed { j, old -> if (j == i) changed else old }) }
+                IconButton(onClick = { onChange(items.filterIndexed { j, _ -> j != i }) }) {
+                    Icon(MaterialSymbols.Rounded.Delete, contentDescription = "Remove", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }
