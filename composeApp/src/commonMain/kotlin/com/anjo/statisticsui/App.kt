@@ -28,10 +28,7 @@ private val LightColors = lightColorScheme(primary = Color(0xFF00838F))
 
 @Composable
 fun App() {
-    // Simple startup
-    KoinApplication(
-            configuration = koinConfiguration<StatsUIApplication>()
-    ) {
+    KoinApplication(configuration = koinConfiguration<StatsUIApplication>()) {
         val prefs = koinInject<Session>().user?.prefs ?: Prefs()
         val dark = when (prefs.theme) {
             "light" -> false

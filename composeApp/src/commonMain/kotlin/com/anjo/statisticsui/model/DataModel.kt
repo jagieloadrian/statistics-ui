@@ -8,6 +8,5 @@ data class DataTypeTile(
     val title: String,
     val icon: ImageVector,
     val primaryColor: Color,
-    val secondaryColor: Color,
     val route: String
 )

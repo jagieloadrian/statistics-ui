@@ -160,14 +160,14 @@ fun DashboardContent(navController: NavHostController, api: PlatformApi = koinIn
     val prefs = session.user?.prefs ?: Prefs()
     val primary = MaterialTheme.colorScheme.primary
     val tiles = dashboards.sortedByDescending { it.id in prefs.favourites }.map {
-        DataTypeTile(it.id, it.label?.ifBlank { null } ?: it.id, MaterialSymbols.Rounded.Dashboard, primary, primary,
+        DataTypeTile(it.id, it.label?.ifBlank { null } ?: it.id, MaterialSymbols.Rounded.Dashboard, primary,
             Screen.DashboardView.route(it.id))
     }
     // The server enforces roles too; viewers just don't see what would answer 403.
     val adminTiles = if (!session.isAdmin) emptyList() else listOf(
-        DataTypeTile("sources", "Sources", MaterialSymbols.Rounded.Sensors, Colors.LIGHT_ORANGE, Colors.LIGHT_ORANGE, Screen.Sources.route),
-        DataTypeTile("datasets", "Datasets", MaterialSymbols.Rounded.Database, Colors.LIGHT_RED, Colors.LIGHT_RED, Screen.Datasets.route),
-        DataTypeTile("users", "Users", MaterialSymbols.Rounded.Group, Colors.LIGHT_RED, Colors.LIGHT_RED, Screen.Users.route),
+        DataTypeTile("sources", "Sources", MaterialSymbols.Rounded.Sensors, Colors.LIGHT_ORANGE, Screen.Sources.route),
+        DataTypeTile("datasets", "Datasets", MaterialSymbols.Rounded.Database, Colors.LIGHT_RED, Screen.Datasets.route),
+        DataTypeTile("users", "Users", MaterialSymbols.Rounded.Group, Colors.LIGHT_RED, Screen.Users.route),
     )
 
     Column(modifier = Modifier.fillMaxSize().padding(LARGE_MEDIUM_PADDING)) {
@@ -233,10 +233,7 @@ fun DataTileCard(tile: DataTypeTile, favourite: Boolean? = null, onFavourite: ()
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier
             .height(180.dp)
-            .clickable {
-                println("Clicked: ${tile.title}")
-                onClick()
-            }
+            .clickable(onClick = onClick)
     ) {
         Box(
             modifier = Modifier
