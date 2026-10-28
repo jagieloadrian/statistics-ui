@@ -1,7 +1,7 @@
 package com.anjo.statisticsui.api
 
+import com.anjo.statisticsui.BuildKonfig
 import com.anjo.statisticsui.auth.Session
-import com.anjo.statisticsui.configuration.AppConfig
 import com.anjo.statisticsui.model.ApiError
 import com.anjo.statisticsui.model.AuthConfig
 import com.anjo.statisticsui.model.Credential
@@ -50,7 +50,7 @@ class ApiException(message: String, val status: Int) : Exception(message)
 
 /** Client for the platform API v2 (contracts/api-v2.md). `kind` = `datasets`, `sources` or `dashboards`. */
 @Singleton
-class PlatformApi(private val client: HttpClient, private val appConfig: AppConfig, private val session: Session) {
+class PlatformApi(private val client: HttpClient, private val session: Session) {
 
     /** Stores the session on success; wrong credentials → 401 with one generic message, too many tries → 429. */
     suspend fun login(email: String, password: String): User {
@@ -157,7 +157,7 @@ class PlatformApi(private val client: HttpClient, private val appConfig: AppConf
         return result ?: throw response.apiException()
     }
 
-    private fun url(path: String) = "${appConfig.backendUrl}/api/v2/$path"
+    private fun url(path: String) = "${BuildKonfig.backendurl}/api/v2/$path"
 
     private fun HttpRequestBuilder.authorize() {
         accept(ContentType.Application.Json)
