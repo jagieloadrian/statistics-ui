@@ -89,8 +89,8 @@ fun AccountScreen(state: AccountState = rememberAccountState()) {
             state.prefs = prefs.copy(timeZone = it.trim().ifBlank { null })
         }
         Picker("Units", prefs.units, UNITS) { state.prefs = prefs.copy(units = it) }
-        Picker("Theme", prefs.theme, THEMES) { state.prefs = prefs.copy(theme = it) }
-        AccentPicker(state.accent) { state.accent = it }
+        Picker("Theme", prefs.theme, THEMES) { theme -> state.applyLook { it.copy(theme = theme) } }
+        AccentPicker(prefs.accent) { accent -> state.applyLook { it.copy(accent = accent) } }
         Picker(
             "Home dashboard",
             prefs.homeDashboard ?: NO_HOME,
@@ -107,13 +107,12 @@ fun AccountScreen(state: AccountState = rememberAccountState()) {
     }
 }
 
-// Colour swatches apply at once: the accent lives on this device, outside the saved preferences
 @Composable
 private fun AccentPicker(
     selected: String,
     onSelect: (String) -> Unit,
 ) {
-    Text("Colour: $selected", color = MaterialTheme.colorScheme.onSurface)
+    Text("Colour: ${accentLabel(selected)}", color = MaterialTheme.colorScheme.onSurface)
     FlowRow(
         Modifier.widthIn(max = FIELD_WIDTH).selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
@@ -127,7 +126,7 @@ private fun AccentPicker(
                     .background(seed)
                     .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
                     .selectable(selected = name == selected, role = Role.RadioButton) { onSelect(name) }
-                    .semantics { contentDescription = name },
+                    .semantics { contentDescription = accentLabel(name) },
                 contentAlignment = Alignment.Center,
             ) {
                 if (name == selected) {
@@ -148,11 +147,14 @@ private fun AccentPicker(
         }
     }
     Text(
-        "Applies right away, on this device only",
+        "Theme and colour apply and save right away",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
+
+// "deep-orange" reads as "Deep orange"
+private fun accentLabel(id: String) = id.replace('-', ' ').replaceFirstChar { it.uppercase() }
 
 @Composable
 private fun PasswordForm(state: AccountState) {

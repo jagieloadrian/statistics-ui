@@ -41,6 +41,6 @@ class AccentSchemeTest :
         }
 
         test("unknownAccentFallsBackToTeal") {
-            accentScheme("Plaid", dark = false).primary shouldBe accentScheme("Teal", dark = false).primary
+            accentScheme("plaid", dark = false).primary shouldBe accentScheme("teal", dark = false).primary
         }
     })

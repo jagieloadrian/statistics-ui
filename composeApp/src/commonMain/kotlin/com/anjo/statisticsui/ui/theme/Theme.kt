@@ -12,30 +12,30 @@ import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sin
 
-// Material 2 "500" swatches, named the way people already know them
+// Material 2 "500" swatches; the ids are what the server stores in prefs.accent
 val ACCENTS =
     mapOf(
-        "Red" to Color(0xFFF44336),
-        "Deep orange" to Color(0xFFFF5722),
-        "Orange" to Color(0xFFFF9800),
-        "Amber" to Color(0xFFFFC107),
-        "Yellow" to Color(0xFFFFEB3B),
-        "Lime" to Color(0xFFCDDC39),
-        "Light green" to Color(0xFF8BC34A),
-        "Green" to Color(0xFF4CAF50),
-        "Teal" to Color(0xFF009688),
-        "Cyan" to Color(0xFF00BCD4),
-        "Light blue" to Color(0xFF03A9F4),
-        "Blue" to Color(0xFF2196F3),
-        "Indigo" to Color(0xFF3F51B5),
-        "Deep purple" to Color(0xFF673AB7),
-        "Purple" to Color(0xFF9C27B0),
-        "Pink" to Color(0xFFE91E63),
-        "Brown" to Color(0xFF795548),
-        "Blue grey" to Color(0xFF607D8B),
+        "red" to Color(0xFFF44336),
+        "deep-orange" to Color(0xFFFF5722),
+        "orange" to Color(0xFFFF9800),
+        "amber" to Color(0xFFFFC107),
+        "yellow" to Color(0xFFFFEB3B),
+        "lime" to Color(0xFFCDDC39),
+        "light-green" to Color(0xFF8BC34A),
+        "green" to Color(0xFF4CAF50),
+        "teal" to Color(0xFF009688),
+        "cyan" to Color(0xFF00BCD4),
+        "light-blue" to Color(0xFF03A9F4),
+        "blue" to Color(0xFF2196F3),
+        "indigo" to Color(0xFF3F51B5),
+        "deep-purple" to Color(0xFF673AB7),
+        "purple" to Color(0xFF9C27B0),
+        "pink" to Color(0xFFE91E63),
+        "brown" to Color(0xFF795548),
+        "blue-grey" to Color(0xFF607D8B),
     )
 
-const val DEFAULT_ACCENT = "Teal"
+const val DEFAULT_ACCENT = "teal"
 
 // M3 tonal palettes from the accent's hue, built in CIELAB instead of HCT: a tone is L*, which fixes luminance,
 // so every M3 tone pair keeps the same contrast whatever the hue

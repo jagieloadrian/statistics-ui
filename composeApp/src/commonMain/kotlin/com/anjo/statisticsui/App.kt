@@ -28,7 +28,7 @@ fun App() {
                 "dark" -> true
                 else -> isSystemInDarkTheme()
             }
-        val colors = remember(session.accent, dark) { accentScheme(session.accent, dark) }
+        val colors = remember(prefs.accent, dark) { accentScheme(prefs.accent, dark) }
         MaterialTheme(colorScheme = colors) {
             CompositionLocalProvider(LocalPrefs provides prefs) {
                 Surface(color = MaterialTheme.colorScheme.background) {

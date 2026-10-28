@@ -13,7 +13,6 @@ import com.anjo.statisticsui.model.User
 import com.anjo.statisticsui.ui.common.ShownErrors
 import com.anjo.statisticsui.ui.common.attempt
 import com.anjo.statisticsui.ui.common.reporting
-import com.anjo.statisticsui.ui.theme.DEFAULT_ACCENT
 import com.anjo.statisticsui.validation.FieldErrors
 import com.anjo.statisticsui.validation.passwordChangeErrors
 import kotlinx.coroutines.CoroutineScope
@@ -31,9 +30,6 @@ class AccountState(
         set(value) {
             editedPrefs = value
         }
-    var accent: String
-        get() = session.accent ?: DEFAULT_ACCENT
-        set(value) = session.pickAccent(value)
     var dashboards by mutableStateOf(emptyList<String>())
         private set
     var prefsInfo by mutableStateOf<String?>(null)
@@ -72,6 +68,18 @@ class AccountState(
             editedPrefs = null
             prefsInfo = "Preferences saved"
         }
+    }
+
+    // Theme and colour show at once, so they save at once on top of the saved prefs; the rest waits for Save
+    fun applyLook(change: (Prefs) -> Prefs) {
+        val saved = session.user ?: return
+        session.user = saved.copy(prefs = change(saved.prefs))
+        editedPrefs = editedPrefs?.let(change)
+        prefsInfo = null
+        scope.attempt({
+            session.user = saved
+            prefsError = it
+        }) { api.putPrefs(change(saved.prefs)) }
     }
 
     fun changePassword() {
