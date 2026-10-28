@@ -25,9 +25,7 @@ Desktop (JVM):
 Tests: `./gradlew :composeApp:jvmTest`.
 
 Web: `./gradlew :composeApp:wasmJsBrowserDevelopmentRun` (or `jsBrowserDevelopmentRun`) serves the UI on
-port 8081, the origin the backend allows by default (`CORS_HOSTS=localhost:8081`). Both web targets currently fail
-to compile with a Kotlin compiler crash ([KT-82395](https://youtrack.jetbrains.com/issue/KT-82395),
-`No file found for source null`), so use the desktop app until it is fixed.
+port 8081, the origin the backend allows by default (`CORS_HOSTS=localhost:8081`).
 
 ## Sign in
 
