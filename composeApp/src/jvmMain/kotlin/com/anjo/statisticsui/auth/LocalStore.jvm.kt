@@ -4,6 +4,9 @@ import java.util.prefs.Preferences
 
 private val prefs = Preferences.userRoot().node("com/anjo/statisticsui")
 
-actual fun loadToken(): String? = prefs.get("token", null)
+actual fun loadSetting(key: String): String? = prefs.get(key, null)
 
-actual fun saveToken(token: String?) = if (token == null) prefs.remove("token") else prefs.put("token", token)
+actual fun saveSetting(
+    key: String,
+    value: String?,
+) = if (value == null) prefs.remove(key) else prefs.put(key, value)

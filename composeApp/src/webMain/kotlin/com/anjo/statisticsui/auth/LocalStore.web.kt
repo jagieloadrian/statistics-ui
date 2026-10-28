@@ -2,6 +2,9 @@ package com.anjo.statisticsui.auth
 
 import kotlinx.browser.localStorage
 
-actual fun loadToken(): String? = localStorage.getItem("token")
+actual fun loadSetting(key: String): String? = localStorage.getItem(key)
 
-actual fun saveToken(token: String?) = if (token == null) localStorage.removeItem("token") else localStorage.setItem("token", token)
+actual fun saveSetting(
+    key: String,
+    value: String?,
+) = if (value == null) localStorage.removeItem(key) else localStorage.setItem(key, value)

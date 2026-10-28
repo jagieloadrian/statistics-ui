@@ -13,6 +13,7 @@ import com.anjo.statisticsui.model.User
 import com.anjo.statisticsui.ui.common.ShownErrors
 import com.anjo.statisticsui.ui.common.attempt
 import com.anjo.statisticsui.ui.common.reporting
+import com.anjo.statisticsui.ui.theme.DEFAULT_ACCENT
 import com.anjo.statisticsui.validation.FieldErrors
 import com.anjo.statisticsui.validation.passwordChangeErrors
 import kotlinx.coroutines.CoroutineScope
@@ -30,6 +31,9 @@ class AccountState(
         set(value) {
             editedPrefs = value
         }
+    var accent: String
+        get() = session.accent ?: DEFAULT_ACCENT
+        set(value) = session.pickAccent(value)
     var dashboards by mutableStateOf(emptyList<String>())
         private set
     var prefsInfo by mutableStateOf<String?>(null)

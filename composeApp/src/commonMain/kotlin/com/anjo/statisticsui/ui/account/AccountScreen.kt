@@ -1,13 +1,20 @@
 package com.anjo.statisticsui.ui.account
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -18,6 +25,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.common.Field
@@ -26,16 +39,19 @@ import com.anjo.statisticsui.ui.common.ScreenTitle
 import com.anjo.statisticsui.ui.common.SectionTitle
 import com.anjo.statisticsui.ui.common.ShownErrors
 import com.anjo.statisticsui.ui.common.screenPadding
+import com.anjo.statisticsui.ui.theme.ACCENTS
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.anjo.statisticsui.validation.MIN_PASSWORD_LENGTH
 import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Check
 import com.composables.icons.materialsymbols.rounded.Logout
 
 private val UNITS = listOf("metric", "imperial")
 private val THEMES = listOf("system", "light", "dark")
 private const val NO_HOME = "Home screen"
 private val FIELD_WIDTH = 420.dp
+private val SWATCH_SIZE = 48.dp
 
 @Composable
 fun AccountScreen(state: AccountState = rememberAccountState()) {
@@ -74,6 +90,7 @@ fun AccountScreen(state: AccountState = rememberAccountState()) {
         }
         Picker("Units", prefs.units, UNITS) { state.prefs = prefs.copy(units = it) }
         Picker("Theme", prefs.theme, THEMES) { state.prefs = prefs.copy(theme = it) }
+        AccentPicker(state.accent) { state.accent = it }
         Picker(
             "Home dashboard",
             prefs.homeDashboard ?: NO_HOME,
@@ -88,6 +105,53 @@ fun AccountScreen(state: AccountState = rememberAccountState()) {
 
         if (state.canChangePassword) PasswordForm(state)
     }
+}
+
+// Colour swatches apply at once: the accent lives on this device, outside the saved preferences
+@Composable
+private fun AccentPicker(
+    selected: String,
+    onSelect: (String) -> Unit,
+) {
+    Text("Colour: $selected", color = MaterialTheme.colorScheme.onSurface)
+    FlowRow(
+        Modifier.widthIn(max = FIELD_WIDTH).selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
+        verticalArrangement = Arrangement.spacedBy(SMALL_PADDING),
+    ) {
+        ACCENTS.forEach { (name, seed) ->
+            Box(
+                Modifier
+                    .size(SWATCH_SIZE)
+                    .clip(CircleShape)
+                    .background(seed)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                    .selectable(selected = name == selected, role = Role.RadioButton) { onSelect(name) }
+                    .semantics { contentDescription = name },
+                contentAlignment = Alignment.Center,
+            ) {
+                if (name == selected) {
+                    Icon(
+                        MaterialSymbols.Rounded.Check,
+                        contentDescription = null,
+                        tint =
+                            if (seed.luminance() >
+                                0.4f
+                            ) {
+                                Color.Black
+                            } else {
+                                Color.White
+                            },
+                    )
+                }
+            }
+        }
+    }
+    Text(
+        "Applies right away, on this device only",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable

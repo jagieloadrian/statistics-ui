@@ -8,9 +8,13 @@ import org.koin.core.annotation.Singleton
 
 @Singleton
 class Session {
-    var token by mutableStateOf(loadToken())
+    var token by mutableStateOf(loadSetting(TOKEN))
         private set
     var user by mutableStateOf<User?>(null)
+
+    // Kept on this device only: server prefs have no field for it
+    var accent by mutableStateOf(loadSetting(ACCENT))
+        private set
 
     val isAdmin get() = user?.role == "admin"
     val canEdit get() = user?.role == "admin" || user?.role == "editor"
@@ -19,14 +23,22 @@ class Session {
         token: String,
         user: User,
     ) {
-        saveToken(token)
+        saveSetting(TOKEN, token)
         this.token = token
         this.user = user
     }
 
     fun signOut() {
-        saveToken(null)
+        saveSetting(TOKEN, null)
         token = null
         user = null
     }
+
+    fun pickAccent(accent: String) {
+        saveSetting(ACCENT, accent)
+        this.accent = accent
+    }
 }
+
+private const val TOKEN = "token"
+private const val ACCENT = "accent"
