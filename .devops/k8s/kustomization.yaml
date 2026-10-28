@@ -1,0 +1,10 @@
+# kubectl apply -k .devops/k8s — Gateway, root VirtualService and mTLS live in the StatisticsService repo.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: statistics
+resources:
+  - namespace.yaml
+  - statistics-ui.yaml
+images:
+  - name: ghcr.io/jagieloadrian/statistics-ui
+    newTag: latest
