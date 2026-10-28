@@ -1,7 +1,6 @@
 package com.anjo.statisticsui.api
 
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.DEFAULT
 import io.ktor.client.plugins.logging.LogLevel
@@ -12,9 +11,10 @@ import kotlinx.serialization.json.Json
 import org.koin.core.annotation.Singleton
 
 
+/** Engine from the platform: CIO on desktop (jvmMain dependency), the browser's fetch on web. */
 @Singleton
 fun createHttpClient(): HttpClient {
-    return HttpClient(CIO) {
+    return HttpClient {
         install(ContentNegotiation) {
             json(Json {
                 encodeDefaults = true
