@@ -14,15 +14,9 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.anjo.statisticsui.api.PlatformApi
-import com.anjo.statisticsui.api.runSuspendCatching
 import com.anjo.statisticsui.model.Dashboard
 import com.anjo.statisticsui.model.DimensionValue
 import com.anjo.statisticsui.model.Variable
@@ -31,30 +25,25 @@ import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.Picker
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.milliseconds
-
-private val SEARCH_DEBOUNCE = 250.milliseconds
 
 @Composable
 fun VariableBar(
     dashboard: Dashboard,
     values: Map<String, VariableValue>,
-    api: PlatformApi,
     onChange: (String, VariableValue) -> Unit,
 ) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-        dashboard.variables.forEach { v ->
-            val selected = values[v.name].orEmpty()
-            when (v.type) {
+        dashboard.variables.forEach { variable ->
+            val selected = values[variable.name].orEmpty()
+            when (variable.type) {
                 "dimension" -> {
-                    DimensionPicker(v, selected, api) { onChange(v.name, it) }
+                    DimensionPicker(variable, selected) { onChange(variable.name, it) }
                 }
 
                 "bucket" -> {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("${v.name}: ", color = Color.Gray)
-                        Picker(selected.firstOrNull().orEmpty(), v.options) { onChange(v.name, listOf(it)) }
+                        Text("${variable.name}: ", color = Color.Gray)
+                        Picker(selected.firstOrNull().orEmpty(), variable.options) { onChange(variable.name, listOf(it)) }
                     }
                 }
             }
@@ -66,51 +55,49 @@ fun VariableBar(
 private fun DimensionPicker(
     variable: Variable,
     selected: VariableValue,
-    api: PlatformApi,
+    state: DimensionPickerState = rememberDimensionPickerState(variable),
     onChange: (VariableValue) -> Unit,
 ) {
-    var open by remember { mutableStateOf(false) }
-    var search by remember { mutableStateOf("") }
-    var options by remember { mutableStateOf(Result.success(emptyList<DimensionValue>())) }
-    val zone = displayZone()
-    LaunchedEffect(open, search) {
-        if (!open) return@LaunchedEffect
-        delay(SEARCH_DEBOUNCE)
-        options = runSuspendCatching { api.dimensionValues(variable.dataset.orEmpty(), variable.dimension.orEmpty(), search) }
-    }
+    LaunchedEffect(state.open, state.search) { state.loadOptions() }
     Box {
-        OutlinedButton(onClick = { open = true }) { Text("${variable.name}: ${selected.joinToString().ifBlank { "all" }}") }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            Field("Search", search, Modifier.padding(horizontal = SMALL_PADDING)) { search = it }
-            ErrorText(options.exceptionOrNull()?.message)
-            options.getOrDefault(emptyList()).forEach { dv ->
-                DropdownMenuItem(
-                    text = {
-                        Column {
-                            Text(dv.value)
-                            Text(
-                                "${dv.firstSeen.shortTime(zone)} – ${dv.lastSeen.shortTime(zone)} · ${dv.count} records",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.Gray,
-                            )
-                        }
-                    },
-                    leadingIcon =
-                        if (variable.multi) {
-                            { Checkbox(checked = dv.value in selected, onCheckedChange = null) }
-                        } else {
-                            null
-                        },
-                    onClick = {
-                        if (variable.multi) {
-                            onChange(if (dv.value in selected) selected - dv.value else selected + dv.value)
-                        } else {
-                            onChange(listOf(dv.value))
-                            open = false
-                        }
-                    },
-                )
+        OutlinedButton(onClick = { state.open = true }) { Text("${variable.name}: ${selected.joinToString().ifBlank { "all" }}") }
+        DropdownMenu(expanded = state.open, onDismissRequest = { state.open = false }) {
+            Field("Search", state.search, Modifier.padding(horizontal = SMALL_PADDING)) { state.search = it }
+            ErrorText(state.options.exceptionOrNull()?.message)
+            state.options.getOrDefault(emptyList()).forEach { option ->
+                DimensionOption(option, variable.multi, checked = option.value in selected) {
+                    if (variable.multi) {
+                        onChange(if (option.value in selected) selected - option.value else selected + option.value)
+                    } else {
+                        onChange(listOf(option.value))
+                        state.open = false
+                    }
+                }
             }
         }
     }
+}
+
+@Composable
+private fun DimensionOption(
+    option: DimensionValue,
+    multi: Boolean,
+    checked: Boolean,
+    onClick: () -> Unit,
+) {
+    val zone = displayZone()
+    DropdownMenuItem(
+        text = {
+            Column {
+                Text(option.value)
+                Text(
+                    "${option.firstSeen.shortTime(zone)} – ${option.lastSeen.shortTime(zone)} · ${option.count} records",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray,
+                )
+            }
+        },
+        leadingIcon = if (multi) ({ Checkbox(checked = checked, onCheckedChange = null) }) else null,
+        onClick = onClick,
+    )
 }

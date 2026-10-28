@@ -22,40 +22,26 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.anjo.statisticsui.api.PlatformApi
-import com.anjo.statisticsui.api.runSuspendCatching
 import com.anjo.statisticsui.auth.Session
 import com.anjo.statisticsui.model.Dashboard
 import com.anjo.statisticsui.model.QueryResult
-import com.anjo.statisticsui.model.TimeRange
 import com.anjo.statisticsui.model.VariableValue
 import com.anjo.statisticsui.model.Widget
 import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.ScreenHeader
-import com.anjo.statisticsui.ui.common.attempt
 import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Edit
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.seconds
 
 private val RANGES = listOf("1h" to 1.hours, "24h" to 1.days, "7d" to 7.days, "30d" to 30.days)
 private val ROW_HEIGHT = 80.dp
@@ -64,102 +50,90 @@ private val ROW_HEIGHT = 80.dp
 fun DashboardScreen(
     id: String,
     navController: NavHostController,
-    api: PlatformApi = koinInject(),
     session: Session = koinInject(),
+    state: DashboardState = rememberDashboardState(id),
 ) {
-    var dashboard by remember { mutableStateOf<Dashboard?>(null) }
-    var range by remember { mutableStateOf(1.days) }
-    var values by remember { mutableStateOf(emptyMap<String, VariableValue>()) }
-    var editing by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    val results = remember { mutableStateMapOf<String, Result<QueryResult>>() }
-
-    LaunchedEffect(id) {
-        attempt({ error = it }) {
-            val loaded = api.dashboard(id)
-            values = initialValues(loaded, api)
-            range = initialDuration(loaded)
-            dashboard = loaded
-        }
-    }
-    LaunchedEffect(dashboard, range, values, editing) {
-        val current = dashboard?.takeUnless { editing } ?: return@LaunchedEffect
-        results.clear()
-        while (true) {
-            val timeRange = TimeRange.last(range)
-            coroutineScope {
-                current.widgets.forEach { w ->
-                    launch { results[w.id] = runSuspendCatching { api.query(resolve(w.query, values, timeRange)) } }
-                }
-            }
-            delay((current.refreshSeconds ?: break).seconds)
-        }
-    }
+    LaunchedEffect(state) { state.load() }
+    LaunchedEffect(state.dashboard, state.range, state.values, state.editing) { state.runQueries() }
+    val dashboard = state.dashboard
 
     Column(Modifier.fillMaxSize().padding(LARGE_MEDIUM_PADDING)) {
         ScreenHeader(dashboard?.title?.ifBlank { null } ?: id, navController) {
-            if (!editing) {
+            if (!state.editing) {
                 RANGES.forEach { (label, duration) ->
                     FilterChip(
-                        selected = range == duration,
-                        onClick = { range = duration },
+                        selected = state.range == duration,
+                        onClick = { state.range = duration },
                         label = { Text("Last $label") },
                         modifier = Modifier.padding(end = SMALL_PADDING),
                     )
                 }
                 if (session.canEdit) {
-                    Button(onClick = { editing = true }, enabled = dashboard != null) {
+                    Button(onClick = { state.editing = true }, enabled = dashboard != null) {
                         Icon(MaterialSymbols.Rounded.Edit, contentDescription = null)
                         Text("Edit")
                     }
                 }
             }
         }
-        ErrorText(error)
-        val current = dashboard ?: return@Column
-        if (editing) {
-            DashboardEditor(
-                initial = current,
-                api = api,
-                onSave = { saved ->
-                    api.putDashboard(saved)
-                    values = initialValues(saved, api) + values.filterKeys { name -> saved.variables.any { it.name == name } }
-                    dashboard = saved
-                    editing = false
-                },
-                onCancel = { editing = false },
-            )
-            return@Column
-        }
-        VariableBar(current, values, api) { name, value -> values = values + (name to value) }
-        if (current.widgets.isEmpty()) Text("No widgets yet. Use Edit to add one.", color = Color.Gray)
-        Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = SMALL_PADDING),
-            verticalArrangement = Arrangement.spacedBy(SMALL_MEDIUM_PADDING),
-        ) {
-            layoutRows(current.widgets).forEach { row ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(SMALL_MEDIUM_PADDING)) {
-                    row.forEach { w ->
-                        Card(
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.weight(w.span().toFloat()).height(ROW_HEIGHT * w.h.coerceAtLeast(1)),
-                        ) {
-                            Column(Modifier.fillMaxSize().padding(SMALL_MEDIUM_PADDING)) {
-                                Text(
-                                    resolveText(w.title.ifBlank { w.id }, values),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.padding(bottom = SMALL_PADDING),
-                                )
-                                Widget(w, results[w.id], Modifier.weight(1f))
-                            }
-                        }
-                    }
-                    val free = COLUMNS - row.sumOf { it.span() }
-                    if (free > 0) Spacer(Modifier.weight(free.toFloat()))
-                }
+        ErrorText(state.error)
+        when {
+            dashboard == null -> {}
+
+            state.editing -> {
+                DashboardEditor(initial = dashboard, onSave = state::save, onCancel = { state.editing = false })
             }
+
+            else -> {
+                DashboardView(dashboard, state.values, state.results, onSelect = state::select)
+            }
+        }
+    }
+}
+
+@Composable
+private fun DashboardView(
+    dashboard: Dashboard,
+    values: Map<String, VariableValue>,
+    results: Map<String, Result<QueryResult>>,
+    onSelect: (String, VariableValue) -> Unit,
+) {
+    VariableBar(dashboard, values, onSelect)
+    if (dashboard.widgets.isEmpty()) Text("No widgets yet. Use Edit to add one.", color = Color.Gray)
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = SMALL_PADDING),
+        verticalArrangement = Arrangement.spacedBy(SMALL_MEDIUM_PADDING),
+    ) {
+        layoutRows(dashboard.widgets).forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(SMALL_MEDIUM_PADDING)) {
+                row.forEach { widget -> WidgetCard(widget, values, results[widget.id], Modifier.weight(widget.span().toFloat())) }
+                val free = COLUMNS - row.sumOf { it.span() }
+                if (free > 0) Spacer(Modifier.weight(free.toFloat()))
+            }
+        }
+    }
+}
+
+@Composable
+private fun WidgetCard(
+    widget: Widget,
+    values: Map<String, VariableValue>,
+    result: Result<QueryResult>?,
+    modifier: Modifier,
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(12.dp),
+        modifier = modifier.height(ROW_HEIGHT * widget.h.coerceAtLeast(1)),
+    ) {
+        Column(Modifier.fillMaxSize().padding(SMALL_MEDIUM_PADDING)) {
+            Text(
+                resolveText(widget.title.ifBlank { widget.id }, values),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = SMALL_PADDING),
+            )
+            Widget(widget, result, Modifier.weight(1f))
         }
     }
 }
@@ -169,31 +143,20 @@ fun NewDashboardDialog(
     existingIds: List<String>,
     onDismiss: () -> Unit,
     onCreated: (String) -> Unit,
-    api: PlatformApi = koinInject(),
+    state: NewDashboardState = rememberNewDashboardState(existingIds),
 ) {
-    var id by remember { mutableStateOf("") }
-    var title by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("New dashboard") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-                Field("Id (letters, digits, - and _)", id) { id = it }
-                Field("Title", title) { title = it }
-                ErrorText(error)
+                Field("Id (letters, digits, - and _)", state.id) { state.id = it }
+                Field("Title", state.title) { state.title = it }
+                ErrorText(state.error)
             }
         },
         confirmButton = {
-            Button(enabled = id.isNotBlank(), onClick = {
-                scope.attempt({ error = it }) {
-                    val newId = id.trim()
-                    require(newId !in existingIds) { "Dashboard '$newId' already exists" }
-                    api.putDashboard(Dashboard(id = newId, title = title.trim()))
-                    onCreated(newId)
-                }
-            }) { Text("Create") }
+            Button(enabled = state.id.isNotBlank(), onClick = { state.create(onCreated) }) { Text("Create") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )

@@ -36,7 +36,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,16 +44,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.anjo.statisticsui.api.PlatformApi
-import com.anjo.statisticsui.auth.Session
 import com.anjo.statisticsui.model.DataTypeTile
-import com.anjo.statisticsui.model.DefinitionSummary
-import com.anjo.statisticsui.model.Prefs
 import com.anjo.statisticsui.model.ScreenIcons
 import com.anjo.statisticsui.navigation.Screen
 import com.anjo.statisticsui.ui.account.AccountScreen
 import com.anjo.statisticsui.ui.common.ErrorText
-import com.anjo.statisticsui.ui.common.attempt
 import com.anjo.statisticsui.ui.dashboard.NewDashboardDialog
 import com.anjo.statisticsui.ui.theme.Colors
 import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
@@ -73,17 +67,20 @@ import com.composables.icons.materialsymbols.rounded.Group
 import com.composables.icons.materialsymbols.rounded.Logout
 import com.composables.icons.materialsymbols.rounded.Sensors
 import com.composables.icons.materialsymbols.rounded.Star
-import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
+
+private val ADMIN_TILES =
+    listOf(
+        DataTypeTile("sources", "Sources", MaterialSymbols.Rounded.Sensors, Colors.LIGHT_ORANGE, Screen.Sources.route),
+        DataTypeTile("datasets", "Datasets", MaterialSymbols.Rounded.Database, Colors.LIGHT_RED, Screen.Datasets.route),
+        DataTypeTile("users", "Users", MaterialSymbols.Rounded.Group, Colors.LIGHT_RED, Screen.Users.route),
+    )
 
 @Composable
 fun MainLayout(
     navController: NavHostController,
-    api: PlatformApi = koinInject(),
-    session: Session = koinInject(),
+    state: HomeState = rememberHomeState(),
 ) {
     var selectedScreenIcons by remember { mutableStateOf(ScreenIcons.Main) }
-    val scope = rememberCoroutineScope()
 
     PermanentNavigationDrawer(
         drawerContent = {
@@ -122,9 +119,9 @@ fun MainLayout(
                     )
                 }
                 Spacer(Modifier.weight(1f))
-                session.user?.let {
+                state.email?.let {
                     Text(
-                        it.email,
+                        it,
                         color = Color.Gray,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(horizontal = MEDIUM_PADDING),
@@ -133,7 +130,7 @@ fun MainLayout(
                 NavigationDrawerItem(
                     label = { Text("Sign out") },
                     selected = false,
-                    onClick = { scope.launch { api.logout() } },
+                    onClick = state::signOut,
                     icon = { Icon(MaterialSymbols.Rounded.Logout, contentDescription = null) },
                     modifier = Modifier.padding(horizontal = LARGE_SMALL_PADDING, vertical = SMALL_PADDING),
                 )
@@ -145,7 +142,7 @@ fun MainLayout(
             ) { padding ->
                 Box(modifier = Modifier.padding(padding)) {
                     when (selectedScreenIcons) {
-                        ScreenIcons.Main -> DashboardContent(navController = navController)
+                        ScreenIcons.Main -> DashboardContent(navController = navController, state = state)
                         ScreenIcons.Charts -> PlaceholderScreen("Charts section")
                         ScreenIcons.Account -> AccountScreen()
                     }
@@ -158,19 +155,12 @@ fun MainLayout(
 @Composable
 fun DashboardContent(
     navController: NavHostController,
-    api: PlatformApi = koinInject(),
-    session: Session = koinInject(),
+    state: HomeState = rememberHomeState(),
 ) {
-    var dashboards by remember { mutableStateOf(emptyList<DefinitionSummary>()) }
-    var creating by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(Unit) { attempt({ error = it }) { dashboards = api.list("dashboards") } }
-
-    val scope = rememberCoroutineScope()
-    val prefs = session.user?.prefs ?: Prefs()
+    LaunchedEffect(Unit) { state.load() }
     val primary = MaterialTheme.colorScheme.primary
     val tiles =
-        dashboards.sortedByDescending { it.id in prefs.favourites }.map {
+        state.sortedDashboards.map {
             DataTypeTile(
                 it.id,
                 it.label?.ifBlank { null } ?: it.id,
@@ -179,16 +169,7 @@ fun DashboardContent(
                 Screen.DashboardView.route(it.id),
             )
         }
-    val adminTiles =
-        if (!session.isAdmin) {
-            emptyList()
-        } else {
-            listOf(
-                DataTypeTile("sources", "Sources", MaterialSymbols.Rounded.Sensors, Colors.LIGHT_ORANGE, Screen.Sources.route),
-                DataTypeTile("datasets", "Datasets", MaterialSymbols.Rounded.Database, Colors.LIGHT_RED, Screen.Datasets.route),
-                DataTypeTile("users", "Users", MaterialSymbols.Rounded.Group, Colors.LIGHT_RED, Screen.Users.route),
-            )
-        }
+    val adminTiles = if (state.isAdmin) ADMIN_TILES else emptyList()
 
     Column(modifier = Modifier.fillMaxSize().padding(LARGE_MEDIUM_PADDING)) {
         Text(
@@ -207,14 +188,14 @@ fun DashboardContent(
                 color = Color.Gray,
                 modifier = Modifier.weight(1f),
             )
-            if (session.canEdit) {
-                Button(onClick = { creating = true }) {
+            if (state.canCreate) {
+                Button(onClick = { state.creating = true }) {
                     Icon(MaterialSymbols.Rounded.Add, contentDescription = null)
                     Text("New dashboard")
                 }
             }
         }
-        ErrorText(error)
+        ErrorText(state.error)
 
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 200.dp),
@@ -222,11 +203,7 @@ fun DashboardContent(
             verticalArrangement = Arrangement.spacedBy(SMALL_MEDIUM_PADDING),
         ) {
             items(tiles) { tile ->
-                val favourite = tile.id in prefs.favourites
-                DataTileCard(tile, favourite = favourite, onFavourite = {
-                    val favourites = if (favourite) prefs.favourites - tile.id else prefs.favourites + tile.id
-                    scope.attempt({ error = it }) { api.putPrefs(prefs.copy(favourites = favourites)) }
-                }) {
+                DataTileCard(tile, favourite = tile.id in state.favourites, onFavourite = { state.toggleFavourite(tile.id) }) {
                     navController.navigate(tile.route)
                 }
             }
@@ -236,12 +213,12 @@ fun DashboardContent(
         }
     }
 
-    if (creating) {
+    if (state.creating) {
         NewDashboardDialog(
-            existingIds = dashboards.map { it.id },
-            onDismiss = { creating = false },
+            existingIds = state.dashboards.map { it.id },
+            onDismiss = { state.creating = false },
             onCreated = { id ->
-                creating = false
+                state.creating = false
                 navController.navigate(Screen.DashboardView.route(id))
             },
         )

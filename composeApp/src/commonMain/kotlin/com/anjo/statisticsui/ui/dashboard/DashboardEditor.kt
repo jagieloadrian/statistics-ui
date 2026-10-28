@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,23 +22,18 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.anjo.statisticsui.api.PlatformApi
-import com.anjo.statisticsui.api.runSuspendCatching
 import com.anjo.statisticsui.model.Dashboard
 import com.anjo.statisticsui.model.Dataset
 import com.anjo.statisticsui.model.Query
 import com.anjo.statisticsui.model.QueryMeasure
 import com.anjo.statisticsui.model.RelativeRange
 import com.anjo.statisticsui.model.Threshold
-import com.anjo.statisticsui.model.User
 import com.anjo.statisticsui.model.Variable
 import com.anjo.statisticsui.model.Widget
 import com.anjo.statisticsui.model.WidgetOptions
@@ -46,7 +42,6 @@ import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.ListEditor
 import com.anjo.statisticsui.ui.common.NumberField
 import com.anjo.statisticsui.ui.common.Picker
-import com.anjo.statisticsui.ui.common.attempt
 import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
@@ -55,7 +50,6 @@ import com.composables.icons.materialsymbols.rounded.Add
 import com.composables.icons.materialsymbols.rounded.Arrow_downward
 import com.composables.icons.materialsymbols.rounded.Arrow_upward
 import com.composables.icons.materialsymbols.rounded.Delete
-import org.koin.compose.koinInject
 
 private val WIDGET_TYPES = listOf("line", "area", "bar", "stat", "gauge", "table")
 private val BUCKETS = listOf("auto", "raw", "none", "1m", "5m", "10m", "30m", "1h", "6h", "1d")
@@ -69,105 +63,20 @@ fun DashboardEditor(
     initial: Dashboard,
     onSave: suspend (Dashboard) -> Unit,
     onCancel: () -> Unit,
-    api: PlatformApi = koinInject(),
+    state: DashboardEditorState = rememberDashboardEditorState(initial),
 ) {
-    var dashboard by remember(initial) { mutableStateOf(initial) }
-    var expandedWidget by remember(initial) { mutableStateOf<Int?>(null) }
-    var datasetIds by remember { mutableStateOf(emptyList<String>()) }
-    val datasets = remember { mutableStateMapOf<String, Dataset>() }
-    var users by remember { mutableStateOf(emptyList<User>()) }
-    var shared by remember(initial) { mutableStateOf(emptySet<Long>()) }
-    var error by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
-    LaunchedEffect(Unit) { attempt({ error = it }) { datasetIds = api.list("datasets").map { it.id } } }
-    LaunchedEffect(initial.id) {
-        attempt({ error = it }) {
-            users = api.users()
-            shared = api.shares(initial.id).toSet()
-        }
-    }
-    val referenced =
-        (
-            dashboard.widgets.map {
-                it.query.dataset
-            } + dashboard.variables.mapNotNull { it.dataset }
-        ).filter { it.isNotBlank() }.toSet()
-    LaunchedEffect(referenced) {
-        referenced.filter { it !in datasets }.forEach { id ->
-            runSuspendCatching { api.dataset(id) }.fold({ datasets[id] = it }, {
-                error =
-                    it.message
-            })
-        }
-    }
-    val widgets = dashboard.widgets
-
-    fun setWidgets(list: List<Widget>) {
-        dashboard = dashboard.copy(widgets = list)
-    }
-
-    suspend fun saveSharesThenDashboard() {
-        if (dashboard.visibility == "users") api.putShares(dashboard.id, shared.toList())
-        onSave(dashboard)
-    }
+    LaunchedEffect(state) { state.load() }
+    val referenced = state.referencedDatasets
+    LaunchedEffect(referenced) { state.loadDatasets(referenced) }
+    val dashboard = state.dashboard
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-            Field("Title", dashboard.title, Modifier.weight(1f)) { dashboard = dashboard.copy(title = it) }
-            Field("Default range (ISO-8601, e.g. P1D)", dashboard.defaultRange?.last.orEmpty(), Modifier.weight(1f)) {
-                dashboard = dashboard.copy(defaultRange = it.trim().ifBlank { null }?.let(::RelativeRange))
-            }
-            NumberField("Refresh seconds (empty = off)", dashboard.refreshSeconds?.toDouble(), Modifier.weight(1f)) {
-                dashboard = dashboard.copy(refreshSeconds = it?.toInt())
-            }
-            Text("Visible to", color = Color.Gray)
-            Picker(dashboard.visibility, VISIBILITIES) { dashboard = dashboard.copy(visibility = it) }
-        }
-        if (dashboard.visibility == "users") {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-                Text("Shared with", color = Color.Gray, modifier = Modifier.align(Alignment.CenterVertically))
-                users.forEach { u ->
-                    FilterChip(
-                        selected = u.id in shared,
-                        onClick = { shared = if (u.id in shared) shared - u.id else shared + u.id },
-                        label = { Text(u.name.ifBlank { u.email }) },
-                    )
-                }
-            }
-        }
-
-        ListEditor(
-            "Variables",
-            dashboard.variables,
-            { dashboard = dashboard.copy(variables = it) },
-            { Variable("", "dimension") },
-        ) { v, set ->
-            Field("Name", v.name, Modifier.weight(1f)) { set(v.copy(name = it)) }
-            Picker(v.type, VARIABLE_TYPES) { set(v.copy(type = it)) }
-            when (v.type) {
-                "dimension" -> {
-                    Picker(v.dataset.orEmpty(), datasetIds) { set(v.copy(dataset = it, dimension = null)) }
-                    Picker(
-                        v.dimension.orEmpty(),
-                        datasets[v.dataset]?.dimensions?.map { it.name }.orEmpty(),
-                    ) { set(v.copy(dimension = it)) }
-                    Checkbox(v.multi, { set(v.copy(multi = it)) })
-                    Text("multi", color = Color.Gray)
-                }
-
-                "timeRange" -> {
-                    Field(
-                        "Default (e.g. P7D)",
-                        v.default.orEmpty(),
-                        Modifier.weight(1f),
-                    ) { set(v.copy(default = it.trim().ifBlank { null })) }
-                }
-
-                "bucket" -> {
-                    CsvField("Options, e.g. raw, 1m, 1h", v.options, Modifier.weight(2f)) { set(v.copy(options = it)) }
-                    Picker(v.default.orEmpty(), v.options) { set(v.copy(default = it)) }
-                }
-            }
+        DashboardSettings(state)
+        ListEditor("Variables", dashboard.variables, { state.dashboard = dashboard.copy(variables = it) }, { Variable("", "dimension") }) {
+            variable,
+            set,
+            ->
+            VariableRow(variable, state.datasetIds, state.datasets, set)
         }
 
         Text(
@@ -176,53 +85,104 @@ fun DashboardEditor(
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING),
         )
-        widgets.forEachIndexed { i, w ->
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = { expandedWidget = if (expandedWidget == i) null else i }, modifier = Modifier.weight(1f)) {
-                    Text("${w.title.ifBlank { w.id }} · ${w.type} · ${w.w}×${w.h}", modifier = Modifier.fillMaxWidth())
-                }
-                IconButton(enabled = i > 0, onClick = {
-                    setWidgets(widgets.swap(i, i - 1))
-                    expandedWidget = i - 1
-                }) {
-                    Icon(MaterialSymbols.Rounded.Arrow_upward, contentDescription = "Move up", tint = Color.Gray)
-                }
-                IconButton(enabled = i < widgets.lastIndex, onClick = {
-                    setWidgets(widgets.swap(i, i + 1))
-                    expandedWidget = i + 1
-                }) {
-                    Icon(MaterialSymbols.Rounded.Arrow_downward, contentDescription = "Move down", tint = Color.Gray)
-                }
-                IconButton(onClick = {
-                    setWidgets(widgets.filterIndexed { j, _ -> j != i })
-                    expandedWidget = null
-                }) {
-                    Icon(MaterialSymbols.Rounded.Delete, contentDescription = "Delete", tint = Color.Gray)
-                }
-            }
-            if (expandedWidget == i) {
-                WidgetForm(w, dashboard.variables, datasetIds, datasets) { changed ->
-                    setWidgets(widgets.mapIndexed { j, old -> if (j == i) changed else old })
-                }
-                HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f))
-            }
-        }
-        TextButton(onClick = {
-            val id = generateSequence(1) { it + 1 }.map { "w$it" }.first { id -> widgets.none { it.id == id } }
-            setWidgets(widgets + Widget(id = id, type = "line", w = 12, h = 4, query = Query(dataset = datasetIds.firstOrNull().orEmpty())))
-            expandedWidget = widgets.size
-        }) {
+        dashboard.widgets.forEachIndexed { index, widget -> WidgetEntry(state, index, widget) }
+        TextButton(onClick = state::addWidget) {
             Icon(MaterialSymbols.Rounded.Add, contentDescription = null)
             Text("Add widget")
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-            Button(onClick = {
-                scope.attempt({ error = it }) { saveSharesThenDashboard() }
-            }) { Text("Save") }
+            Button(onClick = { state.save(onSave) }) { Text("Save") }
             TextButton(onClick = onCancel) { Text("Cancel") }
         }
-        ErrorText(error)
+        ErrorText(state.error)
+    }
+}
+
+@Composable
+private fun DashboardSettings(state: DashboardEditorState) {
+    val dashboard = state.dashboard
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+        Field("Title", dashboard.title, Modifier.weight(1f)) { state.dashboard = dashboard.copy(title = it) }
+        Field("Default range (ISO-8601, e.g. P1D)", dashboard.defaultRange?.last.orEmpty(), Modifier.weight(1f)) {
+            state.dashboard = dashboard.copy(defaultRange = it.trim().ifBlank { null }?.let(::RelativeRange))
+        }
+        NumberField("Refresh seconds (empty = off)", dashboard.refreshSeconds?.toDouble(), Modifier.weight(1f)) {
+            state.dashboard = dashboard.copy(refreshSeconds = it?.toInt())
+        }
+        Text("Visible to", color = Color.Gray)
+        Picker(dashboard.visibility, VISIBILITIES) { state.dashboard = dashboard.copy(visibility = it) }
+    }
+    if (dashboard.visibility == "users") {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+            Text("Shared with", color = Color.Gray, modifier = Modifier.align(Alignment.CenterVertically))
+            state.users.forEach { user ->
+                FilterChip(
+                    selected = user.id in state.shared,
+                    onClick = { state.toggleShare(user.id) },
+                    label = { Text(user.name.ifBlank { user.email }) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.VariableRow(
+    variable: Variable,
+    datasetIds: List<String>,
+    datasets: Map<String, Dataset>,
+    set: (Variable) -> Unit,
+) {
+    Field("Name", variable.name, Modifier.weight(1f)) { set(variable.copy(name = it)) }
+    Picker(variable.type, VARIABLE_TYPES) { set(variable.copy(type = it)) }
+    when (variable.type) {
+        "dimension" -> {
+            Picker(variable.dataset.orEmpty(), datasetIds) { set(variable.copy(dataset = it, dimension = null)) }
+            Picker(variable.dimension.orEmpty(), datasets[variable.dataset]?.dimensions?.map { it.name }.orEmpty()) {
+                set(variable.copy(dimension = it))
+            }
+            Checkbox(variable.multi, { set(variable.copy(multi = it)) })
+            Text("multi", color = Color.Gray)
+        }
+
+        "timeRange" -> {
+            Field("Default (e.g. P7D)", variable.default.orEmpty(), Modifier.weight(1f)) {
+                set(variable.copy(default = it.trim().ifBlank { null }))
+            }
+        }
+
+        "bucket" -> {
+            CsvField("Options, e.g. raw, 1m, 1h", variable.options, Modifier.weight(2f)) { set(variable.copy(options = it)) }
+            Picker(variable.default.orEmpty(), variable.options) { set(variable.copy(default = it)) }
+        }
+    }
+}
+
+@Composable
+private fun WidgetEntry(
+    state: DashboardEditorState,
+    index: Int,
+    widget: Widget,
+) {
+    val widgets = state.dashboard.widgets
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        TextButton(onClick = { state.toggleWidget(index) }, modifier = Modifier.weight(1f)) {
+            Text("${widget.title.ifBlank { widget.id }} · ${widget.type} · ${widget.w}×${widget.h}", modifier = Modifier.fillMaxWidth())
+        }
+        IconButton(enabled = index > 0, onClick = { state.moveWidget(index, index - 1) }) {
+            Icon(MaterialSymbols.Rounded.Arrow_upward, contentDescription = "Move up", tint = Color.Gray)
+        }
+        IconButton(enabled = index < widgets.lastIndex, onClick = { state.moveWidget(index, index + 1) }) {
+            Icon(MaterialSymbols.Rounded.Arrow_downward, contentDescription = "Move down", tint = Color.Gray)
+        }
+        IconButton(onClick = { state.removeWidget(index) }) {
+            Icon(MaterialSymbols.Rounded.Delete, contentDescription = "Delete", tint = Color.Gray)
+        }
+    }
+    if (state.expandedWidget == index) {
+        WidgetForm(widget, state.dashboard.variables, state.datasetIds, state.datasets) { state.updateWidget(index, it) }
+        HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f))
     }
 }
 
