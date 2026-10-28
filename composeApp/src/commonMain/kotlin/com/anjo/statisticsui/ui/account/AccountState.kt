@@ -24,11 +24,10 @@ class AccountState(
     private val session: Session,
     private val scope: CoroutineScope,
 ) {
-    private var editedPrefs by mutableStateOf<Prefs?>(null)
     var prefs: Prefs
-        get() = editedPrefs ?: session.user?.prefs ?: Prefs()
+        get() = session.draftPrefs ?: session.user?.prefs ?: Prefs()
         set(value) {
-            editedPrefs = value
+            session.draftPrefs = value
         }
     var dashboards by mutableStateOf(emptyList<String>())
         private set
@@ -65,21 +64,14 @@ class AccountState(
         prefsInfo = null
         scope.attempt({ prefsError = it }) {
             api.putPrefs(prefs)
-            editedPrefs = null
+            session.draftPrefs = null
             prefsInfo = "Preferences saved"
         }
     }
 
-    // Theme and colour show at once, so they save at once on top of the saved prefs; the rest waits for Save
-    fun applyLook(change: (Prefs) -> Prefs) {
-        val saved = session.user ?: return
-        session.user = saved.copy(prefs = change(saved.prefs))
-        editedPrefs = editedPrefs?.let(change)
-        prefsInfo = null
-        scope.attempt({
-            session.user = saved
-            prefsError = it
-        }) { api.putPrefs(change(saved.prefs)) }
+    // Leaving Account without Save drops the edits, and with them the theme and colour preview
+    fun discardPrefs() {
+        session.draftPrefs = null
     }
 
     fun changePassword() {

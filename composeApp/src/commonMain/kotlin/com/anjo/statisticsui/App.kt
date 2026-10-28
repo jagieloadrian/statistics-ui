@@ -22,13 +22,14 @@ fun App() {
     KoinApplication(configuration = koinConfiguration<StatsUIApplication>()) {
         val session = koinInject<Session>()
         val prefs = session.user?.prefs ?: Prefs()
+        val look = session.draftPrefs ?: prefs
         val dark =
-            when (prefs.theme) {
+            when (look.theme) {
                 "light" -> false
                 "dark" -> true
                 else -> isSystemInDarkTheme()
             }
-        val colors = remember(prefs.accent, dark) { accentScheme(prefs.accent, dark) }
+        val colors = remember(look.accent, dark) { accentScheme(look.accent, dark) }
         MaterialTheme(colorScheme = colors) {
             CompositionLocalProvider(LocalPrefs provides prefs) {
                 Surface(color = MaterialTheme.colorScheme.background) {

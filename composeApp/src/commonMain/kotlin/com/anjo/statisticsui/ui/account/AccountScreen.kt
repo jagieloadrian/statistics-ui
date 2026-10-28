@@ -22,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +57,7 @@ private val SWATCH_SIZE = 48.dp
 @Composable
 fun AccountScreen(state: AccountState = rememberAccountState()) {
     LaunchedEffect(Unit) { state.load() }
+    DisposableEffect(Unit) { onDispose(state::discardPrefs) }
     val prefs = state.prefs
 
     Column(
@@ -89,8 +91,8 @@ fun AccountScreen(state: AccountState = rememberAccountState()) {
             state.prefs = prefs.copy(timeZone = it.trim().ifBlank { null })
         }
         Picker("Units", prefs.units, UNITS) { state.prefs = prefs.copy(units = it) }
-        Picker("Theme", prefs.theme, THEMES) { theme -> state.applyLook { it.copy(theme = theme) } }
-        AccentPicker(prefs.accent) { accent -> state.applyLook { it.copy(accent = accent) } }
+        Picker("Theme", prefs.theme, THEMES) { state.prefs = prefs.copy(theme = it) }
+        AccentPicker(prefs.accent) { state.prefs = prefs.copy(accent = it) }
         Picker(
             "Home dashboard",
             prefs.homeDashboard ?: NO_HOME,
@@ -147,7 +149,7 @@ private fun AccentPicker(
         }
     }
     Text(
-        "Theme and colour apply and save right away",
+        "Theme and colour preview right away; Save preferences keeps them",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
