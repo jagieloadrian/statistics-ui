@@ -20,6 +20,7 @@ import com.anjo.statisticsui.model.SourceStatus
 import com.anjo.statisticsui.model.platformJson
 import com.anjo.statisticsui.model.rows
 import com.anjo.statisticsui.model.withRows
+import com.anjo.statisticsui.ui.common.ShownErrors
 import com.anjo.statisticsui.ui.common.attempt
 import com.anjo.statisticsui.validation.FieldErrors
 import com.anjo.statisticsui.validation.jsonError
@@ -102,10 +103,10 @@ internal class SourceFormState(
     var mappingJson by mutableStateOf(encode(initial.mapping))
     var error by mutableStateOf<String?>(null)
         private set
-    private var submitted by mutableStateOf(false)
+    val shown = ShownErrors()
 
     val errors: FieldErrors
-        get() = if (submitted) sourceErrors(source, rate, mappingJson, if (isNew) existingIds else emptyList()) else emptyMap()
+        get() = shown.of(sourceErrors(source, rate, mappingJson, if (isNew) existingIds else emptyList()))
 
     fun edit(change: Source) {
         if (change.mapping != source.mapping) mappingJson = encode(change.mapping)
@@ -143,7 +144,7 @@ internal class SourceFormState(
         onSaved: (Source) -> Unit,
         change: (Source) -> Source,
     ) {
-        submitted = true
+        shown.submit()
         if (errors.isNotEmpty()) return
         val rateLimit = positiveWholeNumber(rate) ?: return
         scope.attempt({ error = it }) {

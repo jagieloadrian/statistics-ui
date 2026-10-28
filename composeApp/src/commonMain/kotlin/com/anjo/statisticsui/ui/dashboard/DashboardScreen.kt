@@ -160,7 +160,9 @@ fun NewDashboardDialog(
         title = { Text("New dashboard") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-                Field("ID", state.id, help = "Letters, digits, - and _", error = state.errors["id"]) { state.id = it }
+                Field("ID", state.id, help = "Letters, digits, - and _", error = state.errors["id"], onBlur = { state.shown.leave("id") }) {
+                    state.id = it
+                }
                 Field("Title", state.title) { state.title = it }
                 ErrorText(state.error)
             }

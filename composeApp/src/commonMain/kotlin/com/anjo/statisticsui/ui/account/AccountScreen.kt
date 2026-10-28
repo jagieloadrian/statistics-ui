@@ -24,6 +24,7 @@ import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.Picker
 import com.anjo.statisticsui.ui.common.ScreenTitle
 import com.anjo.statisticsui.ui.common.SectionTitle
+import com.anjo.statisticsui.ui.common.ShownErrors
 import com.anjo.statisticsui.ui.common.screenPadding
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
@@ -93,11 +94,26 @@ fun AccountScreen(state: AccountState = rememberAccountState()) {
 private fun PasswordForm(state: AccountState) {
     val errors = state.passwordErrors
     SectionTitle("Change password")
-    PasswordField("Current password", state.currentPassword, errors["current"]) { state.currentPassword = it }
-    PasswordField("New password", state.newPassword, errors["new"], help = "At least $MIN_PASSWORD_LENGTH characters") {
+    PasswordField(
+        "Current password",
+        state.currentPassword,
+        errors["current"],
+        state.passwordShown,
+        "current",
+    ) { state.currentPassword = it }
+    PasswordField(
+        "New password",
+        state.newPassword,
+        errors["new"],
+        state.passwordShown,
+        "new",
+        help = "At least $MIN_PASSWORD_LENGTH characters",
+    ) {
         state.newPassword = it
     }
-    PasswordField("Repeat new password", state.repeatedPassword, errors["repeated"]) { state.repeatedPassword = it }
+    PasswordField("Repeat new password", state.repeatedPassword, errors["repeated"], state.passwordShown, "repeated") {
+        state.repeatedPassword = it
+    }
     Button(onClick = state::changePassword) { Text("Change password") }
     state.passwordInfo?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     ErrorText(state.passwordError)
@@ -108,6 +124,8 @@ private fun PasswordField(
     label: String,
     value: String,
     error: String?,
+    shown: ShownErrors,
+    key: String,
     help: String? = null,
     onChange: (String) -> Unit,
 ) {
@@ -118,6 +136,7 @@ private fun PasswordField(
         password = true,
         help = help,
         error = error,
+        onBlur = { shown.leave(key) },
         onChange = onChange,
     )
 }

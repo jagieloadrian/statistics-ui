@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.Role
@@ -44,6 +45,7 @@ import com.anjo.statisticsui.model.Prefs
 import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
+import com.anjo.statisticsui.validation.FieldErrors
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Add
 import com.composables.icons.materialsymbols.rounded.Arrow_back
@@ -132,8 +134,10 @@ fun Field(
     keyboardType: KeyboardType = if (password) KeyboardType.Password else KeyboardType.Text,
     help: String? = null,
     error: String? = null,
+    onBlur: () -> Unit = {},
     onChange: (String) -> Unit,
 ) {
+    var focused by remember { mutableStateOf(false) }
     OutlinedTextField(
         value = value,
         onValueChange = onChange,
@@ -144,8 +148,34 @@ fun Field(
         supportingText = (error ?: help)?.let { { Text(it) } },
         visualTransformation = if (password) PasswordVisualTransformation() else VisualTransformation.None,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        modifier = modifier,
+        modifier =
+            modifier.onFocusChanged {
+                if (focused && !it.isFocused) onBlur()
+                focused = it.isFocused
+            },
     )
+}
+
+// Validation timing: a field's error shows once the field is left, every error once the form is submitted,
+// so nothing turns red while the first value is still being typed
+class ShownErrors {
+    private var submitted by mutableStateOf(false)
+    private var left by mutableStateOf(emptySet<String>())
+
+    fun leave(field: String) {
+        left += field
+    }
+
+    fun submit() {
+        submitted = true
+    }
+
+    fun reset() {
+        submitted = false
+        left = emptySet()
+    }
+
+    fun of(errors: FieldErrors): FieldErrors = if (submitted) errors else errors.filterKeys { it in left }
 }
 
 @Composable
@@ -253,13 +283,14 @@ fun NumberField(
     modifier: Modifier = Modifier,
     help: String? = null,
     error: String? = null,
+    onBlur: () -> Unit = {},
     onChange: (Double?) -> Unit,
 ) {
     fun Double.plain() = if (this % 1.0 == 0.0) toLong().toString() else toString()
     var text by remember { mutableStateOf(value?.plain().orEmpty()) }
     val changedOutside = text.toDoubleOrNull() != value
     if (changedOutside) text = value?.plain().orEmpty()
-    Field(label, text, modifier, keyboardType = KeyboardType.Decimal, help = help, error = error) {
+    Field(label, text, modifier, keyboardType = KeyboardType.Decimal, help = help, error = error, onBlur = onBlur) {
         text = it
         onChange(it.toDoubleOrNull())
     }

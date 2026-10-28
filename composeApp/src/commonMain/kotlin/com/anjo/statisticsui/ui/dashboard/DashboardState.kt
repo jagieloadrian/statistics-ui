@@ -19,6 +19,7 @@ import com.anjo.statisticsui.model.User
 import com.anjo.statisticsui.model.Variable
 import com.anjo.statisticsui.model.VariableValue
 import com.anjo.statisticsui.model.Widget
+import com.anjo.statisticsui.ui.common.ShownErrors
 import com.anjo.statisticsui.ui.common.attempt
 import com.anjo.statisticsui.ui.common.reporting
 import com.anjo.statisticsui.validation.FieldErrors
@@ -104,9 +105,9 @@ class DashboardEditorState(
         private set
     var error by mutableStateOf<String?>(null)
         private set
-    private var submitted by mutableStateOf(false)
+    val shown = ShownErrors()
 
-    val errors: FieldErrors get() = if (submitted) dashboardErrors(dashboard) else emptyMap()
+    val errors: FieldErrors get() = shown.of(dashboardErrors(dashboard))
 
     val referencedDatasets: Set<String>
         get() =
@@ -162,7 +163,7 @@ class DashboardEditorState(
     }
 
     fun save(onSave: suspend (Dashboard) -> Unit) {
-        submitted = true
+        shown.submit()
         if (errors.isNotEmpty()) return
         scope.attempt({ error = it }) { saveSharesThenDashboard(onSave) }
     }
@@ -186,12 +187,12 @@ class NewDashboardState(
     var title by mutableStateOf("")
     var error by mutableStateOf<String?>(null)
         private set
-    private var submitted by mutableStateOf(false)
+    val shown = ShownErrors()
 
-    val errors: FieldErrors get() = if (submitted) newDashboardErrors(id, existingIds) else emptyMap()
+    val errors: FieldErrors get() = shown.of(newDashboardErrors(id, existingIds))
 
     fun create(onCreated: (String) -> Unit) {
-        submitted = true
+        shown.submit()
         if (errors.isNotEmpty()) return
         scope.attempt({ error = it }) {
             val newId = id.trim()

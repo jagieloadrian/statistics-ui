@@ -10,6 +10,7 @@ import com.anjo.statisticsui.api.ApiException
 import com.anjo.statisticsui.api.PlatformApi
 import com.anjo.statisticsui.model.Dataset
 import com.anjo.statisticsui.model.DefinitionSummary
+import com.anjo.statisticsui.ui.common.ShownErrors
 import com.anjo.statisticsui.ui.common.attempt
 import com.anjo.statisticsui.validation.FieldErrors
 import com.anjo.statisticsui.validation.datasetErrors
@@ -78,13 +79,13 @@ class DatasetFormState(
         private set
     var retry by mutableStateOf<Pair<String, suspend () -> Unit>?>(null)
         private set
-    private var submitted by mutableStateOf(false)
+    val shown = ShownErrors()
 
     val errors: FieldErrors
-        get() = if (submitted) datasetErrors(dataset, calculated.map { it.first }, retention, existingIds) else emptyMap()
+        get() = shown.of(datasetErrors(dataset, calculated.map { it.first }, retention, existingIds))
 
     fun save(onSave: suspend (Dataset, Boolean) -> Unit) {
-        submitted = true
+        shown.submit()
         if (errors.isNotEmpty()) return
         val toSave = dataset.copy(calculated = calculated.toMap(), retentionDays = positiveWholeNumber(retention))
         retryOnConflict("Save anyway") { force -> onSave(toSave, force) }

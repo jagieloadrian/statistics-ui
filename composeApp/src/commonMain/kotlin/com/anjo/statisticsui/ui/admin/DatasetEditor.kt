@@ -81,7 +81,9 @@ private fun DatasetForm(
     val errors = form.errors
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Row(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-            Field("ID", dataset.id, enabled = isNew, error = errors["id"]) { form.dataset = dataset.copy(id = it) }
+            Field("ID", dataset.id, enabled = isNew, error = errors["id"], onBlur = { form.shown.leave("id") }) {
+                form.dataset = dataset.copy(id = it)
+            }
             Field("Label", dataset.label.orEmpty()) { form.dataset = dataset.copy(label = it.ifBlank { null }) }
         }
 
@@ -124,6 +126,7 @@ private fun DatasetForm(
             keyboardType = KeyboardType.Number,
             help = "Leave empty to keep records forever",
             error = errors["retention"],
+            onBlur = { form.shown.leave("retention") },
         ) {
             form.retention = it
         }

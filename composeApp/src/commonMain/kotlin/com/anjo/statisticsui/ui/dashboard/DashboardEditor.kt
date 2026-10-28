@@ -116,6 +116,7 @@ private fun DashboardSettings(state: DashboardEditorState) {
             dashboard.refreshSeconds?.toDouble(),
             help = "Leave empty to turn off",
             error = state.errors["refresh"],
+            onBlur = { state.shown.leave("refresh") },
         ) {
             state.dashboard = dashboard.copy(refreshSeconds = it?.toInt())
         }

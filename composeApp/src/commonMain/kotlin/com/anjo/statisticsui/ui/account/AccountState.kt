@@ -10,6 +10,7 @@ import com.anjo.statisticsui.api.PlatformApi
 import com.anjo.statisticsui.auth.Session
 import com.anjo.statisticsui.model.Prefs
 import com.anjo.statisticsui.model.User
+import com.anjo.statisticsui.ui.common.ShownErrors
 import com.anjo.statisticsui.ui.common.attempt
 import com.anjo.statisticsui.ui.common.reporting
 import com.anjo.statisticsui.validation.FieldErrors
@@ -43,10 +44,10 @@ class AccountState(
     var passwordError by mutableStateOf<String?>(null)
         private set
     private var localSignIn by mutableStateOf(true)
-    private var passwordSubmitted by mutableStateOf(false)
+    val passwordShown = ShownErrors()
 
     val passwordErrors: FieldErrors
-        get() = if (passwordSubmitted) passwordChangeErrors(currentPassword, newPassword, repeatedPassword) else emptyMap()
+        get() = passwordShown.of(passwordChangeErrors(currentPassword, newPassword, repeatedPassword))
 
     val user: User? get() = session.user
     val canChangePassword get() = user?.hasPassword != false && localSignIn
@@ -71,11 +72,11 @@ class AccountState(
 
     fun changePassword() {
         passwordInfo = null
-        passwordSubmitted = true
+        passwordShown.submit()
         if (passwordErrors.isNotEmpty()) return
         scope.attempt({ passwordError = it }) {
             api.changePassword(currentPassword, newPassword)
-            passwordSubmitted = false
+            passwordShown.reset()
             currentPassword = ""
             newPassword = ""
             repeatedPassword = ""

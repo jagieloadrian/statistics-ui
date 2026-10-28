@@ -11,6 +11,7 @@ import com.anjo.statisticsui.auth.providerSignIn
 import com.anjo.statisticsui.auth.resumeProviderSignIn
 import com.anjo.statisticsui.model.AuthConfig
 import com.anjo.statisticsui.model.User
+import com.anjo.statisticsui.ui.common.ShownErrors
 import com.anjo.statisticsui.ui.common.attempt
 import com.anjo.statisticsui.ui.common.reporting
 import com.anjo.statisticsui.validation.FieldErrors
@@ -32,9 +33,9 @@ class LoginState(
     var error by mutableStateOf<String?>(null)
         private set
     private var providerJob by mutableStateOf<Job?>(null)
-    private var submitted by mutableStateOf(false)
+    val shown = ShownErrors()
 
-    val errors: FieldErrors get() = if (submitted) loginErrors(email, password) else emptyMap()
+    val errors: FieldErrors get() = shown.of(loginErrors(email, password))
 
     val showsPasswordForm get() = config?.local != false
     val waitsForProvider get() = providerJob != null
@@ -46,7 +47,7 @@ class LoginState(
         }
 
     fun signIn(onSignedIn: (User) -> Unit) {
-        submitted = true
+        shown.submit()
         if (errors.isNotEmpty()) return
         scope.attempt({ error = it }) {
             busy = true

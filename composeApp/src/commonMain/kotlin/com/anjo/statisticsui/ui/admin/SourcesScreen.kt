@@ -95,12 +95,25 @@ private fun SourceForm(
     Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(MEDIUM_PADDING)) {
         Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState())) {
             Row(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-                Field("ID", source.id, Modifier.weight(1f), enabled = form.isNew, error = errors["id"]) { form.edit(source.copy(id = it)) }
+                Field(
+                    "ID",
+                    source.id,
+                    Modifier.weight(1f),
+                    enabled = form.isNew,
+                    error = errors["id"],
+                    onBlur = { form.shown.leave("id") },
+                ) { form.edit(source.copy(id = it)) }
                 Field("Label", source.label.orEmpty(), Modifier.weight(1f)) { form.edit(source.copy(label = it.ifBlank { null })) }
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
                 Picker("Dataset", source.dataset, datasets) { form.edit(source.copy(dataset = it)) }
-                Field("Rate limit per second", form.rate, keyboardType = KeyboardType.Decimal, error = errors["rate"]) { form.rate = it }
+                Field(
+                    "Rate limit per second",
+                    form.rate,
+                    keyboardType = KeyboardType.Decimal,
+                    error = errors["rate"],
+                    onBlur = { form.shown.leave("rate") },
+                ) { form.rate = it }
             }
             ErrorText(errors["dataset"]?.let { "Dataset: $it" })
             Text(
@@ -123,6 +136,7 @@ private fun SourceForm(
                 Modifier.fillMaxWidth().height(220.dp),
                 singleLine = false,
                 error = errors["mapping"],
+                onBlur = { form.shown.leave("mapping") },
             ) { form.mappingJson = it }
             TextButton(onClick = form::applyJson) { Text("Apply JSON") }
 

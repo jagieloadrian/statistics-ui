@@ -49,7 +49,16 @@ fun UsersScreen(
         Column(Modifier.widthIn(max = FORM_WIDTH), verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
             val errors = state.errors
             val field = Modifier.fillMaxWidth()
-            Field("Email", state.email, field, keyboardType = KeyboardType.Email, error = errors["email"]) { state.email = it }
+            Field(
+                "Email",
+                state.email,
+                field,
+                keyboardType = KeyboardType.Email,
+                error = errors["email"],
+                onBlur = { state.shown.leave("email") },
+            ) {
+                state.email = it
+            }
             Field("Name (optional)", state.name, field) { state.name = it }
             Picker("Role", state.role, ROLES) { state.role = it }
             Field(
@@ -59,6 +68,7 @@ fun UsersScreen(
                 password = true,
                 help = "At least $MIN_PASSWORD_LENGTH characters",
                 error = errors["password"],
+                onBlur = { state.shown.leave("password") },
             ) { state.password = it }
             Button(onClick = state::create) { Text("Create user") }
         }

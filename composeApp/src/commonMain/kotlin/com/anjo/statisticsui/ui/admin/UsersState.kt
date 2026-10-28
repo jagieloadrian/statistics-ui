@@ -10,6 +10,7 @@ import com.anjo.statisticsui.api.PlatformApi
 import com.anjo.statisticsui.model.NewUser
 import com.anjo.statisticsui.model.User
 import com.anjo.statisticsui.model.UserUpdate
+import com.anjo.statisticsui.ui.common.ShownErrors
 import com.anjo.statisticsui.ui.common.attempt
 import com.anjo.statisticsui.validation.FieldErrors
 import com.anjo.statisticsui.validation.newUserErrors
@@ -28,18 +29,18 @@ class UsersState(
     var password by mutableStateOf("")
     var error by mutableStateOf<String?>(null)
         private set
-    private var submitted by mutableStateOf(false)
+    val shown = ShownErrors()
 
-    val errors: FieldErrors get() = if (submitted) newUserErrors(email, role, password) else emptyMap()
+    val errors: FieldErrors get() = shown.of(newUserErrors(email, role, password))
 
     fun load() = scope.attempt({ error = it }) { users = api.users() }
 
     fun create() {
-        submitted = true
+        shown.submit()
         if (errors.isNotEmpty()) return
         scope.attempt({ error = it }) {
             api.createUser(NewUser(email.trim(), name.trim(), role, password))
-            submitted = false
+            shown.reset()
             email = ""
             name = ""
             password = ""
