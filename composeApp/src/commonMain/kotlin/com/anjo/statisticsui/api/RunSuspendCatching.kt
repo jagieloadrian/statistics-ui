@@ -7,6 +7,7 @@ suspend fun <T> runSuspendCatching(block: suspend () -> T): Result<T> =
         Result.success(block())
     } catch (e: CancellationException) {
         throw e
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
+        // Throwable, not Exception: Ktor on wasm reports network failures as kotlin.Error
         Result.failure(e)
     }

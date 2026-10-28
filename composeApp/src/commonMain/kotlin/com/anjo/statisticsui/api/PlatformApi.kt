@@ -171,11 +171,7 @@ class PlatformApi(
     suspend fun exportBundle(): JsonElement = request("export")
 
     suspend fun importBundle(bundle: JsonElement): ImportResult {
-        val response =
-            client.request(url("import")) {
-                authorize()
-                json(HttpMethod.Post, bundle)
-            }
+        val response = send("import") { json(HttpMethod.Post, bundle) }
         val result =
             if (response.status.isSuccess() || response.status == HttpStatusCode.BadRequest) {
                 runSuspendCatching { response.body<ImportResult>() }.getOrNull()
@@ -198,15 +194,23 @@ class PlatformApi(
         return ApiException(error?.let { (listOf(it.message) + it.details).joinToString("\n") } ?: "HTTP $status", status.value)
     }
 
-    private suspend inline fun <reified T> request(
+    // Failing to get any response means the server is unreachable (down, offline, CORS), whatever the engine calls it
+    private suspend fun send(
         path: String,
-        block: HttpRequestBuilder.() -> Unit = {},
-    ): T {
-        val response =
+        block: HttpRequestBuilder.() -> Unit,
+    ): HttpResponse =
+        runSuspendCatching {
             client.request(url(path)) {
                 authorize()
                 block()
             }
+        }.getOrElse { throw ApiException("Cannot reach the server. Check your connection and try again.", 0) }
+
+    private suspend inline fun <reified T> request(
+        path: String,
+        noinline block: HttpRequestBuilder.() -> Unit = {},
+    ): T {
+        val response = send(path, block)
         if (!response.status.isSuccess()) throw response.apiException()
         return response.body()
     }
