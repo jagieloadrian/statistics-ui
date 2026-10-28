@@ -7,7 +7,7 @@ spec live in the `StatisticsService` repo (spec 004).
 
 The app calls `http://127.0.0.1:8080/api/v2`. Another backend is a build-time setting, e.g.
 `./gradlew :composeApp:wasmJsBrowserDistribution -PbackendUrl=https://stats.example.com`; an empty value
-(`-PbackendUrl=`) makes the web build call the origin it was loaded from (see Kubernetes).
+(`-PbackendUrl=`) makes the web build call the origin it was loaded from (see Deployment).
 
 Start the backend first (see its README): PostgreSQL, then
 `ADMIN_EMAIL=admin@local ADMIN_PASSWORD='change-me-now' ./gradlew run` in `StatisticsService`.
@@ -20,7 +20,8 @@ Desktop (JVM):
 ./gradlew :composeApp:run
 ```
 
-Tests: `./gradlew :composeApp:jvmTest`.
+Tests: `./gradlew :composeApp:jvmTest` (the common tests run on the JVM). Lint: `./gradlew ktlintCheck`
+(ktlint, official style; `./gradlew ktlintFormat` fixes most findings). `./gradlew check` runs both.
 
 Web: `./gradlew :composeApp:wasmJsBrowserDevelopmentRun` (or `jsBrowserDevelopmentRun`) serves the UI on
 port 8081, the origin the backend allows by default (`CORS_HOSTS=localhost:8081`).
@@ -51,19 +52,52 @@ Admins add other accounts under **Users** with an initial password:
 **Account** sets time zone, units (metric/imperial), theme, home dashboard (opened after sign-in) and the password
 (not shown for provider-only accounts or when password sign-in is off).
 
-## Kubernetes
+## Deployment (homelab)
 
-The web UI runs as an unprivileged nginx image (`Dockerfile`, port 8080) with plain manifests in `.devops/k8s`:
-Deployment and Service `statistics-ui` in the namespace `statistics` (Istio sidecar injection on). The
-`StatisticsService` repo provides the Istio Gateway, strict mTLS and the VirtualService for `stats.example.com`
-that sends `/api/` to the backend and everything else here, so the browser loads the UI and calls the API on one
-origin.
+The web UI ships as `ghcr.io/jagieloadrian/statistics-ui` (`Dockerfile`, nginx-unprivileged with
+`.devops/nginx/nginx.conf`) and follows the homelab platform contract. It is stateless, needs no configuration
+and no secrets: the image holds only the static files, built with `-PbackendUrl=` so the browser calls the API
+on the origin it loaded the UI from.
+
+- **Who calls it:** only the ingress gateway (`home-gateway` in `istio-ingress`, principal
+  `cluster.local/ns/istio-ingress/sa/home-gateway-istio`) through the HTTPRoute for `statistics.home.arpa`.
+- **Whom it calls:** nobody inside the cluster. The browser calls the backend at `http://statistics.home.arpa/api/`,
+  routed by the `statistics-service` HTTPRoute (PathPrefix `/api/`, same host) from the `StatisticsService` repo.
+- **Image:** UID/GID 10001, read-only root filesystem (writes only to `/tmp`), plain HTTP on `0.0.0.0:8080`,
+  `GET /health/live` and `GET /health/ready`, JSON access log on stdout (`timestamp`, `level`, `message`,
+  `logger`, `traceId` from `traceparent`), errors on stderr, graceful stop on SIGQUIT, `.wasm` served as
+  `application/wasm`. linux/amd64 and linux/arm64; the Dockerfile has no `RUN`, so buildx needs no emulation.
+- **Manifests:** `.devops/k8s` (ServiceAccount, Deployment, Service, HTTPRoute, AuthorizationPolicy, namespace
+  `apps`) is the `apps/statistics-ui/` directory for the `homelab` repo; `.devops/flux/image-automation.yaml`
+  holds the ImageRepository and ImagePolicy for `clusters/home/image-automation.yaml`.
+- **CI:** `.github/workflows/build.yml` pushes `main-<yyyyMMddHHmmss>-<sha7>` on main and `<semver>` on `v*` tags,
+  never `latest`; Flux picks up new `main-…` tags through the `$imagepolicy` marker in the Deployment.
+
+Local image build:
 
 ```shell
 ./gradlew :composeApp:wasmJsBrowserDistribution -PbackendUrl=
-docker build -t ghcr.io/jagieloadrian/statistics-ui:latest .
-docker push ghcr.io/jagieloadrian/statistics-ui:latest   # the Release workflow pushes on main and v* tags
-kubectl apply -k .devops/k8s                              # also creates the namespace
+docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/jagieloadrian/statistics-ui:<tag> --push .
+kubectl kustomize .devops/k8s
 ```
 
-Register `https://stats.example.com/` as a redirect URI of the OIDC client at the provider (Authelia).
+Register `http://statistics.home.arpa/` as a redirect URI of the OIDC client at the provider.
+
+### Definition of Ready
+
+Verified locally (multi-arch push to a local registry, container run with `--read-only --tmpfs /tmp
+--user 10001:10001 --cap-drop ALL`, kustomize + kubeconform with the CRD catalog):
+
+- [x] Manifest list has `linux/amd64` and `linux/arm64` (`docker buildx imagetools inspect`)
+- [x] Immutable tag `main-<yyyyMMddHHmmss>-<sha7>` or semver, never `latest` (build.yml)
+- [x] Starts as UID 10001 with a read-only root filesystem
+- [x] `/health/live` and `/health/ready` answer 200 within a second
+- [x] `docker stop` (SIGQUIT) exits 0 in under a second
+- [x] Memory request = limit 32Mi, measured 7.6 MiB with 8 workers (24%); CPU request only
+- [x] No configuration or secrets needed, none in the image
+- [x] Service port `http` with `appProtocol: http`, no TLS in the container
+- [x] ServiceAccount + AuthorizationPolicy admitting only the ingress gateway
+- [x] JSON logs on stdout
+- [x] Stateless, so no PVC, node selector or backup
+- [ ] `docker manifest inspect ghcr.io/jagieloadrian/statistics-ui:<tag>` after the first push from CI
+- [ ] Start time and memory measured on the RPi5 and the Wyse
