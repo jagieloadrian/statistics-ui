@@ -1,6 +1,7 @@
 package com.anjo.statisticsui.ui.admin
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -20,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -58,13 +60,25 @@ fun SourcesScreen(
 ) {
     LaunchedEffect(Unit) { state.reload() }
 
+    Box(Modifier.fillMaxSize()) {
+        SourcesContent(state, navController)
+        SnackbarHost(state.snackbar, Modifier.align(Alignment.BottomCenter))
+    }
+    if (state.bundleOpen) BundleDialog(onDismiss = state::closeBundle)
+}
+
+@Composable
+private fun SourcesContent(
+    state: SourcesState,
+    navController: NavHostController,
+) {
     Column(Modifier.fillMaxSize().padding(screenPadding())) {
         ScreenHeader("Sources", navController) {
             OutlinedButton(onClick = { state.bundleOpen = true }) { Text("Export / import") }
         }
         ErrorText(state.error)
         AdminListDetail(
-            items = state.sources,
+            items = state.listed,
             selectedId = state.selectedId,
             onSelect = state::select,
             onNew = state::startNew,
@@ -79,13 +93,12 @@ fun SourcesScreen(
                             rememberSourceFormState(source, state.isNew, state.sources.map { it.id }),
                             datasets = state.datasets,
                             onSaved = state::onSaved,
-                            onDeleted = state::onDeleted,
+                            onDelete = { state.delete(source.id) },
                         )
                     }
                 },
         )
     }
-    if (state.bundleOpen) BundleDialog(onDismiss = state::closeBundle)
 }
 
 @Composable
@@ -93,7 +106,7 @@ private fun SourceForm(
     form: SourceFormState,
     datasets: List<String>,
     onSaved: (Source) -> Unit,
-    onDeleted: () -> Unit,
+    onDelete: () -> Unit,
 ) {
     val source = form.source
     val errors = form.errors
@@ -141,7 +154,7 @@ private fun SourceForm(
 
             Row(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
                 Button(onClick = { form.save(onSaved) }) { Text("Save source") }
-                if (!form.isNew) ConfirmButton("Delete source", "Click again to delete ${source.id}") { form.delete(onDeleted) }
+                if (!form.isNew) OutlinedButton(onClick = onDelete) { Text("Delete source") }
             }
             ErrorText(form.error)
         }

@@ -1,6 +1,7 @@
 package com.anjo.statisticsui.ui.admin
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,6 +12,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -19,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.anjo.statisticsui.ui.common.ConfirmButton
 import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.Picker
@@ -39,6 +41,17 @@ fun UsersScreen(
 ) {
     LaunchedEffect(Unit) { state.load() }
 
+    Box(Modifier.fillMaxSize()) {
+        UsersContent(state, navController)
+        SnackbarHost(state.snackbar, Modifier.align(Alignment.BottomCenter))
+    }
+}
+
+@Composable
+private fun UsersContent(
+    state: UsersState,
+    navController: NavHostController,
+) {
     Column(
         Modifier.fillMaxSize().padding(screenPadding()).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(SMALL_PADDING),
@@ -75,7 +88,7 @@ fun UsersScreen(
         ErrorText(state.error)
 
         SectionTitle("Accounts")
-        state.users.forEach { user ->
+        state.listed.forEach { user ->
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -84,7 +97,7 @@ fun UsersScreen(
                 Text(user.email, Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface)
                 Text(user.name, Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Picker("Role", user.role, ROLES) { state.changeRole(user, it) }
-                ConfirmButton("Delete", "Click again to delete ${user.email}") { state.delete(user) }
+                OutlinedButton(onClick = { state.delete(user) }) { Text("Delete") }
             }
         }
     }

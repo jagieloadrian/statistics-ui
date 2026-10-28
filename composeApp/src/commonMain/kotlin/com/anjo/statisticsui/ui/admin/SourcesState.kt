@@ -1,5 +1,6 @@
 package com.anjo.statisticsui.ui.admin
 
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
@@ -22,6 +23,7 @@ import com.anjo.statisticsui.model.rows
 import com.anjo.statisticsui.model.withRows
 import com.anjo.statisticsui.ui.common.ShownErrors
 import com.anjo.statisticsui.ui.common.attempt
+import com.anjo.statisticsui.ui.common.deleteWithUndo
 import com.anjo.statisticsui.validation.FieldErrors
 import com.anjo.statisticsui.validation.jsonError
 import com.anjo.statisticsui.validation.positiveWholeNumber
@@ -46,7 +48,10 @@ class SourcesState(
     var bundleOpen by mutableStateOf(false)
     var error by mutableStateOf<String?>(null)
         private set
+    val snackbar = SnackbarHostState()
+    private var deleting by mutableStateOf(emptySet<String>())
 
+    val listed get() = sources.filter { it.id !in deleting }
     val selectedId get() = selected?.id.takeUnless { isNew }
 
     fun reload() =
@@ -82,9 +87,22 @@ class SourcesState(
         reload()
     }
 
-    fun onDeleted() {
-        selected = null
-        reload()
+    fun delete(id: String) {
+        val source = selected
+        close()
+        deleting += id
+        scope.attempt({ error = it }) {
+            try {
+                val deleted = snackbar.deleteWithUndo("Deleted source $id") { api.delete("sources", id) }
+                if (deleted) {
+                    reload()
+                } else if (selected == null) {
+                    selected = source
+                }
+            } finally {
+                deleting -= id
+            }
+        }
     }
 
     fun closeBundle() {
@@ -138,12 +156,6 @@ internal class SourceFormState(
         paused: Boolean,
         onSaved: (Source) -> Unit,
     ) = save(onSaved) { it.copy(paused = paused) }
-
-    fun delete(onDeleted: () -> Unit) =
-        scope.attempt({ error = it }) {
-            api.delete("sources", initial.id)
-            onDeleted()
-        }
 
     private fun save(
         onSaved: (Source) -> Unit,
