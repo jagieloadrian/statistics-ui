@@ -92,7 +92,8 @@ tasks.named<Test>("jvmTest") {
 buildkonfig {
     packageName = "com.anjo.statisticsui"
     defaultConfigs {
-        buildConfigField(STRING, "backendurl", "http://127.0.0.1:8080")
+        // -PbackendUrl= (empty): the web build calls the origin it was served from (container image)
+        buildConfigField(STRING, "backendurl", providers.gradleProperty("backendUrl").getOrElse("http://127.0.0.1:8080"))
     }
 }
 

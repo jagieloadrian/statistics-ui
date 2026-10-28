@@ -5,11 +5,9 @@ spec live in the `StatisticsService` repo (spec 004).
 
 ## Backend URL
 
-The app calls `http://127.0.0.1:8080/api/v2`, set in `composeApp/build.gradle.kts`:
-
-```kotlin
-buildkonfig { defaultConfigs { buildConfigField(STRING, "backendurl", "http://127.0.0.1:8080") } }
-```
+The app calls `http://127.0.0.1:8080/api/v2`. Another backend is a build-time setting, e.g.
+`./gradlew :composeApp:wasmJsBrowserDistribution -PbackendUrl=https://stats.example.com`; an empty value
+(`-PbackendUrl=`) makes the web build call the origin it was loaded from (see Kubernetes).
 
 Start the backend first (see its README): PostgreSQL, then
 `ADMIN_EMAIL=admin@local ADMIN_PASSWORD='change-me-now' ./gradlew run` in `StatisticsService`.
