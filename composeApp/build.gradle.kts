@@ -14,6 +14,11 @@ plugins {
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.koinCompiler)
     alias(libs.plugins.buildKonfig)
+    alias(libs.plugins.ktlint)
+}
+
+ktlint {
+    version = libs.versions.ktlintCli
 }
 
 kotlin {
@@ -43,22 +48,22 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(libs.charty)
-            //compose
+            // compose
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
             implementation(libs.compose.ui)
             implementation(libs.androidx.compose.navigation)
             implementation(libs.compose.material.symbols.rounded)
-            //ktor
+            // ktor
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.ktor.client.logging)
 
-            //kotlin
+            // kotlin
             implementation(libs.kotlinx.date.time)
-            //koin
+            // koin
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.annotations)
             implementation(libs.koin.core)

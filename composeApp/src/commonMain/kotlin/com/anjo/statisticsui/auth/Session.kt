@@ -16,7 +16,10 @@ class Session {
     val isAdmin get() = user?.role == "admin"
     val canEdit get() = user?.role == "admin" || user?.role == "editor"
 
-    fun signIn(token: String, user: User) {
+    fun signIn(
+        token: String,
+        user: User,
+    ) {
         saveToken(token)
         this.token = token
         this.user = user

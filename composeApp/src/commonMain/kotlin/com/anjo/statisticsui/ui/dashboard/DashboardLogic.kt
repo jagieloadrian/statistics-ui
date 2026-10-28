@@ -14,4 +14,10 @@ internal fun layoutRows(widgets: List<Widget>): List<List<Widget>> =
 
 internal fun Widget.span() = w.coerceIn(1, COLUMNS)
 
-internal fun <T> List<T>.swap(i: Int, j: Int) = toMutableList().also { it[i] = this[j]; it[j] = this[i] }
+internal fun <T> List<T>.swap(
+    i: Int,
+    j: Int,
+) = toMutableList().also {
+    it[i] = this[j]
+    it[j] = this[i]
+}

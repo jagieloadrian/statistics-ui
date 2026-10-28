@@ -56,7 +56,11 @@ private const val GAUGE_SWEEP = 240f
 
 /** Renders one widget filling [modifier]; [result] null = loading, failure = error message. */
 @Composable
-fun Widget(widget: Widget, result: Result<QueryResult>?, modifier: Modifier = Modifier) {
+fun Widget(
+    widget: Widget,
+    result: Result<QueryResult>?,
+    modifier: Modifier = Modifier,
+) {
     val data = result?.getOrNull()
     val zone = displayZone()
     val display = unitDisplay(widget.options.unit, LocalPrefs.current.units)
@@ -64,19 +68,45 @@ fun Widget(widget: Widget, result: Result<QueryResult>?, modifier: Modifier = Mo
         Box(Modifier.weight(1f).fillMaxWidth()) {
             val error = result?.exceptionOrNull()
             when {
-                result == null -> CircularProgressIndicator()
-                // the server answers 400 naming an unknown dataset/field, e.g. after a measure was deleted with force
-                (error as? ApiException)?.status == 400 -> Column {
-                    Text("Missing data definition", color = Colors.LIGHT_ORANGE, fontWeight = FontWeight.Bold)
-                    Text(error.message.orEmpty(), color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+                result == null -> {
+                    CircularProgressIndicator()
                 }
-                data == null -> ErrorText(error?.message ?: "Query failed")
-                data.series.all { it.rows.isEmpty() } -> Text("No data in range", color = Color.Gray)
-                widget.type in setOf("line", "area", "bar") -> SeriesChart(data, widget, zone, display)
-                widget.type == "stat" -> StatWidget(data, widget.options, zone, display)
-                widget.type == "gauge" -> GaugeWidget(data, widget.options, display)
-                widget.type == "table" -> TableWidget(data, widget.options, zone)
-                else -> Text("Widget type '${widget.type}' is not supported yet", color = Color.Gray)
+
+                // the server answers 400 naming an unknown dataset/field, e.g. after a measure was deleted with force
+                (error as? ApiException)?.status == 400 -> {
+                    Column {
+                        Text("Missing data definition", color = Colors.LIGHT_ORANGE, fontWeight = FontWeight.Bold)
+                        Text(error.message.orEmpty(), color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+
+                data == null -> {
+                    ErrorText(error?.message ?: "Query failed")
+                }
+
+                data.series.all { it.rows.isEmpty() } -> {
+                    Text("No data in range", color = Color.Gray)
+                }
+
+                widget.type in setOf("line", "area", "bar") -> {
+                    SeriesChart(data, widget, zone, display)
+                }
+
+                widget.type == "stat" -> {
+                    StatWidget(data, widget.options, zone, display)
+                }
+
+                widget.type == "gauge" -> {
+                    GaugeWidget(data, widget.options, display)
+                }
+
+                widget.type == "table" -> {
+                    TableWidget(data, widget.options, zone)
+                }
+
+                else -> {
+                    Text("Widget type '${widget.type}' is not supported yet", color = Color.Gray)
+                }
             }
         }
         data?.bucket?.takeIf { it.isNotBlank() }?.let { Text("Bucket: $it", color = Color.Gray, fontSize = 11.sp) }
@@ -85,7 +115,12 @@ fun Widget(widget: Widget, result: Result<QueryResult>?, modifier: Modifier = Mo
 
 /** `line`, `area` or `bar`; charty's MultilineChart paints every line with one brush, so series are drawn on its scaffold. */
 @Composable
-private fun SeriesChart(result: QueryResult, widget: Widget, zone: TimeZone, display: UnitDisplay) {
+private fun SeriesChart(
+    result: QueryResult,
+    widget: Widget,
+    zone: TimeZone,
+    display: UnitDisplay,
+) {
     val options = widget.options
     val chart = remember(result, options.x, zone, display.unit) { lineChartData(result, options.x ?: "ts", zone, display) }
     if (chart == null) {
@@ -96,20 +131,31 @@ private fun SeriesChart(result: QueryResult, widget: Widget, zone: TimeZone, dis
     val area = widget.type == "area"
     // bars grow from zero, so zero must be on the axis
     val min = options.min?.let { display.convert(it).toFloat() } ?: if (bar) minOf(chart.min, 0f) else chart.min
-    val max = (options.max?.let { display.convert(it).toFloat() } ?: if (bar) maxOf(chart.max, 0f) else chart.max).let { if (it <= min) min + 1 else it }
-    val colors = chart.lines.mapIndexed { i, line ->
-        (options.colors[line.column] ?: options.colors[line.name])?.let(::parseColor) ?: PALETTE[i % PALETTE.size]
-    }
+    val max =
+        (options.max?.let { display.convert(it).toFloat() } ?: if (bar) maxOf(chart.max, 0f) else chart.max).let {
+            if (it <=
+                min
+            ) {
+                min + 1
+            } else {
+                it
+            }
+        }
+    val colors =
+        chart.lines.mapIndexed { i, line ->
+            (options.colors[line.column] ?: options.colors[line.name])?.let(::parseColor) ?: PALETTE[i % PALETTE.size]
+        }
     Column(Modifier.fillMaxSize()) {
         ChartScaffold(
             modifier = Modifier.fillMaxWidth().weight(1f),
             xLabels = chart.labels,
             yAxisConfig = AxisConfig(minValue = min, maxValue = max, drawAxisAtZero = false),
-            config = ChartScaffoldConfig(
-                axisColor = ChartyColor.Solid(Color.Gray),
-                gridColor = ChartyColor.Solid(Color.Gray.copy(alpha = 0.2f)),
-                labelTextStyle = TextStyle(color = Color.LightGray, fontSize = 10.sp),
-            ),
+            config =
+                ChartScaffoldConfig(
+                    axisColor = ChartyColor.Solid(Color.Gray),
+                    gridColor = ChartyColor.Solid(Color.Gray.copy(alpha = 0.2f)),
+                    labelTextStyle = TextStyle(color = Color.LightGray, fontSize = 10.sp),
+                ),
         ) { ctx ->
             val slot = ctx.width / chart.labels.size
             val barWidth = slot * 0.8f / chart.lines.size
@@ -143,7 +189,12 @@ private fun SeriesChart(result: QueryResult, widget: Widget, zone: TimeZone, dis
 }
 
 @Composable
-private fun StatWidget(result: QueryResult, options: WidgetOptions, zone: TimeZone, display: UnitDisplay) {
+private fun StatWidget(
+    result: QueryResult,
+    options: WidgetOptions,
+    zone: TimeZone,
+    display: UnitDisplay,
+) {
     val values = remember(result) { statValues(result) }
     FlowRow(horizontalArrangement = Arrangement.spacedBy(MEDIUM_PADDING), verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
         values.forEach { (label, value) ->
@@ -153,7 +204,7 @@ private fun StatWidget(result: QueryResult, options: WidgetOptions, zone: TimeZo
                     number?.let { formatValue(it, options, display) } ?: value.format(zone = zone),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color = number?.let { thresholdColor(it, options.thresholds) } ?: MaterialTheme.colorScheme.onSurface
+                    color = number?.let { thresholdColor(it, options.thresholds) } ?: MaterialTheme.colorScheme.onSurface,
                 )
                 Text(label, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
             }
@@ -163,11 +214,16 @@ private fun StatWidget(result: QueryResult, options: WidgetOptions, zone: TimeZo
 
 /** 240° arc per numeric value between `options.min`/`max` (default 0–100); thresholds tint the track and the value. */
 @Composable
-private fun GaugeWidget(result: QueryResult, options: WidgetOptions, display: UnitDisplay) {
+private fun GaugeWidget(
+    result: QueryResult,
+    options: WidgetOptions,
+    display: UnitDisplay,
+) {
     val values = remember(result) { statValues(result).mapNotNull { (label, v) -> v.number()?.let { label to it } } }
     val min = options.min ?: 0.0
     val max = (options.max ?: 100.0).let { if (it <= min) min + 1 else it }
     val thresholds = options.thresholds.sortedBy { it.value }
+
     fun sweep(v: Double) = ((v - min) / (max - min)).coerceIn(0.0, 1.0).toFloat() * GAUGE_SWEEP
     FlowRow(horizontalArrangement = Arrangement.spacedBy(MEDIUM_PADDING)) {
         values.forEach { (label, v) ->
@@ -182,13 +238,25 @@ private fun GaugeWidget(result: QueryResult, options: WidgetOptions, display: Un
                         thresholds.forEachIndexed { i, t ->
                             val end = thresholds.getOrNull(i + 1)?.value ?: max
                             parseColor(t.color)?.let { c ->
-                                drawArc(c.copy(alpha = 0.35f), GAUGE_START + sweep(t.value), sweep(end) - sweep(t.value), false,
-                                    topLeft, arcSize, style = Stroke(width))
+                                drawArc(
+                                    c.copy(alpha = 0.35f),
+                                    GAUGE_START + sweep(t.value),
+                                    sweep(end) - sweep(t.value),
+                                    false,
+                                    topLeft,
+                                    arcSize,
+                                    style = Stroke(width),
+                                )
                             }
                         }
                         drawArc(color, GAUGE_START, sweep(v), false, topLeft, arcSize, style = Stroke(width, cap = StrokeCap.Round))
                     }
-                    Text(formatValue(v, options, display), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Text(
+                        formatValue(v, options, display),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
                 }
                 Text(label, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
             }
@@ -197,16 +265,23 @@ private fun GaugeWidget(result: QueryResult, options: WidgetOptions, display: Un
 }
 
 @Composable
-private fun TableWidget(result: QueryResult, options: WidgetOptions, zone: TimeZone) {
-    val (header, rows) = remember(result, options.decimals, zone) {
-        val dims = result.series.flatMap { it.dims.keys }.distinct()
-        val columns = result.series.flatMap { it.columns }.distinct()
-        dims + columns to result.series.flatMap { s ->
-            s.rows.map { r ->
-                dims.map { s.dims[it].orEmpty() } + columns.map { c -> r.getOrNull(s.columns.indexOf(c))?.format(options.decimals, zone).orEmpty() }
-            }
+private fun TableWidget(
+    result: QueryResult,
+    options: WidgetOptions,
+    zone: TimeZone,
+) {
+    val (header, rows) =
+        remember(result, options.decimals, zone) {
+            val dims = result.series.flatMap { it.dims.keys }.distinct()
+            val columns = result.series.flatMap { it.columns }.distinct()
+            dims + columns to
+                result.series.flatMap { s ->
+                    s.rows.map { r ->
+                        dims.map { s.dims[it].orEmpty() } +
+                            columns.map { c -> r.getOrNull(s.columns.indexOf(c))?.format(options.decimals, zone).orEmpty() }
+                    }
+                }
         }
-    }
     Column(Modifier.verticalScroll(rememberScrollState())) {
         TableRow(header, header = true)
         HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f))
@@ -217,7 +292,10 @@ private fun TableWidget(result: QueryResult, options: WidgetOptions, zone: TimeZ
 }
 
 @Composable
-private fun TableRow(cells: List<String>, header: Boolean = false) {
+private fun TableRow(
+    cells: List<String>,
+    header: Boolean = false,
+) {
     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         cells.forEach {
             Text(

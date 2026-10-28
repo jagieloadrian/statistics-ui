@@ -67,16 +67,20 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 /** Source states from data-model.md (source status state machine). */
-private val STATE_COLORS = mapOf(
-    "receiving" to Color(0xFF4CAF50),
-    "waiting-for-data" to Color.Gray,
-    "silent" to Colors.LIGHT_ORANGE,
-    "paused" to Color(0xFF90A4AE),
-    "erroring" to Colors.LIGHT_RED,
-)
+private val STATE_COLORS =
+    mapOf(
+        "receiving" to Color(0xFF4CAF50),
+        "waiting-for-data" to Color.Gray,
+        "silent" to Colors.LIGHT_ORANGE,
+        "paused" to Color(0xFF90A4AE),
+        "erroring" to Colors.LIGHT_RED,
+    )
 
 @Composable
-fun SourcesScreen(navController: NavHostController, api: PlatformApi = koinInject()) {
+fun SourcesScreen(
+    navController: NavHostController,
+    api: PlatformApi = koinInject(),
+) {
     var sources by remember { mutableStateOf(emptyList<DefinitionSummary>()) }
     var datasets by remember { mutableStateOf(emptyList<String>()) }
     val states = remember { mutableStateMapOf<String, String>() }
@@ -103,9 +107,17 @@ fun SourcesScreen(navController: NavHostController, api: PlatformApi = koinInjec
             AdminList(
                 items = sources,
                 selectedId = selected?.id.takeUnless { isNew },
-                onSelect = { id -> scope.attempt({ error = it }) { selected = api.source(id); isNew = false } },
-                onNew = { selected = Source(id = "", dataset = datasets.firstOrNull().orEmpty()); isNew = true },
-                badge = { id -> states[id]?.let { StateChip(it) } }
+                onSelect = { id ->
+                    scope.attempt({ error = it }) {
+                        selected = api.source(id)
+                        isNew = false
+                    }
+                },
+                onNew = {
+                    selected = Source(id = "", dataset = datasets.firstOrNull().orEmpty())
+                    isNew = true
+                },
+                badge = { id -> states[id]?.let { StateChip(it) } },
             )
             selected?.let { source ->
                 SourceForm(
@@ -114,18 +126,37 @@ fun SourcesScreen(navController: NavHostController, api: PlatformApi = koinInjec
                     existingIds = sources.map { it.id },
                     datasets = datasets,
                     api = api,
-                    onSaved = { selected = it; isNew = false; reload() },
-                    onDeleted = { selected = null; reload() }
+                    onSaved = {
+                        selected = it
+                        isNew = false
+                        reload()
+                    },
+                    onDeleted = {
+                        selected = null
+                        reload()
+                    },
                 )
             }
         }
     }
-    if (bundleOpen) BundleDialog(api) { bundleOpen = false; reload() }
+    if (bundleOpen) {
+        BundleDialog(api) {
+            bundleOpen = false
+            reload()
+        }
+    }
 }
 
 @Composable
-private fun SourceForm(initial: Source, isNew: Boolean, existingIds: List<String>, datasets: List<String>, api: PlatformApi,
-                       onSaved: (Source) -> Unit, onDeleted: () -> Unit) {
+private fun SourceForm(
+    initial: Source,
+    isNew: Boolean,
+    existingIds: List<String>,
+    datasets: List<String>,
+    api: PlatformApi,
+    onSaved: (Source) -> Unit,
+    onDeleted: () -> Unit,
+) {
     var source by remember(initial) { mutableStateOf(initial) }
     var rows by remember(initial) { mutableStateOf(initial.mapping.firstOrNull().rows()) }
     var rate by remember(initial) { mutableStateOf(initial.rateLimitPerSecond.toString()) }
@@ -135,10 +166,12 @@ private fun SourceForm(initial: Source, isNew: Boolean, existingIds: List<String
     val scope = rememberCoroutineScope()
 
     fun mapping(): List<Rule> = platformJson.decodeFromString(mappingJson)
-    fun current() = source.copy(
-        mapping = mapping(),
-        rateLimitPerSecond = rate.trim().toIntOrNull() ?: throw IllegalArgumentException("Rate limit must be a whole number"),
-    )
+
+    fun current() =
+        source.copy(
+            mapping = mapping(),
+            rateLimitPerSecond = rate.trim().toIntOrNull() ?: throw IllegalArgumentException("Rate limit must be a whole number"),
+        )
     val save = { s: () -> Source ->
         scope.attempt({ error = it }) {
             val saved = s()
@@ -162,8 +195,15 @@ private fun SourceForm(initial: Source, isNew: Boolean, existingIds: List<String
             }
             Text("Push address: /api/v2/ingest/${source.id}", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
 
-            ListEditor("Mapping (first rule)", rows, { rows = it; source = source.copy(mapping = source.mapping.withRows(it)) },
-                { MapRow() }) { r, set ->
+            ListEditor(
+                "Mapping (first rule)",
+                rows,
+                {
+                    rows = it
+                    source = source.copy(mapping = source.mapping.withRows(it))
+                },
+                { MapRow() },
+            ) { r, set ->
                 Field("Target", r.target, Modifier.weight(1f)) { set(r.copy(target = it)) }
                 Field("Path", r.path, Modifier.weight(1.5f)) { set(r.copy(path = it)) }
                 Checkbox(r.dim, { set(r.copy(dim = it)) })
@@ -176,31 +216,56 @@ private fun SourceForm(initial: Source, isNew: Boolean, existingIds: List<String
                 }
             }
 
-            Text("Advanced: full mapping JSON", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING))
+            Text(
+                "Advanced: full mapping JSON",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING),
+            )
             Field("Mapping", mappingJson, Modifier.fillMaxWidth().height(220.dp), singleLine = false) { mappingJson = it }
             TextButton(onClick = {
-                scope.attempt({ error = it }) { mapping().let { m -> source = source.copy(mapping = m); rows = m.firstOrNull().rows() } }
+                scope.attempt({ error = it }) {
+                    mapping().let { m ->
+                        source = source.copy(mapping = m)
+                        rows = m.firstOrNull().rows()
+                    }
+                }
             }) { Text("Apply JSON") }
 
             Row(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
                 Button(onClick = { save { current() } }) { Text("Save") }
-                if (!isNew) ConfirmButton("Delete", "Click again to delete") {
-                    scope.attempt({ error = it }) { api.delete("sources", initial.id); onDeleted() }
+                if (!isNew) {
+                    ConfirmButton("Delete", "Click again to delete") {
+                        scope.attempt({ error = it }) {
+                            api.delete("sources", initial.id)
+                            onDeleted()
+                        }
+                    }
                 }
             }
             ErrorText(error)
         }
         if (!isNew) {
-            SourceOps(initial, api, mapping = ::mapping, onPause = { paused -> save { current().copy(paused = paused) } },
-                modifier = Modifier.weight(1f))
+            SourceOps(
+                initial,
+                api,
+                mapping = ::mapping,
+                onPause = { paused -> save { current().copy(paused = paused) } },
+                modifier = Modifier.weight(1f),
+            )
         }
     }
 }
 
 /** Status panel, pause/resume, credential rotation and mapping test for a saved source. */
 @Composable
-private fun SourceOps(source: Source, api: PlatformApi, mapping: () -> List<Rule>, onPause: (Boolean) -> Unit, modifier: Modifier) {
+private fun SourceOps(
+    source: Source,
+    api: PlatformApi,
+    mapping: () -> List<Rule>,
+    onPause: (Boolean) -> Unit,
+    modifier: Modifier,
+) {
     var status by remember(source) { mutableStateOf<SourceStatus?>(null) }
     var token by remember(source.id) { mutableStateOf<String?>(null) }
     var sample by remember(source.id) { mutableStateOf("") }
@@ -212,7 +277,12 @@ private fun SourceOps(source: Source, api: PlatformApi, mapping: () -> List<Rule
 
     Column(modifier.fillMaxHeight().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-            Text("Status", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+            Text(
+                "Status",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
             Text("Paused", color = Color.Gray)
             Switch(checked = source.paused, onCheckedChange = onPause)
             IconButton(onClick = { refresh() }) { Icon(MaterialSymbols.Rounded.Refresh, contentDescription = "Refresh", tint = Color.Gray) }
@@ -246,7 +316,15 @@ private fun SourceOps(source: Source, api: PlatformApi, mapping: () -> List<Rule
         }) { Text("Test mapping") }
         test?.let { t ->
             Text("${t.records.size} record(s)", color = Color.LightGray)
-            t.records.forEach { SelectionContainer { Text(it.toString(), color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodySmall) } }
+            t.records.forEach {
+                SelectionContainer {
+                    Text(
+                        it.toString(),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
             t.errors.forEach { Text(it, color = MaterialTheme.colorScheme.error) }
         }
         ErrorText(error)
@@ -255,7 +333,10 @@ private fun SourceOps(source: Source, api: PlatformApi, mapping: () -> List<Rule
 
 /** Export shows the whole bundle as copyable JSON; import posts pasted JSON and shows `{created, updated, errors}`. */
 @Composable
-private fun BundleDialog(api: PlatformApi, onDismiss: () -> Unit) {
+private fun BundleDialog(
+    api: PlatformApi,
+    onDismiss: () -> Unit,
+) {
     var text by remember { mutableStateOf("") }
     var result by remember { mutableStateOf<ImportResult?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -268,9 +349,12 @@ private fun BundleDialog(api: PlatformApi, onDismiss: () -> Unit) {
                 Field("Bundle JSON", text, Modifier.fillMaxWidth().height(360.dp), singleLine = false) { text = it }
                 result?.let { r ->
                     Text(
-                        if (r.errors.isEmpty()) "Imported: ${r.created} created, ${r.updated} updated"
-                        else "Nothing imported (${r.errors.size} errors):",
-                        color = Color.LightGray
+                        if (r.errors.isEmpty()) {
+                            "Imported: ${r.created} created, ${r.updated} updated"
+                        } else {
+                            "Nothing imported (${r.errors.size} errors):"
+                        },
+                        color = Color.LightGray,
                     )
                     r.errors.forEach { Text(it, color = MaterialTheme.colorScheme.error) }
                 }
@@ -280,14 +364,17 @@ private fun BundleDialog(api: PlatformApi, onDismiss: () -> Unit) {
         confirmButton = {
             Row(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
                 OutlinedButton(onClick = {
-                    scope.attempt({ error = it }) { result = null; text = platformJson.encodeToString(api.exportBundle()) }
+                    scope.attempt({ error = it }) {
+                        result = null
+                        text = platformJson.encodeToString(api.exportBundle())
+                    }
                 }) { Text("Export") }
                 Button(enabled = text.isNotBlank(), onClick = {
                     scope.attempt({ error = it }) { result = api.importBundle(platformJson.parseToJsonElement(text)) }
                 }) { Text("Import") }
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } },
     )
 }
 
@@ -295,7 +382,11 @@ private fun BundleDialog(api: PlatformApi, onDismiss: () -> Unit) {
 private fun StateChip(state: String) {
     val color = STATE_COLORS[state] ?: Color.Gray
     Surface(shape = RoundedCornerShape(SMALL_PADDING), color = color.copy(alpha = 0.2f)) {
-        Text(state, color = color, style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.padding(horizontal = SMALL_PADDING, vertical = 2.dp))
+        Text(
+            state,
+            color = color,
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.padding(horizontal = SMALL_PADDING, vertical = 2.dp),
+        )
     }
 }

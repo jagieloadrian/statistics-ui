@@ -42,7 +42,10 @@ import org.koin.compose.koinInject
  * Wrong credentials get the server's one generic message; more than 5 tries a minute answer 429.
  */
 @Composable
-fun LoginScreen(onSignedIn: (User) -> Unit, api: PlatformApi = koinInject()) {
+fun LoginScreen(
+    onSignedIn: (User) -> Unit,
+    api: PlatformApi = koinInject(),
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
@@ -60,8 +63,12 @@ fun LoginScreen(onSignedIn: (User) -> Unit, api: PlatformApi = koinInject()) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
             Column(Modifier.padding(LARGE_MEDIUM_PADDING).width(360.dp), verticalArrangement = Arrangement.spacedBy(SMALL_MEDIUM_PADDING)) {
-                Text("StatsFlow", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary)
+                Text(
+                    "StatsFlow",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
                 Text("Sign in", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                 if (config?.local != false) {
                     Field("Email", email, Modifier.fillMaxWidth()) { email = it }
@@ -78,7 +85,7 @@ fun LoginScreen(onSignedIn: (User) -> Unit, api: PlatformApi = koinInject()) {
                             }
                         },
                         enabled = !busy && email.isNotBlank() && password.isNotEmpty(),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) { Text("Sign in") }
                 }
                 config?.oidc?.let { provider ->
@@ -86,15 +93,18 @@ fun LoginScreen(onSignedIn: (User) -> Unit, api: PlatformApi = koinInject()) {
                         // desktop waits for the system browser; web is leaving the page
                         Text("Waiting for the browser…", color = MaterialTheme.colorScheme.onSurface)
                         OutlinedButton(onClick = { providerJob?.cancel() }, modifier = Modifier.fillMaxWidth()) { Text("Cancel") }
-                    } else OutlinedButton(
-                        onClick = {
-                            scope.attempt({ error = it }) { providerSignIn(api)?.let(onSignedIn) }
-                                .also { providerJob = it }
-                                .invokeOnCompletion { providerJob = null }
-                        },
-                        enabled = !busy,
-                        modifier = Modifier.fillMaxWidth()
-                    ) { Text("Sign in with ${provider.name}") }
+                    } else {
+                        OutlinedButton(
+                            onClick = {
+                                scope
+                                    .attempt({ error = it }) { providerSignIn(api)?.let(onSignedIn) }
+                                    .also { providerJob = it }
+                                    .invokeOnCompletion { providerJob = null }
+                            },
+                            enabled = !busy,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text("Sign in with ${provider.name}") }
+                    }
                 }
                 ErrorText(error)
             }

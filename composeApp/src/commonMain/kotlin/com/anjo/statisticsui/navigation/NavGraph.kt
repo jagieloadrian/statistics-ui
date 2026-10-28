@@ -32,7 +32,9 @@ fun NavGraph(
     api: PlatformApi = koinInject(),
 ) {
     val scope = rememberCoroutineScope()
+
     fun reset(route: String) = navController.navigate(route) { popUpTo(navController.graph.id) { inclusive = true } }
+
     fun goHome(user: User) {
         reset(Screen.Main.route)
         user.prefs.homeDashboard?.let { navController.navigate(Screen.DashboardView.route(it)) }
@@ -48,7 +50,7 @@ fun NavGraph(
         navController = navController,
         startDestination = Screen.Splash.route,
         enterTransition = { fadeIn() + slideInHorizontally() },
-        exitTransition = { fadeOut() + slideOutHorizontally() }
+        exitTransition = { fadeOut() + slideOutHorizontally() },
     ) {
         composable(Screen.Splash.route) {
             SplashScreen {

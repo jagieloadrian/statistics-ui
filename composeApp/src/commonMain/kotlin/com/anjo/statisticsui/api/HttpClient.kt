@@ -10,22 +10,22 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import org.koin.core.annotation.Singleton
 
-
 /** Engine from the platform: CIO on desktop (jvmMain dependency), the browser's fetch on web. */
 @Singleton
-fun createHttpClient(): HttpClient {
-    return HttpClient {
+fun createHttpClient(): HttpClient =
+    HttpClient {
         install(ContentNegotiation) {
-            json(Json {
-                encodeDefaults = true
-                isLenient = true
-                coerceInputValues = true
-                ignoreUnknownKeys = true
-            })
+            json(
+                Json {
+                    encodeDefaults = true
+                    isLenient = true
+                    coerceInputValues = true
+                    ignoreUnknownKeys = true
+                },
+            )
         }
         install(Logging) {
             logger = Logger.DEFAULT
             level = LogLevel.INFO
         }
     }
-}

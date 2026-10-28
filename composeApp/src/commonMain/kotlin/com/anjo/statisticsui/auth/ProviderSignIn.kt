@@ -5,7 +5,11 @@ import com.anjo.statisticsui.model.User
 import io.ktor.http.parseQueryString
 
 /** The provider's redirect back to the app: [code] + [state] on success, [error] (its description if given) otherwise. */
-data class Callback(val code: String?, val state: String?, val error: String?)
+data class Callback(
+    val code: String?,
+    val state: String?,
+    val error: String?,
+)
 
 /** Null when [query] (with or without the leading `?`) carries neither `code` nor `error`. */
 fun parseCallback(query: String): Callback? {

@@ -40,7 +40,11 @@ import com.composables.icons.materialsymbols.rounded.Delete
 val LocalPrefs = compositionLocalOf { Prefs() }
 
 @Composable
-fun ScreenHeader(title: String, navController: NavHostController, actions: @Composable () -> Unit = {}) {
+fun ScreenHeader(
+    title: String,
+    navController: NavHostController,
+    actions: @Composable () -> Unit = {},
+) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = { navController.popBackStack() }) {
             Icon(MaterialSymbols.Rounded.Arrow_back, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
@@ -50,7 +54,7 @@ fun ScreenHeader(title: String, navController: NavHostController, actions: @Comp
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
         )
         actions()
     }
@@ -64,8 +68,15 @@ fun ErrorText(error: String?) {
 }
 
 @Composable
-fun Field(label: String, value: String, modifier: Modifier = Modifier, enabled: Boolean = true, singleLine: Boolean = true,
-          password: Boolean = false, onChange: (String) -> Unit) {
+fun Field(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    singleLine: Boolean = true,
+    password: Boolean = false,
+    onChange: (String) -> Unit,
+) {
     OutlinedTextField(
         value = value,
         onValueChange = onChange,
@@ -73,26 +84,41 @@ fun Field(label: String, value: String, modifier: Modifier = Modifier, enabled: 
         enabled = enabled,
         singleLine = singleLine,
         visualTransformation = if (password) PasswordVisualTransformation() else VisualTransformation.None,
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
 /** Destructive action: first click arms the button and shows [confirmText], the second runs [onConfirm]. */
 @Composable
-fun ConfirmButton(text: String, confirmText: String, onConfirm: () -> Unit) {
+fun ConfirmButton(
+    text: String,
+    confirmText: String,
+    onConfirm: () -> Unit,
+) {
     var armed by remember { mutableStateOf(false) }
-    OutlinedButton(onClick = { if (armed) onConfirm(); armed = !armed }) { Text(if (armed) confirmText else text) }
+    OutlinedButton(onClick = {
+        if (armed) onConfirm()
+        armed = !armed
+    }) { Text(if (armed) confirmText else text) }
 }
 
 /** Button showing [value]; opens a menu of [options]. */
 @Composable
-fun Picker(value: String, options: List<String>, modifier: Modifier = Modifier, onSelect: (String) -> Unit) {
+fun Picker(
+    value: String,
+    options: List<String>,
+    modifier: Modifier = Modifier,
+    onSelect: (String) -> Unit,
+) {
     var open by remember { mutableStateOf(false) }
     Box(modifier) {
         OutlinedButton(onClick = { open = true }) { Text(value.ifBlank { "Choose…" }) }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             options.forEach { option ->
-                DropdownMenuItem(text = { Text(option) }, onClick = { open = false; onSelect(option) })
+                DropdownMenuItem(text = { Text(option) }, onClick = {
+                    open = false
+                    onSelect(option)
+                })
             }
         }
     }
@@ -100,13 +126,25 @@ fun Picker(value: String, options: List<String>, modifier: Modifier = Modifier, 
 
 /** Editable rows of [items] with remove buttons and an "Add" button; [row] edits one item. */
 @Composable
-fun <T> ListEditor(title: String, items: List<T>, onChange: (List<T>) -> Unit, new: () -> T,
-                   row: @Composable RowScope.(T, (T) -> Unit) -> Unit) {
-    Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING))
+fun <T> ListEditor(
+    title: String,
+    items: List<T>,
+    onChange: (List<T>) -> Unit,
+    new: () -> T,
+    row: @Composable RowScope.(T, (T) -> Unit) -> Unit,
+) {
+    Text(
+        title,
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING),
+    )
     items.forEachIndexed { i, item ->
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
+        ) {
             row(item) { changed -> onChange(items.mapIndexed { j, old -> if (j == i) changed else old }) }
             IconButton(onClick = { onChange(items.filterIndexed { j, _ -> j != i }) }) {
                 Icon(MaterialSymbols.Rounded.Delete, contentDescription = "Remove", tint = Color.Gray)
@@ -121,9 +159,17 @@ fun <T> ListEditor(title: String, items: List<T>, onChange: (List<T>) -> Unit, n
 
 /** Text field for an optional number; keeps half-typed text such as `1.` or `-` until it parses. */
 @Composable
-fun NumberField(label: String, value: Double?, modifier: Modifier = Modifier, onChange: (Double?) -> Unit) {
+fun NumberField(
+    label: String,
+    value: Double?,
+    modifier: Modifier = Modifier,
+    onChange: (Double?) -> Unit,
+) {
     fun Double.plain() = if (this % 1.0 == 0.0) toLong().toString() else toString()
     var text by remember { mutableStateOf(value?.plain().orEmpty()) }
     if (text.toDoubleOrNull() != value) text = value?.plain().orEmpty() // changed from outside
-    Field(label, text, modifier) { text = it; onChange(it.toDoubleOrNull()) }
+    Field(label, text, modifier) {
+        text = it
+        onChange(it.toDoubleOrNull())
+    }
 }

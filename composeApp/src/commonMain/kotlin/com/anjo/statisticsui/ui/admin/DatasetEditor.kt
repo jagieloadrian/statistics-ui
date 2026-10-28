@@ -49,7 +49,10 @@ import org.koin.compose.koinInject
 private val MEASURE_TYPES = listOf("number", "boolean", "text")
 
 @Composable
-fun DatasetsScreen(navController: NavHostController, api: PlatformApi = koinInject()) {
+fun DatasetsScreen(
+    navController: NavHostController,
+    api: PlatformApi = koinInject(),
+) {
     var datasets by remember { mutableStateOf(emptyList<DefinitionSummary>()) }
     var selected by remember { mutableStateOf<Dataset?>(null) }
     var isNew by remember { mutableStateOf(false) }
@@ -65,8 +68,16 @@ fun DatasetsScreen(navController: NavHostController, api: PlatformApi = koinInje
             AdminList(
                 items = datasets,
                 selectedId = selected?.id.takeUnless { isNew },
-                onSelect = { id -> scope.attempt({ error = it }) { selected = api.dataset(id); isNew = false } },
-                onNew = { selected = Dataset(id = ""); isNew = true }
+                onSelect = { id ->
+                    scope.attempt({ error = it }) {
+                        selected = api.dataset(id)
+                        isNew = false
+                    }
+                },
+                onNew = {
+                    selected = Dataset(id = "")
+                    isNew = true
+                },
             )
             selected?.let { dataset ->
                 DatasetForm(
@@ -75,9 +86,16 @@ fun DatasetsScreen(navController: NavHostController, api: PlatformApi = koinInje
                     onSave = { saved, force ->
                         // PUT is an upsert: a "new" dataset must not silently replace an existing one
                         require(!isNew || datasets.none { d -> d.id == saved.id }) { "Dataset '${saved.id}' already exists" }
-                        api.putDataset(saved, force); selected = saved; isNew = false; reload()
+                        api.putDataset(saved, force)
+                        selected = saved
+                        isNew = false
+                        reload()
                     },
-                    onDelete = { force -> api.delete("datasets", dataset.id, force); selected = null; reload() }
+                    onDelete = { force ->
+                        api.delete("datasets", dataset.id, force)
+                        selected = null
+                        reload()
+                    },
                 )
             }
         }
@@ -85,8 +103,12 @@ fun DatasetsScreen(navController: NavHostController, api: PlatformApi = koinInje
 }
 
 @Composable
-private fun DatasetForm(initial: Dataset, isNew: Boolean, onSave: suspend (Dataset, Boolean) -> Unit,
-                        onDelete: suspend (Boolean) -> Unit) {
+private fun DatasetForm(
+    initial: Dataset,
+    isNew: Boolean,
+    onSave: suspend (Dataset, Boolean) -> Unit,
+    onDelete: suspend (Boolean) -> Unit,
+) {
     var dataset by remember(initial) { mutableStateOf(initial) }
     // ponytail: calculated kept as pairs while editing so renaming a key never merges two rows
     var calculated by remember(initial) { mutableStateOf(initial.calculated.toList()) }
@@ -96,7 +118,10 @@ private fun DatasetForm(initial: Dataset, isNew: Boolean, onSave: suspend (Datas
     val scope = rememberCoroutineScope()
 
     /** Runs [action]; a 409 (dataset still referenced, refs in the error) offers [anyway] = the same with `force`. */
-    fun guarded(anyway: String, action: suspend (force: Boolean) -> Unit) = scope.attempt({ error = it }) {
+    fun guarded(
+        anyway: String,
+        action: suspend (force: Boolean) -> Unit,
+    ) = scope.attempt({ error = it }) {
         retry = null
         try {
             action(false)
@@ -134,16 +159,28 @@ private fun DatasetForm(initial: Dataset, isNew: Boolean, onSave: suspend (Datas
         Row(Modifier.padding(top = SMALL_MEDIUM_PADDING), horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
             Button(onClick = {
                 guarded("Save anyway") { force ->
-                    val days = if (retention.isBlank()) null else retention.trim().toIntOrNull()
-                        ?: throw IllegalArgumentException("Retention days must be a whole number")
+                    val days =
+                        if (retention.isBlank()) {
+                            null
+                        } else {
+                            retention.trim().toIntOrNull()
+                                ?: throw IllegalArgumentException("Retention days must be a whole number")
+                        }
                     onSave(dataset.copy(calculated = calculated.toMap(), retentionDays = days), force)
                 }
             }) { Text("Save") }
-            if (!isNew) ConfirmButton("Delete", "Click again: deletes the dataset and all its records") {
-                guarded("Delete anyway") { force -> onDelete(force) }
+            if (!isNew) {
+                ConfirmButton("Delete", "Click again: deletes the dataset and all its records") {
+                    guarded("Delete anyway") { force -> onDelete(force) }
+                }
             }
             retry?.let { (label, run) ->
-                OutlinedButton(onClick = { scope.attempt({ error = it }) { retry = null; run() } }) { Text(label) }
+                OutlinedButton(onClick = {
+                    scope.attempt({ error = it }) {
+                        retry = null
+                        run()
+                    }
+                }) { Text(label) }
             }
         }
         ErrorText(error)
@@ -152,8 +189,13 @@ private fun DatasetForm(initial: Dataset, isNew: Boolean, onSave: suspend (Datas
 
 /** Left-hand definition list with a "New" button; [badge] renders extra info per id (e.g. source state). */
 @Composable
-fun AdminList(items: List<DefinitionSummary>, selectedId: String?, onSelect: (String) -> Unit, onNew: () -> Unit,
-              badge: @Composable (String) -> Unit = {}) {
+fun AdminList(
+    items: List<DefinitionSummary>,
+    selectedId: String?,
+    onSelect: (String) -> Unit,
+    onNew: () -> Unit,
+    badge: @Composable (String) -> Unit = {},
+) {
     Column(Modifier.width(260.dp).fillMaxHeight().verticalScroll(rememberScrollState())) {
         Button(onClick = onNew) {
             Icon(MaterialSymbols.Rounded.Add, contentDescription = null)
@@ -165,7 +207,7 @@ fun AdminList(items: List<DefinitionSummary>, selectedId: String?, onSelect: (St
                 label = { Text(item.label?.ifBlank { null } ?: item.id) },
                 selected = item.id == selectedId,
                 onClick = { onSelect(item.id) },
-                badge = { badge(item.id) }
+                badge = { badge(item.id) },
             )
         }
     }

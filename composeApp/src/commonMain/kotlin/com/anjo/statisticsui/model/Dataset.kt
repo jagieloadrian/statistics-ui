@@ -5,10 +5,18 @@ import kotlinx.serialization.Serializable
 // Mirror of StatisticsService spec 004 contracts/definition-format.md and api-v2.md
 
 @Serializable
-data class Measure(val name: String, val type: String = "number", val unit: String? = null, val label: String? = null)
+data class Measure(
+    val name: String,
+    val type: String = "number",
+    val unit: String? = null,
+    val label: String? = null,
+)
 
 @Serializable
-data class Dimension(val name: String, val label: String? = null)
+data class Dimension(
+    val name: String,
+    val label: String? = null,
+)
 
 @Serializable
 data class Dataset(
@@ -23,4 +31,9 @@ data class Dataset(
 )
 
 @Serializable
-data class DimensionValue(val value: String, val firstSeen: String, val lastSeen: String, val count: Long)
+data class DimensionValue(
+    val value: String,
+    val firstSeen: String,
+    val lastSeen: String,
+    val count: Long,
+)

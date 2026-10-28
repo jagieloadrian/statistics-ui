@@ -40,7 +40,10 @@ private val THEMES = listOf("system", "light", "dark")
 private const val NO_HOME = "(home screen)"
 
 @Composable
-fun AccountScreen(api: PlatformApi = koinInject(), session: Session = koinInject()) {
+fun AccountScreen(
+    api: PlatformApi = koinInject(),
+    session: Session = koinInject(),
+) {
     val user = session.user
     var prefs by remember(user) { mutableStateOf(user?.prefs ?: Prefs()) }
     var dashboards by remember { mutableStateOf(emptyList<String>()) }
@@ -63,13 +66,22 @@ fun AccountScreen(api: PlatformApi = koinInject(), session: Session = koinInject
 
     Column(
         Modifier.fillMaxSize().padding(LARGE_MEDIUM_PADDING).verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)
+        verticalArrangement = Arrangement.spacedBy(SMALL_PADDING),
     ) {
-        Text("Account", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+        Text(
+            "Account",
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
         user?.let { Text("${it.name.ifBlank { it.email }} · ${it.email} · ${it.role}", color = Color.Gray) }
 
-        Text("Preferences", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING))
+        Text(
+            "Preferences",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING),
+        )
         Field("Time zone, e.g. Europe/Warsaw (empty = this device)", prefs.timeZone.orEmpty(), Modifier.width(420.dp)) {
             prefs = prefs.copy(timeZone = it.trim().ifBlank { null })
         }
@@ -79,19 +91,29 @@ fun AccountScreen(api: PlatformApi = koinInject(), session: Session = koinInject
             Text("Theme", color = Color.Gray)
             Picker(prefs.theme, THEMES) { prefs = prefs.copy(theme = it) }
             Text("Home dashboard", color = Color.Gray)
-            Picker(prefs.homeDashboard ?: NO_HOME, listOf(NO_HOME) + dashboards) { prefs = prefs.copy(homeDashboard = it.takeUnless { h -> h == NO_HOME }) }
+            Picker(prefs.homeDashboard ?: NO_HOME, listOf(NO_HOME) + dashboards) {
+                prefs =
+                    prefs.copy(homeDashboard = it.takeUnless { h -> h == NO_HOME })
+            }
         }
         Button(onClick = {
             prefsInfo = null
-            scope.attempt({ prefsError = it }) { api.putPrefs(prefs); prefsInfo = "Preferences saved" }
+            scope.attempt({ prefsError = it }) {
+                api.putPrefs(prefs)
+                prefsInfo = "Preferences saved"
+            }
         }) { Text("Save preferences") }
         prefsInfo?.let { Text(it, color = Color.Gray) }
         ErrorText(prefsError)
 
         // provider-only accounts have no password; with local sign-in off nobody uses one
         if (user?.hasPassword != false && localSignIn) {
-            Text("Change password", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING))
+            Text(
+                "Change password",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING),
+            )
             Field("Current password", current, Modifier.width(420.dp), password = true) { current = it }
             Field("New password (at least 10 characters)", new, Modifier.width(420.dp), password = true) { new = it }
             Field("Repeat new password", repeat, Modifier.width(420.dp), password = true) { repeat = it }
@@ -100,7 +122,9 @@ fun AccountScreen(api: PlatformApi = koinInject(), session: Session = koinInject
                 passwordInfo = null
                 scope.attempt({ passwordError = it }) {
                     api.changePassword(current, new)
-                    current = ""; new = ""; repeat = ""
+                    current = ""
+                    new = ""
+                    repeat = ""
                     passwordInfo = "Password changed; your other sessions were signed out"
                 }
             }) { Text("Change password") }

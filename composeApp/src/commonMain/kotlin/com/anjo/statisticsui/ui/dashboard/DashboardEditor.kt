@@ -66,7 +66,12 @@ private val VISIBILITIES = listOf("private", "users", "all")
 
 /** Edits the whole dashboard definition locally; nothing is stored until Save (one PUT). */
 @Composable
-fun DashboardEditor(initial: Dashboard, onSave: suspend (Dashboard) -> Unit, onCancel: () -> Unit, api: PlatformApi = koinInject()) {
+fun DashboardEditor(
+    initial: Dashboard,
+    onSave: suspend (Dashboard) -> Unit,
+    onCancel: () -> Unit,
+    api: PlatformApi = koinInject(),
+) {
     var dashboard by remember(initial) { mutableStateOf(initial) }
     var open by remember(initial) { mutableStateOf<Int?>(null) } // index of the widget whose form is shown
     var datasetIds by remember { mutableStateOf(emptyList<String>()) }
@@ -82,12 +87,20 @@ fun DashboardEditor(initial: Dashboard, onSave: suspend (Dashboard) -> Unit, onC
             shared = api.shares(initial.id).toSet()
         }
     }
-    val referenced = (dashboard.widgets.map { it.query.dataset } + dashboard.variables.mapNotNull { it.dataset }).filter { it.isNotBlank() }.toSet()
+    val referenced =
+        (
+            dashboard.widgets.map {
+                it.query.dataset
+            } + dashboard.variables.mapNotNull { it.dataset }
+        ).filter { it.isNotBlank() }.toSet()
     LaunchedEffect(referenced) {
         referenced.filter { it !in datasets }.forEach { id -> catching { api.dataset(id) }.onSuccess { datasets[id] = it } }
     }
     val widgets = dashboard.widgets
-    fun setWidgets(list: List<Widget>) { dashboard = dashboard.copy(widgets = list) }
+
+    fun setWidgets(list: List<Widget>) {
+        dashboard = dashboard.copy(widgets = list)
+    }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
@@ -108,23 +121,39 @@ fun DashboardEditor(initial: Dashboard, onSave: suspend (Dashboard) -> Unit, onC
                     FilterChip(
                         selected = u.id in shared,
                         onClick = { shared = if (u.id in shared) shared - u.id else shared + u.id },
-                        label = { Text(u.name.ifBlank { u.email }) }
+                        label = { Text(u.name.ifBlank { u.email }) },
                     )
                 }
             }
         }
 
-        ListEditor("Variables", dashboard.variables, { dashboard = dashboard.copy(variables = it) }, { Variable("", "dimension") }) { v, set ->
+        ListEditor(
+            "Variables",
+            dashboard.variables,
+            { dashboard = dashboard.copy(variables = it) },
+            { Variable("", "dimension") },
+        ) { v, set ->
             Field("Name", v.name, Modifier.weight(1f)) { set(v.copy(name = it)) }
             Picker(v.type, VARIABLE_TYPES) { set(v.copy(type = it)) }
             when (v.type) {
                 "dimension" -> {
                     Picker(v.dataset.orEmpty(), datasetIds) { set(v.copy(dataset = it, dimension = null)) }
-                    Picker(v.dimension.orEmpty(), datasets[v.dataset]?.dimensions?.map { it.name }.orEmpty()) { set(v.copy(dimension = it)) }
+                    Picker(
+                        v.dimension.orEmpty(),
+                        datasets[v.dataset]?.dimensions?.map { it.name }.orEmpty(),
+                    ) { set(v.copy(dimension = it)) }
                     Checkbox(v.multi, { set(v.copy(multi = it)) })
                     Text("multi", color = Color.Gray)
                 }
-                "timeRange" -> Field("Default (e.g. P7D)", v.default.orEmpty(), Modifier.weight(1f)) { set(v.copy(default = it.trim().ifBlank { null })) }
+
+                "timeRange" -> {
+                    Field(
+                        "Default (e.g. P7D)",
+                        v.default.orEmpty(),
+                        Modifier.weight(1f),
+                    ) { set(v.copy(default = it.trim().ifBlank { null })) }
+                }
+
                 "bucket" -> {
                     CsvField("Options, e.g. raw, 1m, 1h", v.options, Modifier.weight(2f)) { set(v.copy(options = it)) }
                     Picker(v.default.orEmpty(), v.options) { set(v.copy(default = it)) }
@@ -132,19 +161,33 @@ fun DashboardEditor(initial: Dashboard, onSave: suspend (Dashboard) -> Unit, onC
             }
         }
 
-        Text("Widgets", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING))
+        Text(
+            "Widgets",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING),
+        )
         widgets.forEachIndexed { i, w ->
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = { open = if (open == i) null else i }, modifier = Modifier.weight(1f)) {
                     Text("${w.title.ifBlank { w.id }} · ${w.type} · ${w.w}×${w.h}", modifier = Modifier.fillMaxWidth())
                 }
-                IconButton(enabled = i > 0, onClick = { setWidgets(widgets.swap(i, i - 1)); open = i - 1 }) {
+                IconButton(enabled = i > 0, onClick = {
+                    setWidgets(widgets.swap(i, i - 1))
+                    open = i - 1
+                }) {
                     Icon(MaterialSymbols.Rounded.Arrow_upward, contentDescription = "Move up", tint = Color.Gray)
                 }
-                IconButton(enabled = i < widgets.lastIndex, onClick = { setWidgets(widgets.swap(i, i + 1)); open = i + 1 }) {
+                IconButton(enabled = i < widgets.lastIndex, onClick = {
+                    setWidgets(widgets.swap(i, i + 1))
+                    open = i + 1
+                }) {
                     Icon(MaterialSymbols.Rounded.Arrow_downward, contentDescription = "Move down", tint = Color.Gray)
                 }
-                IconButton(onClick = { setWidgets(widgets.filterIndexed { j, _ -> j != i }); open = null }) {
+                IconButton(onClick = {
+                    setWidgets(widgets.filterIndexed { j, _ -> j != i })
+                    open = null
+                }) {
                     Icon(MaterialSymbols.Rounded.Delete, contentDescription = "Delete", tint = Color.Gray)
                 }
             }
@@ -180,15 +223,22 @@ fun DashboardEditor(initial: Dashboard, onSave: suspend (Dashboard) -> Unit, onC
 
 /** Every field of the Widget table in definition-format; the query never gets from/to (the dashboard range does). */
 @Composable
-private fun WidgetForm(w: Widget, variables: List<Variable>, datasetIds: List<String>, datasets: Map<String, Dataset>,
-                       onChange: (Widget) -> Unit) {
+private fun WidgetForm(
+    w: Widget,
+    variables: List<Variable>,
+    datasetIds: List<String>,
+    datasets: Map<String, Dataset>,
+    onChange: (Widget) -> Unit,
+) {
     val q = w.query
     val o = w.options
     val ds = datasets[q.dataset]
     val measures = ds?.let { it.measures.map { m -> m.name } + it.calculated.keys }.orEmpty()
     val fields = listOf("ts") + measures
     val dims = ds?.dimensions?.map { it.name }.orEmpty()
+
     fun setQuery(query: Query) = onChange(w.copy(query = query))
+
     fun setOptions(options: WidgetOptions) = onChange(w.copy(options = options))
 
     Column(Modifier.padding(start = MEDIUM_PADDING), verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
@@ -209,7 +259,12 @@ private fun WidgetForm(w: Widget, variables: List<Variable>, datasetIds: List<St
             NumberField("Max points (auto bucket)", q.maxPoints.toDouble()) { it?.let { n -> setQuery(q.copy(maxPoints = n.toInt())) } }
         }
 
-        ListEditor("Measures", q.measures, { setQuery(q.copy(measures = it)) }, { QueryMeasure(measures.firstOrNull().orEmpty()) }) { m, set ->
+        ListEditor(
+            "Measures",
+            q.measures,
+            { setQuery(q.copy(measures = it)) },
+            { QueryMeasure(measures.firstOrNull().orEmpty()) },
+        ) { m, set ->
             Picker(m.field, fields) { set(m.copy(field = it)) }
             Text("agg", color = Color.Gray)
             Picker(m.agg.orEmpty(), AGGS) { set(m.copy(agg = it.ifBlank { null })) }
@@ -220,8 +275,12 @@ private fun WidgetForm(w: Widget, variables: List<Variable>, datasetIds: List<St
             Field("as", m.alias.orEmpty(), Modifier.weight(1f)) { set(m.copy(alias = it.trim().ifBlank { null })) }
         }
         // ponytail: map-backed rows; two rows with the same key merge (one filter/colour per name is all a map holds anyway)
-        ListEditor("Filter", q.filter.toList(), { setQuery(q.copy(filter = it.toMap())) },
-            { dims.firstOrNull { it !in q.filter }.orEmpty() to emptyList() }) { (dim, allowed), set ->
+        ListEditor(
+            "Filter",
+            q.filter.toList(),
+            { setQuery(q.copy(filter = it.toMap())) },
+            { dims.firstOrNull { it !in q.filter }.orEmpty() to emptyList() },
+        ) { (dim, allowed), set ->
             Picker(dim, dims) { set(it to allowed) }
             CsvField("Values (\$variable allowed)", allowed, Modifier.weight(1f)) { set(dim to it) }
         }
@@ -229,7 +288,11 @@ private fun WidgetForm(w: Widget, variables: List<Variable>, datasetIds: List<St
         FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
             dims.forEach { dim ->
                 val on = dim in q.groupBy
-                FilterChip(selected = on, onClick = { setQuery(q.copy(groupBy = if (on) q.groupBy - dim else q.groupBy + dim)) }, label = { Text(dim) })
+                FilterChip(
+                    selected = on,
+                    onClick = { setQuery(q.copy(groupBy = if (on) q.groupBy - dim else q.groupBy + dim)) },
+                    label = { Text(dim) },
+                )
             }
         }
 
@@ -255,9 +318,17 @@ private fun WidgetForm(w: Widget, variables: List<Variable>, datasetIds: List<St
 
 /** Comma-separated list; keeps the typed text (e.g. a trailing comma) while it still parses to the same list. */
 @Composable
-private fun CsvField(label: String, values: List<String>, modifier: Modifier = Modifier, onChange: (List<String>) -> Unit) {
+private fun CsvField(
+    label: String,
+    values: List<String>,
+    modifier: Modifier = Modifier,
+    onChange: (List<String>) -> Unit,
+) {
     fun parse(text: String) = text.split(',').map { it.trim() }.filter { it.isNotEmpty() }
     var text by remember { mutableStateOf(values.joinToString(", ")) }
     if (parse(text) != values) text = values.joinToString(", ") // changed from outside
-    Field(label, text, modifier) { text = it; onChange(parse(it)) }
+    Field(label, text, modifier) {
+        text = it
+        onChange(parse(it))
+    }
 }

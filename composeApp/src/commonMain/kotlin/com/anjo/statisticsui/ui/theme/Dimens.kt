@@ -2,7 +2,6 @@ package com.anjo.statisticsui.ui.theme
 
 import androidx.compose.ui.unit.dp
 
-
 val LARGE_PADDING = 56.dp
 val LARGE_MEDIUM_PADDING = 32.dp
 val MEDIUM_PADDING = 24.dp

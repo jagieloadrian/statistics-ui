@@ -41,7 +41,10 @@ private val ROLES = listOf("viewer", "editor", "admin")
 
 /** Admin only: invite with an initial password (no email is sent), change role, delete; the last admin is kept (409). */
 @Composable
-fun UsersScreen(navController: NavHostController, api: PlatformApi = koinInject()) {
+fun UsersScreen(
+    navController: NavHostController,
+    api: PlatformApi = koinInject(),
+) {
     var users by remember { mutableStateOf(emptyList<User>()) }
     var email by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
@@ -53,11 +56,15 @@ fun UsersScreen(navController: NavHostController, api: PlatformApi = koinInject(
 
     Column(
         Modifier.fillMaxSize().padding(LARGE_MEDIUM_PADDING).verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)
+        verticalArrangement = Arrangement.spacedBy(SMALL_PADDING),
     ) {
         ScreenHeader("Users", navController)
         Text("Invite", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
+        ) {
             Field("Email", email, Modifier.weight(1f)) { email = it }
             Field("Name", name, Modifier.weight(1f)) { name = it }
             Picker(role, ROLES) { role = it }
@@ -65,22 +72,40 @@ fun UsersScreen(navController: NavHostController, api: PlatformApi = koinInject(
             Button(enabled = email.isNotBlank() && password.length >= 10, onClick = {
                 scope.attempt({ error = it }) {
                     api.createUser(NewUser(email.trim(), name.trim(), role, password))
-                    email = ""; name = ""; password = ""
+                    email = ""
+                    name = ""
+                    password = ""
                     users = api.users()
                 }
             }) { Text("Create") }
         }
         ErrorText(error)
 
-        Text("Accounts", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING))
+        Text(
+            "Accounts",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING),
+        )
         users.forEach { u ->
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
+            ) {
                 Text(u.email, Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface)
                 Text(u.name, Modifier.weight(1f), color = Color.Gray)
-                Picker(u.role, ROLES) { r -> scope.attempt({ error = it }) { api.updateUser(u.id, UserUpdate(role = r)); users = api.users() } }
+                Picker(u.role, ROLES) { r ->
+                    scope.attempt({ error = it }) {
+                        api.updateUser(u.id, UserUpdate(role = r))
+                        users = api.users()
+                    }
+                }
                 ConfirmButton("Delete", "Click again to delete ${u.email}") {
-                    scope.attempt({ error = it }) { api.deleteUser(u.id); users = api.users() }
+                    scope.attempt({ error = it }) {
+                        api.deleteUser(u.id)
+                        users = api.users()
+                    }
                 }
             }
         }

@@ -35,15 +35,25 @@ import kotlin.time.Duration.Companion.milliseconds
 
 /** Pickers for `dimension` and `bucket` variables; a `timeRange` variable is the dashboard range selector itself. */
 @Composable
-fun VariableBar(dashboard: Dashboard, values: Map<String, VariableValue>, api: PlatformApi, onChange: (String, VariableValue) -> Unit) {
+fun VariableBar(
+    dashboard: Dashboard,
+    values: Map<String, VariableValue>,
+    api: PlatformApi,
+    onChange: (String, VariableValue) -> Unit,
+) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
         dashboard.variables.forEach { v ->
             val selected = values[v.name].orEmpty()
             when (v.type) {
-                "dimension" -> DimensionPicker(v, selected, api) { onChange(v.name, it) }
-                "bucket" -> Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("${v.name}: ", color = Color.Gray)
-                    Picker(selected.firstOrNull().orEmpty(), v.options) { onChange(v.name, listOf(it)) }
+                "dimension" -> {
+                    DimensionPicker(v, selected, api) { onChange(v.name, it) }
+                }
+
+                "bucket" -> {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("${v.name}: ", color = Color.Gray)
+                        Picker(selected.firstOrNull().orEmpty(), v.options) { onChange(v.name, listOf(it)) }
+                    }
                 }
             }
         }
@@ -51,7 +61,12 @@ fun VariableBar(dashboard: Dashboard, values: Map<String, VariableValue>, api: P
 }
 
 @Composable
-private fun DimensionPicker(variable: Variable, selected: VariableValue, api: PlatformApi, onChange: (VariableValue) -> Unit) {
+private fun DimensionPicker(
+    variable: Variable,
+    selected: VariableValue,
+    api: PlatformApi,
+    onChange: (VariableValue) -> Unit,
+) {
     var open by remember { mutableStateOf(false) }
     var search by remember { mutableStateOf("") }
     var options by remember { mutableStateOf(emptyList<DimensionValue>()) }
@@ -59,8 +74,9 @@ private fun DimensionPicker(variable: Variable, selected: VariableValue, api: Pl
     LaunchedEffect(open, search) {
         if (!open) return@LaunchedEffect
         delay(250.milliseconds) // debounce typing
-        options = catching { api.dimensionValues(variable.dataset.orEmpty(), variable.dimension.orEmpty(), search) }
-            .getOrDefault(emptyList())
+        options =
+            catching { api.dimensionValues(variable.dataset.orEmpty(), variable.dimension.orEmpty(), search) }
+                .getOrDefault(emptyList())
     }
     Box {
         OutlinedButton(onClick = { open = true }) { Text("${variable.name}: ${selected.joinToString().ifBlank { "all" }}") }
@@ -71,13 +87,19 @@ private fun DimensionPicker(variable: Variable, selected: VariableValue, api: Pl
                     text = {
                         Column {
                             Text(dv.value)
-                            Text("${dv.firstSeen.shortTime(zone)} – ${dv.lastSeen.shortTime(zone)} · ${dv.count} records",
-                                style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            Text(
+                                "${dv.firstSeen.shortTime(zone)} – ${dv.lastSeen.shortTime(zone)} · ${dv.count} records",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray,
+                            )
                         }
                     },
-                    leadingIcon = if (variable.multi) {
-                        { Checkbox(checked = dv.value in selected, onCheckedChange = null) }
-                    } else null,
+                    leadingIcon =
+                        if (variable.multi) {
+                            { Checkbox(checked = dv.value in selected, onCheckedChange = null) }
+                        } else {
+                            null
+                        },
                     onClick = {
                         if (variable.multi) {
                             onChange(if (dv.value in selected) selected - dv.value else selected + dv.value)
@@ -85,7 +107,7 @@ private fun DimensionPicker(variable: Variable, selected: VariableValue, api: Pl
                             onChange(listOf(dv.value))
                             open = false
                         }
-                    }
+                    },
                 )
             }
         }

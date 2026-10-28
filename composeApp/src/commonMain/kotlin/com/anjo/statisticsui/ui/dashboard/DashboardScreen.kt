@@ -61,7 +61,12 @@ private val RANGES = listOf("1h" to 1.hours, "24h" to 1.days, "7d" to 7.days, "3
 private val ROW_HEIGHT = 80.dp
 
 @Composable
-fun DashboardScreen(id: String, navController: NavHostController, api: PlatformApi = koinInject(), session: Session = koinInject()) {
+fun DashboardScreen(
+    id: String,
+    navController: NavHostController,
+    api: PlatformApi = koinInject(),
+    session: Session = koinInject(),
+) {
     var dashboard by remember { mutableStateOf<Dashboard?>(null) }
     var range by remember { mutableStateOf(1.days) }
     var values by remember { mutableStateOf(emptyMap<String, VariableValue>()) }
@@ -101,7 +106,7 @@ fun DashboardScreen(id: String, navController: NavHostController, api: PlatformA
                         selected = range == duration,
                         onClick = { range = duration },
                         label = { Text("Last $label") },
-                        modifier = Modifier.padding(end = SMALL_PADDING)
+                        modifier = Modifier.padding(end = SMALL_PADDING),
                     )
                 }
                 // ponytail: owner isn't in the dashboard JSON, so an editor sees Edit on others' dashboards and gets the 403 on save
@@ -126,7 +131,7 @@ fun DashboardScreen(id: String, navController: NavHostController, api: PlatformA
                     dashboard = saved
                     editing = false
                 },
-                onCancel = { editing = false }
+                onCancel = { editing = false },
             )
             return@Column
         }
@@ -134,7 +139,7 @@ fun DashboardScreen(id: String, navController: NavHostController, api: PlatformA
         if (current.widgets.isEmpty()) Text("No widgets yet. Use Edit to add one.", color = Color.Gray)
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = SMALL_PADDING),
-            verticalArrangement = Arrangement.spacedBy(SMALL_MEDIUM_PADDING)
+            verticalArrangement = Arrangement.spacedBy(SMALL_MEDIUM_PADDING),
         ) {
             layoutRows(current.widgets).forEach { row ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(SMALL_MEDIUM_PADDING)) {
@@ -142,11 +147,15 @@ fun DashboardScreen(id: String, navController: NavHostController, api: PlatformA
                         Card(
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                             shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.weight(w.span().toFloat()).height(ROW_HEIGHT * w.h.coerceAtLeast(1))
+                            modifier = Modifier.weight(w.span().toFloat()).height(ROW_HEIGHT * w.h.coerceAtLeast(1)),
                         ) {
                             Column(Modifier.fillMaxSize().padding(SMALL_MEDIUM_PADDING)) {
-                                Text(resolveText(w.title.ifBlank { w.id }, values), style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(bottom = SMALL_PADDING))
+                                Text(
+                                    resolveText(w.title.ifBlank { w.id }, values),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(bottom = SMALL_PADDING),
+                                )
                                 Widget(w, results[w.id], Modifier.weight(1f))
                             }
                         }
@@ -161,8 +170,12 @@ fun DashboardScreen(id: String, navController: NavHostController, api: PlatformA
 
 /** Creates an empty dashboard; refuses an id that already exists, since PUT would overwrite it. */
 @Composable
-fun NewDashboardDialog(existingIds: List<String>, onDismiss: () -> Unit, onCreated: (String) -> Unit,
-                       api: PlatformApi = koinInject()) {
+fun NewDashboardDialog(
+    existingIds: List<String>,
+    onDismiss: () -> Unit,
+    onCreated: (String) -> Unit,
+    api: PlatformApi = koinInject(),
+) {
     var id by remember { mutableStateOf("") }
     var title by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
@@ -187,6 +200,6 @@ fun NewDashboardDialog(existingIds: List<String>, onDismiss: () -> Unit, onCreat
                 }
             }) { Text("Create") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
 }

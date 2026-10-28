@@ -18,23 +18,25 @@ import org.koin.compose.KoinApplication
 import org.koin.compose.koinInject
 import org.koin.plugin.module.dsl.koinConfiguration
 
-private val DarkColors = darkColorScheme(
-    background = Color(0xFF1E1E2C),
-    surface = Color(0xFF2D2D44),
-    primary = Color(0xFF4DD0E1),
-    onSurface = Color.White
-)
+private val DarkColors =
+    darkColorScheme(
+        background = Color(0xFF1E1E2C),
+        surface = Color(0xFF2D2D44),
+        primary = Color(0xFF4DD0E1),
+        onSurface = Color.White,
+    )
 private val LightColors = lightColorScheme(primary = Color(0xFF00838F))
 
 @Composable
 fun App() {
     KoinApplication(configuration = koinConfiguration<StatsUIApplication>()) {
         val prefs = koinInject<Session>().user?.prefs ?: Prefs()
-        val dark = when (prefs.theme) {
-            "light" -> false
-            "dark" -> true
-            else -> isSystemInDarkTheme()
-        }
+        val dark =
+            when (prefs.theme) {
+                "light" -> false
+                "dark" -> true
+                else -> isSystemInDarkTheme()
+            }
         MaterialTheme(colorScheme = if (dark) DarkColors else LightColors) {
             CompositionLocalProvider(LocalPrefs provides prefs) {
                 // Surface gives every destination the theme background (only MainLayout had one).
