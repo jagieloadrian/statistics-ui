@@ -3,7 +3,7 @@ package com.anjo.statisticsui.ui.admin
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -89,13 +89,16 @@ private fun UsersContent(
 
         SectionTitle("Accounts")
         state.listed.forEach { user ->
-            Row(
+            // Narrow windows move the role and delete controls under the email instead of squeezing it
+            FlowRow(
                 Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+                itemVerticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
             ) {
-                Text(user.email, Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface)
-                Text(user.name, Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Column(Modifier.weight(1f).widthIn(min = 200.dp)) {
+                    Text(user.email, color = MaterialTheme.colorScheme.onSurface)
+                    if (user.name.isNotEmpty()) Text(user.name, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 Picker("Role", user.role, ROLES) { state.changeRole(user, it) }
                 OutlinedButton(onClick = { state.delete(user) }) { Text("Delete") }
             }
