@@ -15,6 +15,7 @@ import com.anjo.statisticsui.ui.common.reporting
 import com.anjo.statisticsui.validation.FieldErrors
 import com.anjo.statisticsui.validation.passwordChangeErrors
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 class AccountState(
@@ -56,6 +57,8 @@ class AccountState(
             dashboards = api.list("dashboards").map { it.id }
             localSignIn = api.authConfig().local
         }
+
+    fun signOut() = scope.launch { api.logout() }
 
     fun savePrefs() {
         prefsInfo = null

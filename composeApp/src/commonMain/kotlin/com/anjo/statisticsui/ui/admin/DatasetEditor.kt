@@ -31,7 +31,7 @@ import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.ListEditor
 import com.anjo.statisticsui.ui.common.Picker
 import com.anjo.statisticsui.ui.common.ScreenHeader
-import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
+import com.anjo.statisticsui.ui.common.screenPadding
 import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
@@ -47,7 +47,7 @@ fun DatasetsScreen(
 ) {
     LaunchedEffect(Unit) { state.reload() }
 
-    Column(Modifier.fillMaxSize().padding(LARGE_MEDIUM_PADDING)) {
+    Column(Modifier.fillMaxSize().padding(screenPadding())) {
         ScreenHeader("Datasets", navController)
         ErrorText(state.error)
         Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(MEDIUM_PADDING)) {

@@ -2,16 +2,21 @@ package com.anjo.statisticsui.ui.account
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.anjo.statisticsui.ui.common.ErrorText
@@ -19,9 +24,12 @@ import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.Picker
 import com.anjo.statisticsui.ui.common.ScreenTitle
 import com.anjo.statisticsui.ui.common.SectionTitle
-import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
+import com.anjo.statisticsui.ui.common.screenPadding
+import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.anjo.statisticsui.validation.MIN_PASSWORD_LENGTH
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Logout
 
 private val UNITS = listOf("metric", "imperial")
 private val THEMES = listOf("system", "light", "dark")
@@ -34,29 +42,43 @@ fun AccountScreen(state: AccountState = rememberAccountState()) {
     val prefs = state.prefs
 
     Column(
-        Modifier.fillMaxSize().padding(LARGE_MEDIUM_PADDING).verticalScroll(rememberScrollState()),
+        Modifier.fillMaxSize().padding(screenPadding()).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(SMALL_PADDING),
     ) {
         ScreenTitle("Account")
-        state.user?.let {
-            Text(
-                "${it.name.ifBlank { it.email }} · ${it.email} · ${it.role}",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(SMALL_MEDIUM_PADDING),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
+            state.user?.let {
+                Text(
+                    "${it.name.ifBlank { it.email }} · ${it.email} · ${it.role}",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            OutlinedButton(onClick = state::signOut) {
+                Icon(MaterialSymbols.Rounded.Logout, contentDescription = null)
+                Text("Sign out")
+            }
         }
 
         SectionTitle("Preferences")
         Field(
             "Time zone (optional)",
             prefs.timeZone.orEmpty(),
-            Modifier.width(FIELD_WIDTH),
+            Modifier.widthIn(max = FIELD_WIDTH).fillMaxWidth(),
             help = "For example Europe/Warsaw. Leave empty to use this device's time zone.",
         ) {
             state.prefs = prefs.copy(timeZone = it.trim().ifBlank { null })
         }
         Picker("Units", prefs.units, UNITS) { state.prefs = prefs.copy(units = it) }
         Picker("Theme", prefs.theme, THEMES) { state.prefs = prefs.copy(theme = it) }
-        Picker("Home dashboard", prefs.homeDashboard ?: NO_HOME, listOf(NO_HOME) + state.dashboards, Modifier.width(FIELD_WIDTH)) {
+        Picker(
+            "Home dashboard",
+            prefs.homeDashboard ?: NO_HOME,
+            listOf(NO_HOME) + state.dashboards,
+            Modifier.widthIn(max = FIELD_WIDTH).fillMaxWidth(),
+        ) {
             state.prefs = prefs.copy(homeDashboard = it.takeUnless { home -> home == NO_HOME })
         }
         Button(onClick = state::savePrefs) { Text("Save preferences") }
@@ -89,5 +111,13 @@ private fun PasswordField(
     help: String? = null,
     onChange: (String) -> Unit,
 ) {
-    Field(label, value, Modifier.width(FIELD_WIDTH), password = true, help = help, error = error, onChange = onChange)
+    Field(
+        label,
+        value,
+        Modifier.widthIn(max = FIELD_WIDTH).fillMaxWidth(),
+        password = true,
+        help = help,
+        error = error,
+        onChange = onChange,
+    )
 }

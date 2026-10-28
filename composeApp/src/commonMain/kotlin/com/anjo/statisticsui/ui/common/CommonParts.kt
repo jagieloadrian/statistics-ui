@@ -30,14 +30,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.anjo.statisticsui.model.Prefs
+import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.composables.icons.materialsymbols.MaterialSymbols
@@ -49,6 +53,23 @@ import com.composables.icons.materialsymbols.rounded.Error
 val LocalPrefs = compositionLocalOf { Prefs() }
 
 private val PICKER_WIDTH = 180.dp
+
+// M3 window size classes: compact is a phone in portrait, expanded starts at landscape tablets
+val COMPACT_MAX_WIDTH = 600.dp
+val EXPANDED_MIN_WIDTH = 840.dp
+
+@Composable
+fun windowWidth(): Dp =
+    with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.width
+            .toDp()
+    }
+
+@Composable
+fun isCompact() = windowWidth() < COMPACT_MAX_WIDTH
+
+@Composable
+fun screenPadding() = if (isCompact()) SMALL_MEDIUM_PADDING else LARGE_MEDIUM_PADDING
 
 @Composable
 fun ScreenHeader(

@@ -2,6 +2,7 @@ package com.anjo.statisticsui.ui.dashboard
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +16,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,7 +35,8 @@ import com.anjo.statisticsui.model.Widget
 import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.ScreenHeader
-import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
+import com.anjo.statisticsui.ui.common.isCompact
+import com.anjo.statisticsui.ui.common.screenPadding
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.composables.icons.materialsymbols.MaterialSymbols
@@ -56,28 +59,31 @@ fun DashboardScreen(
     LaunchedEffect(state.dashboard, state.range, state.values, state.editing) { state.runQueries() }
     val dashboard = state.dashboard
 
-    Column(Modifier.fillMaxSize().padding(LARGE_MEDIUM_PADDING)) {
+    Column(Modifier.fillMaxSize().padding(screenPadding())) {
         ScreenHeader(dashboard?.title?.ifBlank { null } ?: id, navController) {
-            if (!state.editing) {
+            if (!state.editing && session.canEdit) {
+                Button(onClick = { state.editing = true }, enabled = dashboard != null) {
+                    Icon(MaterialSymbols.Rounded.Edit, contentDescription = null)
+                    Text("Edit dashboard")
+                }
+            }
+        }
+        if (!state.editing) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
                 RANGES.forEach { (label, duration) ->
                     FilterChip(
                         selected = state.range == duration,
                         onClick = { state.range = duration },
                         label = { Text("Last $label") },
-                        modifier = Modifier.padding(end = SMALL_PADDING),
                     )
-                }
-                if (session.canEdit) {
-                    Button(onClick = { state.editing = true }, enabled = dashboard != null) {
-                        Icon(MaterialSymbols.Rounded.Edit, contentDescription = null)
-                        Text("Edit dashboard")
-                    }
                 }
             }
         }
         ErrorText(state.error)
         when {
-            dashboard == null -> {}
+            dashboard == null -> {
+                if (state.error == null) CircularProgressIndicator()
+            }
 
             state.editing -> {
                 DashboardEditor(initial = dashboard, onSave = state::save, onCancel = { state.editing = false })
@@ -103,10 +109,15 @@ private fun DashboardView(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = SMALL_PADDING),
         verticalArrangement = Arrangement.spacedBy(SMALL_MEDIUM_PADDING),
     ) {
-        layoutRows(dashboard.widgets).forEach { row ->
+        // Compact windows stack widgets at full width; the 12-column grid starts at medium
+        val compact = isCompact()
+        val rows = if (compact) dashboard.widgets.map(::listOf) else layoutRows(dashboard.widgets)
+        rows.forEach { row ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(SMALL_MEDIUM_PADDING)) {
-                row.forEach { widget -> WidgetCard(widget, values, results[widget.id], Modifier.weight(widget.span().toFloat())) }
-                val free = COLUMNS - row.sumOf { it.span() }
+                row.forEach { widget ->
+                    WidgetCard(widget, values, results[widget.id], Modifier.weight(if (compact) 1f else widget.span().toFloat()))
+                }
+                val free = if (compact) 0 else COLUMNS - row.sumOf { it.span() }
                 if (free > 0) Spacer(Modifier.weight(free.toFloat()))
             }
         }

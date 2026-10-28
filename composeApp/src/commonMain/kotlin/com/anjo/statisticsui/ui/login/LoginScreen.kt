@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.anjo.statisticsui.model.User
 import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.common.Field
-import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
+import com.anjo.statisticsui.ui.common.screenPadding
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 
 @Composable
@@ -34,9 +34,12 @@ fun LoginScreen(
     LaunchedEffect(Unit) { state.load(onSignedIn) }
 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Card(
+            modifier = Modifier.padding(SMALL_MEDIUM_PADDING),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        ) {
             Column(
-                Modifier.padding(LARGE_MEDIUM_PADDING).width(360.dp),
+                Modifier.padding(screenPadding()).widthIn(max = 360.dp),
                 verticalArrangement = Arrangement.spacedBy(SMALL_MEDIUM_PADDING),
             ) {
                 Text(

@@ -40,7 +40,7 @@ import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.ListEditor
 import com.anjo.statisticsui.ui.common.Picker
 import com.anjo.statisticsui.ui.common.ScreenHeader
-import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
+import com.anjo.statisticsui.ui.common.screenPadding
 import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
@@ -56,7 +56,7 @@ fun SourcesScreen(
 ) {
     LaunchedEffect(Unit) { state.reload() }
 
-    Column(Modifier.fillMaxSize().padding(LARGE_MEDIUM_PADDING)) {
+    Column(Modifier.fillMaxSize().padding(screenPadding())) {
         ScreenHeader("Sources", navController) {
             OutlinedButton(onClick = { state.bundleOpen = true }) { Text("Export / import") }
         }

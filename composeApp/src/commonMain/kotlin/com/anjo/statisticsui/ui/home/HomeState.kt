@@ -12,7 +12,6 @@ import com.anjo.statisticsui.model.DefinitionSummary
 import com.anjo.statisticsui.model.Prefs
 import com.anjo.statisticsui.ui.common.attempt
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 class HomeState(
@@ -25,23 +24,29 @@ class HomeState(
     var creating by mutableStateOf(false)
     var error by mutableStateOf<String?>(null)
         private set
+    var loading by mutableStateOf(true)
+        private set
 
     val favourites: List<String> get() = prefs.favourites
-    val email get() = session.user?.email
     val canCreate get() = session.canEdit
     val isAdmin get() = session.isAdmin
     val sortedDashboards get() = dashboards.sortedByDescending { it.id in favourites }
 
     private val prefs get() = session.user?.prefs ?: Prefs()
 
-    fun load() = scope.attempt({ error = it }) { dashboards = api.list("dashboards") }
+    fun load() =
+        scope.attempt({ error = it }) {
+            try {
+                dashboards = api.list("dashboards")
+            } finally {
+                loading = false
+            }
+        }
 
     fun toggleFavourite(id: String) {
         val changed = if (id in favourites) favourites - id else favourites + id
         scope.attempt({ error = it }) { api.putPrefs(prefs.copy(favourites = changed)) }
     }
-
-    fun signOut() = scope.launch { api.logout() }
 }
 
 @Composable
