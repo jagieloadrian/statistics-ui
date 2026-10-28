@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHost
@@ -28,6 +30,7 @@ import com.anjo.statisticsui.ui.common.Picker
 import com.anjo.statisticsui.ui.common.ScreenHeader
 import com.anjo.statisticsui.ui.common.SectionTitle
 import com.anjo.statisticsui.ui.common.screenPadding
+import com.anjo.statisticsui.ui.theme.LARGE_SMALL_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.anjo.statisticsui.validation.MIN_PASSWORD_LENGTH
 import com.anjo.statisticsui.validation.ROLES
@@ -89,18 +92,21 @@ private fun UsersContent(
 
         SectionTitle("Accounts")
         state.listed.forEach { user ->
-            // Narrow windows move the role and delete controls under the email instead of squeezing it
-            FlowRow(
-                Modifier.fillMaxWidth(),
-                itemVerticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
-            ) {
-                Column(Modifier.weight(1f).widthIn(min = 200.dp)) {
-                    Text(user.email, color = MaterialTheme.colorScheme.onSurface)
-                    if (user.name.isNotEmpty()) Text(user.name, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+                // Narrow windows move the role and delete controls under the email instead of squeezing it
+                FlowRow(
+                    Modifier.fillMaxWidth().padding(LARGE_SMALL_PADDING),
+                    itemVerticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
+                    verticalArrangement = Arrangement.spacedBy(SMALL_PADDING),
+                ) {
+                    Column(Modifier.weight(1f).widthIn(min = 200.dp)) {
+                        Text(user.email, color = MaterialTheme.colorScheme.onSurface)
+                        if (user.name.isNotEmpty()) Text(user.name, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Picker("Role", user.role, ROLES) { state.changeRole(user, it) }
+                    OutlinedButton(onClick = { state.delete(user) }) { Text("Delete") }
                 }
-                Picker("Role", user.role, ROLES) { state.changeRole(user, it) }
-                OutlinedButton(onClick = { state.delete(user) }) { Text("Delete") }
             }
         }
     }
