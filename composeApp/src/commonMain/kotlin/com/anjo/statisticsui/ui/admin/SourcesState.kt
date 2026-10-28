@@ -21,6 +21,10 @@ import com.anjo.statisticsui.model.platformJson
 import com.anjo.statisticsui.model.rows
 import com.anjo.statisticsui.model.withRows
 import com.anjo.statisticsui.ui.common.attempt
+import com.anjo.statisticsui.validation.FieldErrors
+import com.anjo.statisticsui.validation.jsonError
+import com.anjo.statisticsui.validation.positiveWholeNumber
+import com.anjo.statisticsui.validation.sourceErrors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -98,6 +102,10 @@ internal class SourceFormState(
     var mappingJson by mutableStateOf(encode(initial.mapping))
     var error by mutableStateOf<String?>(null)
         private set
+    private var submitted by mutableStateOf(false)
+
+    val errors: FieldErrors
+        get() = if (submitted) sourceErrors(source, rate, mappingJson, if (isNew) existingIds else emptyList()) else emptyMap()
 
     fun edit(change: Source) {
         if (change.mapping != source.mapping) mappingJson = encode(change.mapping)
@@ -118,12 +126,12 @@ internal class SourceFormState(
             rows = parsed.firstOrNull().rows()
         }
 
-    fun save(onSaved: (Source) -> Unit) = save(onSaved) { current() }
+    fun save(onSaved: (Source) -> Unit) = save(onSaved) { it }
 
     fun setPaused(
         paused: Boolean,
         onSaved: (Source) -> Unit,
-    ) = save(onSaved) { current().copy(paused = paused) }
+    ) = save(onSaved) { it.copy(paused = paused) }
 
     fun delete(onDeleted: () -> Unit) =
         scope.attempt({ error = it }) {
@@ -131,20 +139,18 @@ internal class SourceFormState(
             onDeleted()
         }
 
-    private fun current() =
-        source.copy(
-            mapping = mapping(),
-            rateLimitPerSecond = rate.trim().toIntOrNull() ?: throw IllegalArgumentException("Rate limit must be a whole number"),
-        )
-
     private fun save(
         onSaved: (Source) -> Unit,
-        build: () -> Source,
-    ) = scope.attempt({ error = it }) {
-        val saved = build()
-        require(!isNew || saved.id !in existingIds) { "Source '${saved.id}' already exists" }
-        api.putSource(saved)
-        onSaved(saved)
+        change: (Source) -> Source,
+    ) {
+        submitted = true
+        if (errors.isNotEmpty()) return
+        val rateLimit = positiveWholeNumber(rate) ?: return
+        scope.attempt({ error = it }) {
+            val saved = change(source.copy(mapping = mapping(), rateLimitPerSecond = rateLimit))
+            api.putSource(saved)
+            onSaved(saved)
+        }
     }
 
     private fun encode(mapping: List<Rule>) = platformJson.encodeToString(mapping)
@@ -164,15 +170,21 @@ class SourceOpsState(
         private set
     var error by mutableStateOf<String?>(null)
         private set
+    private var testSubmitted by mutableStateOf(false)
+
+    val sampleError: String? get() = if (testSubmitted) jsonError(sample) else null
 
     fun refresh() = scope.attempt({ error = it }) { status = api.sourceStatus(sourceId) }
 
     fun rotateCredential() = scope.attempt({ error = it }) { token = api.rotateCredential(sourceId) }
 
-    fun testMapping(mapping: () -> List<Rule>) =
+    fun testMapping(mapping: () -> List<Rule>) {
+        testSubmitted = true
+        if (sampleError != null) return
         scope.attempt({ error = it }) {
             test = api.testMapping(sourceId, MappingTestRequest(platformJson.parseToJsonElement(sample), mapping()))
         }
+    }
 }
 
 class BundleState(
@@ -184,6 +196,9 @@ class BundleState(
         private set
     var error by mutableStateOf<String?>(null)
         private set
+    private var importSubmitted by mutableStateOf(false)
+
+    val textError: String? get() = if (importSubmitted) jsonError(text) else null
 
     fun export() =
         scope.attempt({ error = it }) {
@@ -191,7 +206,11 @@ class BundleState(
             text = platformJson.encodeToString(api.exportBundle())
         }
 
-    fun import() = scope.attempt({ error = it }) { result = api.importBundle(platformJson.parseToJsonElement(text)) }
+    fun import() {
+        importSubmitted = true
+        if (textError != null) return
+        scope.attempt({ error = it }) { result = api.importBundle(platformJson.parseToJsonElement(text)) }
+    }
 }
 
 @Composable

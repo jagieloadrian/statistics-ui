@@ -74,6 +74,7 @@ fun Field(
     enabled: Boolean = true,
     singleLine: Boolean = true,
     password: Boolean = false,
+    error: String? = null,
     onChange: (String) -> Unit,
 ) {
     OutlinedTextField(
@@ -82,6 +83,8 @@ fun Field(
         label = { Text(label) },
         enabled = enabled,
         singleLine = singleLine,
+        isError = error != null,
+        supportingText = error?.let { { Text(it) } },
         visualTransformation = if (password) PasswordVisualTransformation() else VisualTransformation.None,
         modifier = modifier,
     )
@@ -158,13 +161,14 @@ fun NumberField(
     label: String,
     value: Double?,
     modifier: Modifier = Modifier,
+    error: String? = null,
     onChange: (Double?) -> Unit,
 ) {
     fun Double.plain() = if (this % 1.0 == 0.0) toLong().toString() else toString()
     var text by remember { mutableStateOf(value?.plain().orEmpty()) }
     val changedOutside = text.toDoubleOrNull() != value
     if (changedOutside) text = value?.plain().orEmpty()
-    Field(label, text, modifier) {
+    Field(label, text, modifier, error = error) {
         text = it
         onChange(it.toDoubleOrNull())
     }

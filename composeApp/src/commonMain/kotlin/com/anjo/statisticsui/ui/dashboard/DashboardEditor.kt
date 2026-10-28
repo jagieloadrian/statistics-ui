@@ -78,6 +78,7 @@ fun DashboardEditor(
             ->
             VariableRow(variable, state.datasetIds, state.datasets, set)
         }
+        ErrorText(state.errors["variables"])
 
         Text(
             "Widgets",
@@ -86,6 +87,7 @@ fun DashboardEditor(
             modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING),
         )
         dashboard.widgets.forEachIndexed { index, widget -> WidgetEntry(state, index, widget) }
+        ErrorText(state.errors["widgets"])
         TextButton(onClick = state::addWidget) {
             Icon(MaterialSymbols.Rounded.Add, contentDescription = null)
             Text("Add widget")
@@ -107,7 +109,12 @@ private fun DashboardSettings(state: DashboardEditorState) {
         Field("Default range (ISO-8601, e.g. P1D)", dashboard.defaultRange?.last.orEmpty(), Modifier.weight(1f)) {
             state.dashboard = dashboard.copy(defaultRange = it.trim().ifBlank { null }?.let(::RelativeRange))
         }
-        NumberField("Refresh seconds (empty = off)", dashboard.refreshSeconds?.toDouble(), Modifier.weight(1f)) {
+        NumberField(
+            "Refresh seconds (empty = off)",
+            dashboard.refreshSeconds?.toDouble(),
+            Modifier.weight(1f),
+            error = state.errors["refresh"],
+        ) {
             state.dashboard = dashboard.copy(refreshSeconds = it?.toInt())
         }
         Text("Visible to", color = Color.Gray)

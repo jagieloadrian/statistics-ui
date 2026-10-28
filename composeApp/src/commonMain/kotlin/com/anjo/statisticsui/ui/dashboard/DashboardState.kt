@@ -21,6 +21,9 @@ import com.anjo.statisticsui.model.VariableValue
 import com.anjo.statisticsui.model.Widget
 import com.anjo.statisticsui.ui.common.attempt
 import com.anjo.statisticsui.ui.common.reporting
+import com.anjo.statisticsui.validation.FieldErrors
+import com.anjo.statisticsui.validation.dashboardErrors
+import com.anjo.statisticsui.validation.newDashboardErrors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -101,6 +104,9 @@ class DashboardEditorState(
         private set
     var error by mutableStateOf<String?>(null)
         private set
+    private var submitted by mutableStateOf(false)
+
+    val errors: FieldErrors get() = if (submitted) dashboardErrors(dashboard) else emptyMap()
 
     val referencedDatasets: Set<String>
         get() =
@@ -155,7 +161,11 @@ class DashboardEditorState(
         expandedWidget = widgets.size
     }
 
-    fun save(onSave: suspend (Dashboard) -> Unit) = scope.attempt({ error = it }) { saveSharesThenDashboard(onSave) }
+    fun save(onSave: suspend (Dashboard) -> Unit) {
+        submitted = true
+        if (errors.isNotEmpty()) return
+        scope.attempt({ error = it }) { saveSharesThenDashboard(onSave) }
+    }
 
     private suspend fun saveSharesThenDashboard(onSave: suspend (Dashboard) -> Unit) {
         if (dashboard.visibility == "users") api.putShares(dashboard.id, shared.toList())
@@ -176,14 +186,19 @@ class NewDashboardState(
     var title by mutableStateOf("")
     var error by mutableStateOf<String?>(null)
         private set
+    private var submitted by mutableStateOf(false)
 
-    fun create(onCreated: (String) -> Unit) =
+    val errors: FieldErrors get() = if (submitted) newDashboardErrors(id, existingIds) else emptyMap()
+
+    fun create(onCreated: (String) -> Unit) {
+        submitted = true
+        if (errors.isNotEmpty()) return
         scope.attempt({ error = it }) {
             val newId = id.trim()
-            require(newId !in existingIds) { "Dashboard '$newId' already exists" }
             api.putDashboard(Dashboard(id = newId, title = title.trim()))
             onCreated(newId)
         }
+    }
 }
 
 class DimensionPickerState(

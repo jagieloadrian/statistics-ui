@@ -46,11 +46,14 @@ fun LoginScreen(
                 )
                 Text("Sign in", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                 if (state.showsPasswordForm) {
-                    Field("Email", state.email, Modifier.fillMaxWidth()) { state.email = it }
-                    Field("Password", state.password, Modifier.fillMaxWidth(), password = true) { state.password = it }
+                    val errors = state.errors
+                    Field("Email", state.email, Modifier.fillMaxWidth(), error = errors["email"]) { state.email = it }
+                    Field("Password", state.password, Modifier.fillMaxWidth(), password = true, error = errors["password"]) {
+                        state.password = it
+                    }
                     Button(
                         onClick = { state.signIn(onSignedIn) },
-                        enabled = !state.busy && state.email.isNotBlank() && state.password.isNotEmpty(),
+                        enabled = !state.busy,
                         modifier = Modifier.fillMaxWidth(),
                     ) { Text("Sign in") }
                 }

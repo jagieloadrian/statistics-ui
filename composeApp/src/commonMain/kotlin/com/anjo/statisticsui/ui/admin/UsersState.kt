@@ -11,6 +11,8 @@ import com.anjo.statisticsui.model.NewUser
 import com.anjo.statisticsui.model.User
 import com.anjo.statisticsui.model.UserUpdate
 import com.anjo.statisticsui.ui.common.attempt
+import com.anjo.statisticsui.validation.FieldErrors
+import com.anjo.statisticsui.validation.newUserErrors
 import kotlinx.coroutines.CoroutineScope
 import org.koin.compose.koinInject
 
@@ -26,17 +28,24 @@ class UsersState(
     var password by mutableStateOf("")
     var error by mutableStateOf<String?>(null)
         private set
+    private var submitted by mutableStateOf(false)
+
+    val errors: FieldErrors get() = if (submitted) newUserErrors(email, role, password) else emptyMap()
 
     fun load() = scope.attempt({ error = it }) { users = api.users() }
 
-    fun create() =
+    fun create() {
+        submitted = true
+        if (errors.isNotEmpty()) return
         scope.attempt({ error = it }) {
             api.createUser(NewUser(email.trim(), name.trim(), role, password))
+            submitted = false
             email = ""
             name = ""
             password = ""
             users = api.users()
         }
+    }
 
     fun changeRole(
         user: User,

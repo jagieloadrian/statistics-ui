@@ -13,6 +13,8 @@ import com.anjo.statisticsui.model.AuthConfig
 import com.anjo.statisticsui.model.User
 import com.anjo.statisticsui.ui.common.attempt
 import com.anjo.statisticsui.ui.common.reporting
+import com.anjo.statisticsui.validation.FieldErrors
+import com.anjo.statisticsui.validation.loginErrors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import org.koin.compose.koinInject
@@ -30,6 +32,9 @@ class LoginState(
     var error by mutableStateOf<String?>(null)
         private set
     private var providerJob by mutableStateOf<Job?>(null)
+    private var submitted by mutableStateOf(false)
+
+    val errors: FieldErrors get() = if (submitted) loginErrors(email, password) else emptyMap()
 
     val showsPasswordForm get() = config?.local != false
     val waitsForProvider get() = providerJob != null
@@ -40,7 +45,9 @@ class LoginState(
             resumeProviderSignIn(api)?.let(onSignedIn)
         }
 
-    fun signIn(onSignedIn: (User) -> Unit) =
+    fun signIn(onSignedIn: (User) -> Unit) {
+        submitted = true
+        if (errors.isNotEmpty()) return
         scope.attempt({ error = it }) {
             busy = true
             try {
@@ -49,6 +56,7 @@ class LoginState(
                 busy = false
             }
         }
+    }
 
     fun signInWithProvider(onSignedIn: (User) -> Unit) {
         val job = scope.attempt({ error = it }) { providerSignIn(api)?.let(onSignedIn) }

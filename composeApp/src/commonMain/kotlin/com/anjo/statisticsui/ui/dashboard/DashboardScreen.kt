@@ -150,13 +150,13 @@ fun NewDashboardDialog(
         title = { Text("New dashboard") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-                Field("Id (letters, digits, - and _)", state.id) { state.id = it }
+                Field("Id (letters, digits, - and _)", state.id, error = state.errors["id"]) { state.id = it }
                 Field("Title", state.title) { state.title = it }
                 ErrorText(state.error)
             }
         },
         confirmButton = {
-            Button(enabled = state.id.isNotBlank(), onClick = { state.create(onCreated) }) { Text("Create") }
+            Button(onClick = { state.create(onCreated) }) { Text("Create") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )

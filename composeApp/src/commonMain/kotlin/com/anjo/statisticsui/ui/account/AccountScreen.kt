@@ -24,6 +24,7 @@ import com.anjo.statisticsui.ui.common.Picker
 import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
+import com.anjo.statisticsui.validation.MIN_PASSWORD_LENGTH
 
 private val UNITS = listOf("metric", "imperial")
 private val THEMES = listOf("system", "light", "dark")
@@ -71,23 +72,24 @@ fun AccountScreen(state: AccountState = rememberAccountState()) {
 
 @Composable
 private fun PasswordForm(state: AccountState) {
+    val errors = state.passwordErrors
     SectionTitle("Change password")
-    Field("Current password", state.currentPassword, Modifier.width(FIELD_WIDTH), password = true) { state.currentPassword = it }
-    Field("New password (at least 10 characters)", state.newPassword, Modifier.width(FIELD_WIDTH), password = true) {
-        state.newPassword = it
-    }
-    Field("Repeat new password", state.repeatedPassword, Modifier.width(FIELD_WIDTH), password = true) { state.repeatedPassword = it }
-    if (state.repeatedPassword.isNotEmpty() && state.repeatedPassword != state.newPassword) {
-        Text("Passwords differ", color = MaterialTheme.colorScheme.error)
-    }
-    Button(
-        enabled =
-            state.currentPassword.isNotEmpty() && state.newPassword.length >= 10 &&
-                state.newPassword == state.repeatedPassword,
-        onClick = state::changePassword,
-    ) { Text("Change password") }
+    PasswordField("Current password", state.currentPassword, errors["current"]) { state.currentPassword = it }
+    PasswordField("New password (at least $MIN_PASSWORD_LENGTH characters)", state.newPassword, errors["new"]) { state.newPassword = it }
+    PasswordField("Repeat new password", state.repeatedPassword, errors["repeated"]) { state.repeatedPassword = it }
+    Button(onClick = state::changePassword) { Text("Change password") }
     state.passwordInfo?.let { Text(it, color = Color.Gray) }
     ErrorText(state.passwordError)
+}
+
+@Composable
+private fun PasswordField(
+    label: String,
+    value: String,
+    error: String?,
+    onChange: (String) -> Unit,
+) {
+    Field(label, value, Modifier.width(FIELD_WIDTH), password = true, error = error, onChange = onChange)
 }
 
 @Composable

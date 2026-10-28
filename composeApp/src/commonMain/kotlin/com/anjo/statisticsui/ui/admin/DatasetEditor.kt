@@ -58,7 +58,7 @@ fun DatasetsScreen(
             )
             state.selected?.let { dataset ->
                 DatasetForm(
-                    rememberDatasetFormState(dataset),
+                    rememberDatasetFormState(dataset, if (state.isNew) state.datasets.map { it.id } else emptyList()),
                     isNew = state.isNew,
                     onSave = state::save,
                     onDelete = { force -> state.delete(dataset.id, force) },
@@ -76,9 +76,10 @@ private fun DatasetForm(
     onDelete: suspend (Boolean) -> Unit,
 ) {
     val dataset = form.dataset
+    val errors = form.errors
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Row(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-            Field("Id", dataset.id, enabled = isNew) { form.dataset = dataset.copy(id = it) }
+            Field("Id", dataset.id, enabled = isNew, error = errors["id"]) { form.dataset = dataset.copy(id = it) }
             Field("Label", dataset.label.orEmpty()) { form.dataset = dataset.copy(label = it.ifBlank { null }) }
         }
 
@@ -104,7 +105,13 @@ private fun DatasetForm(
             Field("Expression, e.g. (recovered + dead) / population", expression, Modifier.weight(3f)) { set(name to it) }
         }
 
-        Field("Retention days (empty = keep forever)", form.retention, Modifier.padding(top = SMALL_MEDIUM_PADDING)) {
+        ErrorText(errors["names"])
+        Field(
+            "Retention days (empty = keep forever)",
+            form.retention,
+            Modifier.padding(top = SMALL_MEDIUM_PADDING),
+            error = errors["retention"],
+        ) {
             form.retention = it
         }
 

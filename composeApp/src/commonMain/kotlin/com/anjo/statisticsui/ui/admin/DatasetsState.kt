@@ -11,6 +11,9 @@ import com.anjo.statisticsui.api.PlatformApi
 import com.anjo.statisticsui.model.Dataset
 import com.anjo.statisticsui.model.DefinitionSummary
 import com.anjo.statisticsui.ui.common.attempt
+import com.anjo.statisticsui.validation.FieldErrors
+import com.anjo.statisticsui.validation.datasetErrors
+import com.anjo.statisticsui.validation.positiveWholeNumber
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CoroutineScope
 import org.koin.compose.koinInject
@@ -47,7 +50,6 @@ class DatasetsState(
         dataset: Dataset,
         force: Boolean,
     ) {
-        require(!isNew || datasets.none { it.id == dataset.id }) { "Dataset '${dataset.id}' already exists" }
         api.putDataset(dataset, force)
         selected = dataset
         isNew = false
@@ -66,6 +68,7 @@ class DatasetsState(
 
 class DatasetFormState(
     initial: Dataset,
+    private val existingIds: Collection<String>,
     private val scope: CoroutineScope,
 ) {
     var dataset by mutableStateOf(initial)
@@ -75,17 +78,17 @@ class DatasetFormState(
         private set
     var retry by mutableStateOf<Pair<String, suspend () -> Unit>?>(null)
         private set
+    private var submitted by mutableStateOf(false)
 
-    fun save(onSave: suspend (Dataset, Boolean) -> Unit) =
-        retryOnConflict("Save anyway") { force ->
-            val days =
-                if (retention.isBlank()) {
-                    null
-                } else {
-                    retention.trim().toIntOrNull() ?: throw IllegalArgumentException("Retention days must be a whole number")
-                }
-            onSave(dataset.copy(calculated = calculated.toMap(), retentionDays = days), force)
-        }
+    val errors: FieldErrors
+        get() = if (submitted) datasetErrors(dataset, calculated.map { it.first }, retention, existingIds) else emptyMap()
+
+    fun save(onSave: suspend (Dataset, Boolean) -> Unit) {
+        submitted = true
+        if (errors.isNotEmpty()) return
+        val toSave = dataset.copy(calculated = calculated.toMap(), retentionDays = positiveWholeNumber(retention))
+        retryOnConflict("Save anyway") { force -> onSave(toSave, force) }
+    }
 
     fun delete(onDelete: suspend (Boolean) -> Unit) = retryOnConflict("Delete anyway", onDelete)
 
@@ -116,7 +119,10 @@ fun rememberDatasetsState(api: PlatformApi = koinInject()): DatasetsState {
 }
 
 @Composable
-fun rememberDatasetFormState(initial: Dataset): DatasetFormState {
+fun rememberDatasetFormState(
+    initial: Dataset,
+    existingIds: Collection<String>,
+): DatasetFormState {
     val scope = rememberCoroutineScope()
-    return remember(initial) { DatasetFormState(initial, scope) }
+    return remember(initial) { DatasetFormState(initial, existingIds, scope) }
 }

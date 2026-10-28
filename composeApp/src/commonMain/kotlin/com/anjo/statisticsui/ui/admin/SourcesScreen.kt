@@ -98,17 +98,19 @@ private fun SourceForm(
     onDeleted: () -> Unit,
 ) {
     val source = form.source
+    val errors = form.errors
     Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(MEDIUM_PADDING)) {
         Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState())) {
             Row(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-                Field("Id", source.id, Modifier.weight(1f), enabled = form.isNew) { form.edit(source.copy(id = it)) }
+                Field("Id", source.id, Modifier.weight(1f), enabled = form.isNew, error = errors["id"]) { form.edit(source.copy(id = it)) }
                 Field("Label", source.label.orEmpty(), Modifier.weight(1f)) { form.edit(source.copy(label = it.ifBlank { null })) }
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
                 Text("Dataset", color = Color.Gray)
                 Picker(source.dataset, datasets) { form.edit(source.copy(dataset = it)) }
-                Field("Rate limit / s", form.rate) { form.rate = it }
+                Field("Rate limit / s", form.rate, error = errors["rate"]) { form.rate = it }
             }
+            ErrorText(errors["dataset"]?.let { "Dataset: $it" })
             Text("Push address: /api/v2/ingest/${source.id}", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
 
             ListEditor("Mapping (first rule)", form.rows, form::editRows, { MapRow() }) { row, set -> MappingRow(row, set) }
@@ -119,7 +121,13 @@ private fun SourceForm(
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING),
             )
-            Field("Mapping", form.mappingJson, Modifier.fillMaxWidth().height(220.dp), singleLine = false) { form.mappingJson = it }
+            Field(
+                "Mapping",
+                form.mappingJson,
+                Modifier.fillMaxWidth().height(220.dp),
+                singleLine = false,
+                error = errors["mapping"],
+            ) { form.mappingJson = it }
             TextButton(onClick = form::applyJson) { Text("Apply JSON") }
 
             Row(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
@@ -199,7 +207,13 @@ private fun SourceOps(
         }
 
         Text("Test mapping", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-        Field("Sample payload (JSON)", ops.sample, Modifier.fillMaxWidth().height(160.dp), singleLine = false) { ops.sample = it }
+        Field(
+            "Sample payload (JSON)",
+            ops.sample,
+            Modifier.fillMaxWidth().height(160.dp),
+            singleLine = false,
+            error = ops.sampleError,
+        ) { ops.sample = it }
         Button(onClick = { ops.testMapping(mapping) }) { Text("Test mapping") }
         ops.test?.let { test ->
             Text("${test.records.size} record(s)", color = Color.LightGray)
@@ -224,7 +238,13 @@ private fun BundleDialog(
         title = { Text("Export / import") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-                Field("Bundle JSON", bundle.text, Modifier.fillMaxWidth().height(360.dp), singleLine = false) { bundle.text = it }
+                Field(
+                    "Bundle JSON",
+                    bundle.text,
+                    Modifier.fillMaxWidth().height(360.dp),
+                    singleLine = false,
+                    error = bundle.textError,
+                ) { bundle.text = it }
                 bundle.result?.let { result ->
                     Text(
                         if (result.errors.isEmpty()) {
@@ -242,7 +262,7 @@ private fun BundleDialog(
         confirmButton = {
             Row(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
                 OutlinedButton(onClick = bundle::export) { Text("Export") }
-                Button(enabled = bundle.text.isNotBlank(), onClick = bundle::import) { Text("Import") }
+                Button(onClick = bundle::import) { Text("Import") }
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } },

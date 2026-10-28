@@ -12,6 +12,8 @@ import com.anjo.statisticsui.model.Prefs
 import com.anjo.statisticsui.model.User
 import com.anjo.statisticsui.ui.common.attempt
 import com.anjo.statisticsui.ui.common.reporting
+import com.anjo.statisticsui.validation.FieldErrors
+import com.anjo.statisticsui.validation.passwordChangeErrors
 import kotlinx.coroutines.CoroutineScope
 import org.koin.compose.koinInject
 
@@ -40,6 +42,10 @@ class AccountState(
     var passwordError by mutableStateOf<String?>(null)
         private set
     private var localSignIn by mutableStateOf(true)
+    private var passwordSubmitted by mutableStateOf(false)
+
+    val passwordErrors: FieldErrors
+        get() = if (passwordSubmitted) passwordChangeErrors(currentPassword, newPassword, repeatedPassword) else emptyMap()
 
     val user: User? get() = session.user
     val canChangePassword get() = user?.hasPassword != false && localSignIn
@@ -62,8 +68,11 @@ class AccountState(
 
     fun changePassword() {
         passwordInfo = null
+        passwordSubmitted = true
+        if (passwordErrors.isNotEmpty()) return
         scope.attempt({ passwordError = it }) {
             api.changePassword(currentPassword, newPassword)
+            passwordSubmitted = false
             currentPassword = ""
             newPassword = ""
             repeatedPassword = ""

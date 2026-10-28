@@ -25,8 +25,8 @@ import com.anjo.statisticsui.ui.common.ScreenHeader
 import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
-
-private val ROLES = listOf("viewer", "editor", "admin")
+import com.anjo.statisticsui.validation.MIN_PASSWORD_LENGTH
+import com.anjo.statisticsui.validation.ROLES
 
 @Composable
 fun UsersScreen(
@@ -46,11 +46,18 @@ fun UsersScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
         ) {
-            Field("Email", state.email, Modifier.weight(1f)) { state.email = it }
+            val errors = state.errors
+            Field("Email", state.email, Modifier.weight(1f), error = errors["email"]) { state.email = it }
             Field("Name", state.name, Modifier.weight(1f)) { state.name = it }
             Picker(state.role, ROLES) { state.role = it }
-            Field("Initial password (≥ 10 characters)", state.password, Modifier.weight(1f), password = true) { state.password = it }
-            Button(enabled = state.email.isNotBlank() && state.password.length >= 10, onClick = state::create) { Text("Create") }
+            Field(
+                "Initial password (≥ $MIN_PASSWORD_LENGTH characters)",
+                state.password,
+                Modifier.weight(1f),
+                password = true,
+                error = errors["password"],
+            ) { state.password = it }
+            Button(onClick = state::create) { Text("Create") }
         }
         ErrorText(state.error)
 
