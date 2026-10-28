@@ -2,8 +2,6 @@ package com.anjo.statisticsui.model
 
 import kotlinx.serialization.Serializable
 
-// Mirror of StatisticsService spec 004 contracts/definition-format.md and api-v2.md
-
 @Serializable
 data class Measure(
     val name: String,

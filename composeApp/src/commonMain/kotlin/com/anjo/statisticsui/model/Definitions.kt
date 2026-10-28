@@ -3,7 +3,6 @@ package com.anjo.statisticsui.model
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-/** `GET /{kind}` row; `label` carries the dashboard title. */
 @Serializable
 data class DefinitionSummary(
     val id: String,
@@ -11,7 +10,6 @@ data class DefinitionSummary(
     val updatedAt: String? = null,
 )
 
-/** `POST /import` answer; `created`/`updated` have no defaults so an [ApiError] body never decodes as one. */
 @Serializable
 data class ImportResult(
     val created: Int,
@@ -26,7 +24,6 @@ data class ApiError(
     val details: List<String> = emptyList(),
 )
 
-/** Used for the JSON text areas (advanced mapping, sample payloads, records). */
 internal val platformJson =
     Json {
         ignoreUnknownKeys = true

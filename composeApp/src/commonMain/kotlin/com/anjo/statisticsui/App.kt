@@ -39,7 +39,6 @@ fun App() {
             }
         MaterialTheme(colorScheme = if (dark) DarkColors else LightColors) {
             CompositionLocalProvider(LocalPrefs provides prefs) {
-                // Surface gives every destination the theme background (only MainLayout had one).
                 Surface(color = MaterialTheme.colorScheme.background) {
                     val controller = rememberNavController()
                     NavGraph(controller)

@@ -55,7 +55,7 @@ import com.anjo.statisticsui.ui.common.ListEditor
 import com.anjo.statisticsui.ui.common.Picker
 import com.anjo.statisticsui.ui.common.ScreenHeader
 import com.anjo.statisticsui.ui.common.attempt
-import com.anjo.statisticsui.ui.common.catching
+import com.anjo.statisticsui.ui.common.runSuspendCatching
 import com.anjo.statisticsui.ui.theme.Colors
 import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
@@ -66,7 +66,6 @@ import com.composables.icons.materialsymbols.rounded.Refresh
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
-/** Source states from data-model.md (source status state machine). */
 private val STATE_COLORS =
     mapOf(
         "receiving" to Color(0xFF4CAF50),
@@ -93,7 +92,7 @@ fun SourcesScreen(
         scope.attempt({ error = it }) {
             datasets = api.list("datasets").map { it.id }
             sources = api.list("sources")
-            sources.forEach { s -> launch { catching { api.sourceStatus(s.id) }.onSuccess { states[s.id] = it.state } } }
+            sources.forEach { s -> launch { runSuspendCatching { api.sourceStatus(s.id) }.onSuccess { states[s.id] = it.state } } }
         }
     }
     LaunchedEffect(Unit) { reload() }
@@ -160,7 +159,6 @@ private fun SourceForm(
     var source by remember(initial) { mutableStateOf(initial) }
     var rows by remember(initial) { mutableStateOf(initial.mapping.firstOrNull().rows()) }
     var rate by remember(initial) { mutableStateOf(initial.rateLimitPerSecond.toString()) }
-    // regenerated whenever the rows change the mapping; edits here count once applied (or on save)
     var mappingJson by remember(source.mapping) { mutableStateOf(platformJson.encodeToString(source.mapping)) }
     var error by remember(initial) { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
@@ -175,7 +173,6 @@ private fun SourceForm(
     val save = { s: () -> Source ->
         scope.attempt({ error = it }) {
             val saved = s()
-            // PUT is an upsert: a "new" source must not silently replace an existing one
             require(!isNew || saved.id !in existingIds) { "Source '${saved.id}' already exists" }
             api.putSource(saved)
             onSaved(saved)
@@ -257,7 +254,6 @@ private fun SourceForm(
     }
 }
 
-/** Status panel, pause/resume, credential rotation and mapping test for a saved source. */
 @Composable
 private fun SourceOps(
     source: Source,
@@ -331,7 +327,6 @@ private fun SourceOps(
     }
 }
 
-/** Export shows the whole bundle as copyable JSON; import posts pasted JSON and shows `{created, updated, errors}`. */
 @Composable
 private fun BundleDialog(
     api: PlatformApi,

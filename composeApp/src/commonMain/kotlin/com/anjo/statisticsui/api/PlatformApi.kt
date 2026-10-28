@@ -45,19 +45,16 @@ import io.ktor.http.isSuccess
 import kotlinx.serialization.json.JsonElement
 import org.koin.core.annotation.Singleton
 
-/** Non-2xx answer; [status] lets callers react to e.g. 409 (references, retry with `force`). */
 class ApiException(
     message: String,
     val status: Int,
 ) : Exception(message)
 
-/** Client for the platform API v2 (contracts/api-v2.md). `kind` = `datasets`, `sources` or `dashboards`. */
 @Singleton
 class PlatformApi(
     private val client: HttpClient,
     private val session: Session,
 ) {
-    /** Stores the session on success; wrong credentials → 401 with one generic message, too many tries → 429. */
     suspend fun login(
         email: String,
         password: String,
@@ -69,11 +66,9 @@ class PlatformApi(
 
     suspend fun authConfig(): AuthConfig = request("auth/config")
 
-    /** Provider unreachable → 503 "Sign-in provider unavailable". */
     suspend fun oidcStart(redirectUri: String): OidcStart =
         request("auth/oidc/start") { json(HttpMethod.Post, OidcStartRequest(redirectUri)) }
 
-    /** Finishes provider sign-in and stores the session, like [login]. */
     suspend fun oidcLogin(
         code: String,
         codeVerifier: String,
@@ -84,7 +79,6 @@ class PlatformApi(
         return answer.user
     }
 
-    /** Ends the session locally even when the server cannot be reached. */
     suspend fun logout() {
         try {
             request<Unit>("auth/logout") { method = HttpMethod.Post }
@@ -97,7 +91,6 @@ class PlatformApi(
 
     suspend fun putPrefs(prefs: Prefs): User = request<User>("me/prefs") { json(HttpMethod.Put, prefs) }.also { session.user = it }
 
-    /** Other sessions of the user are revoked; wrong current password or a new one under 10 chars → 400. */
     suspend fun changePassword(
         current: String,
         new: String,
@@ -123,7 +116,6 @@ class PlatformApi(
 
     suspend fun list(kind: String): List<DefinitionSummary> = request(kind)
 
-    /** [force] overrides the 409 reference guard (dataset still used by widgets, variables or sources). */
     suspend fun delete(
         kind: String,
         id: String,
@@ -153,7 +145,6 @@ class PlatformApi(
 
     suspend fun putDashboard(dashboard: Dashboard): Unit = request("dashboards/${dashboard.id}") { json(HttpMethod.Put, dashboard) }
 
-    /** Returns the new source token; it is shown once and the previous one stops working. */
     suspend fun rotateCredential(sourceId: String): String =
         request<Credential>("sources/$sourceId/credential") { method = HttpMethod.Post }.token
 
@@ -179,10 +170,8 @@ class PlatformApi(
             parameter("offset", offset)
         }
 
-    /** Raw JSON so the copy shown to the user keeps every field. */
     suspend fun exportBundle(): JsonElement = request("export")
 
-    /** 200 = imported; 400 with the same shape = nothing stored. Any other answer throws. */
     suspend fun importBundle(bundle: JsonElement): ImportResult {
         val response =
             client.request(url("import")) {
@@ -205,7 +194,6 @@ class PlatformApi(
         session.token?.let { bearerAuth(it) }
     }
 
-    /** A 401 on a request that carried a token means it expired or was revoked: sign out (NavGraph shows login). */
     private suspend fun HttpResponse.apiException(): ApiException {
         if (status == HttpStatusCode.Unauthorized && call.request.headers[HttpHeaders.Authorization] != null) session.signOut()
         val error = runCatching { body<ApiError>() }.getOrNull()

@@ -37,10 +37,6 @@ import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import kotlinx.coroutines.Job
 import org.koin.compose.koinInject
 
-/**
- * Password form and/or provider button, as the backend's sign-in config says (the form also shows while it is unknown).
- * Wrong credentials get the server's one generic message; more than 5 tries a minute answer 429.
- */
 @Composable
 fun LoginScreen(
     onSignedIn: (User) -> Unit,
@@ -90,7 +86,6 @@ fun LoginScreen(
                 }
                 config?.oidc?.let { provider ->
                     if (providerJob != null) {
-                        // desktop waits for the system browser; web is leaving the page
                         Text("Waiting for the browser…", color = MaterialTheme.colorScheme.onSurface)
                         OutlinedButton(onClick = { providerJob?.cancel() }, modifier = Modifier.fillMaxWidth()) { Text("Cancel") }
                     } else {

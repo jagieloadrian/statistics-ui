@@ -54,7 +54,6 @@ private const val MAX_TABLE_ROWS = 200
 private const val GAUGE_START = 150f
 private const val GAUGE_SWEEP = 240f
 
-/** Renders one widget filling [modifier]; [result] null = loading, failure = error message. */
 @Composable
 fun Widget(
     widget: Widget,
@@ -72,7 +71,6 @@ fun Widget(
                     CircularProgressIndicator()
                 }
 
-                // the server answers 400 naming an unknown dataset/field, e.g. after a measure was deleted with force
                 (error as? ApiException)?.status == 400 -> {
                     Column {
                         Text("Missing data definition", color = Colors.LIGHT_ORANGE, fontWeight = FontWeight.Bold)
@@ -113,7 +111,6 @@ fun Widget(
     }
 }
 
-/** `line`, `area` or `bar`; charty's MultilineChart paints every line with one brush, so series are drawn on its scaffold. */
 @Composable
 private fun SeriesChart(
     result: QueryResult,
@@ -129,7 +126,6 @@ private fun SeriesChart(
     }
     val bar = widget.type == "bar"
     val area = widget.type == "area"
-    // bars grow from zero, so zero must be on the axis
     val min = options.min?.let { display.convert(it).toFloat() } ?: if (bar) minOf(chart.min, 0f) else chart.min
     val max =
         (options.max?.let { display.convert(it).toFloat() } ?: if (bar) maxOf(chart.max, 0f) else chart.max).let {
@@ -212,7 +208,6 @@ private fun StatWidget(
     }
 }
 
-/** 240° arc per numeric value between `options.min`/`max` (default 0–100); thresholds tint the track and the value. */
 @Composable
 private fun GaugeWidget(
     result: QueryResult,
@@ -285,7 +280,6 @@ private fun TableWidget(
     Column(Modifier.verticalScroll(rememberScrollState())) {
         TableRow(header, header = true)
         HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f))
-        // ponytail: plain Column, capped; virtualise if large raw tables are needed
         rows.take(MAX_TABLE_ROWS).forEach { TableRow(it) }
         if (rows.size > MAX_TABLE_ROWS) Text("… ${rows.size - MAX_TABLE_ROWS} more rows", color = Color.Gray)
     }
@@ -309,7 +303,6 @@ private fun TableRow(
     }
 }
 
-/** The signed-in user's time zone, else the system zone. */
 @Composable
 internal fun displayZone(): TimeZone {
     val id = LocalPrefs.current.timeZone

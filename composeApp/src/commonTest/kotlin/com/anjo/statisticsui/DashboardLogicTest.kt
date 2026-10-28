@@ -43,7 +43,7 @@ class DashboardLogicTest :
                         ),
                 )
             val chart = lineChartData(result).shouldNotBeNull()
-            chart.labels shouldBe listOf("10-26 00:00", "10-26 01:00", "10-26 02:00") // null value dropped
+            chart.labels shouldBe listOf("10-26 00:00", "10-26 01:00", "10-26 02:00")
             chart.lines shouldBe listOf(ChartLine("a · t", "t", listOf(0 to 1f, 1 to 2f)), ChartLine("b · t", "t", listOf(2 to 5f)))
             (chart.min to chart.max) shouldBe (1f to 5f)
             lineChartData(

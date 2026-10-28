@@ -39,7 +39,6 @@ import org.koin.compose.koinInject
 
 private val ROLES = listOf("viewer", "editor", "admin")
 
-/** Admin only: invite with an initial password (no email is sent), change role, delete; the last admin is kept (409). */
 @Composable
 fun UsersScreen(
     navController: NavHostController,

@@ -4,7 +4,6 @@ import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Instant
 
-/** Selected value(s) of a dashboard variable; a bucket variable uses the first. */
 typealias VariableValue = List<String>
 
 data class TimeRange(

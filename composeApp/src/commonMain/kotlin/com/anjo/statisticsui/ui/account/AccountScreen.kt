@@ -106,8 +106,8 @@ fun AccountScreen(
         prefsInfo?.let { Text(it, color = Color.Gray) }
         ErrorText(prefsError)
 
-        // provider-only accounts have no password; with local sign-in off nobody uses one
-        if (user?.hasPassword != false && localSignIn) {
+        val canChangePassword = user?.hasPassword != false && localSignIn
+        if (canChangePassword) {
             Text(
                 "Change password",
                 style = MaterialTheme.typography.titleMedium,

@@ -10,7 +10,6 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import org.koin.core.annotation.Singleton
 
-/** Engine from the platform: CIO on desktop (jvmMain dependency), the browser's fetch on web. */
 @Singleton
 fun createHttpClient(): HttpClient =
     HttpClient {

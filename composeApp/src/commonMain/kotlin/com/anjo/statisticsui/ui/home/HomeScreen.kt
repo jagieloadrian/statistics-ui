@@ -55,7 +55,7 @@ import com.anjo.statisticsui.navigation.Screen
 import com.anjo.statisticsui.ui.account.AccountScreen
 import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.common.attempt
-import com.anjo.statisticsui.ui.common.catching
+import com.anjo.statisticsui.ui.common.runSuspendCatching
 import com.anjo.statisticsui.ui.dashboard.NewDashboardDialog
 import com.anjo.statisticsui.ui.theme.Colors
 import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
@@ -134,8 +134,7 @@ fun MainLayout(
                 NavigationDrawerItem(
                     label = { Text("Sign out") },
                     selected = false,
-                    // Session.signOut runs even when the server is unreachable; NavGraph then shows the login screen.
-                    onClick = { scope.launch { catching { api.logout() } } },
+                    onClick = { scope.launch { runSuspendCatching { api.logout() } } },
                     icon = { Icon(MaterialSymbols.Rounded.Logout, contentDescription = null) },
                     modifier = Modifier.padding(horizontal = LARGE_SMALL_PADDING, vertical = SMALL_PADDING),
                 )
@@ -181,7 +180,6 @@ fun DashboardContent(
                 Screen.DashboardView.route(it.id),
             )
         }
-    // The server enforces roles too; viewers just don't see what would answer 403.
     val adminTiles =
         if (!session.isAdmin) {
             emptyList()
@@ -304,7 +302,6 @@ fun DataTileCard(
                         }
                     }
                     Spacer(Modifier.weight(1f))
-                    // ponytail: outlined star tinted when favourite; the filled-symbols artifact isn't a dependency
                     favourite?.let {
                         IconButton(onClick = onFavourite) {
                             Icon(

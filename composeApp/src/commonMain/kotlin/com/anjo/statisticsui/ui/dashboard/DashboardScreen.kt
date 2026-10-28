@@ -43,7 +43,7 @@ import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.ScreenHeader
 import com.anjo.statisticsui.ui.common.attempt
-import com.anjo.statisticsui.ui.common.catching
+import com.anjo.statisticsui.ui.common.runSuspendCatching
 import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
@@ -82,8 +82,6 @@ fun DashboardScreen(
             dashboard = loaded
         }
     }
-    // the dashboard range sets from/to on every widget query; widget definitions never carry their own.
-    // Cancelled when the screen leaves composition, which also stops the refresh loop.
     LaunchedEffect(dashboard, range, values, editing) {
         val current = dashboard?.takeUnless { editing } ?: return@LaunchedEffect
         results.clear()
@@ -91,7 +89,7 @@ fun DashboardScreen(
             val timeRange = TimeRange.last(range)
             coroutineScope {
                 current.widgets.forEach { w ->
-                    launch { results[w.id] = catching { api.query(resolve(w.query, values, timeRange)) } }
+                    launch { results[w.id] = runSuspendCatching { api.query(resolve(w.query, values, timeRange)) } }
                 }
             }
             delay((current.refreshSeconds ?: break).seconds)
@@ -109,7 +107,6 @@ fun DashboardScreen(
                         modifier = Modifier.padding(end = SMALL_PADDING),
                     )
                 }
-                // ponytail: owner isn't in the dashboard JSON, so an editor sees Edit on others' dashboards and gets the 403 on save
                 if (session.canEdit) {
                     Button(onClick = { editing = true }, enabled = dashboard != null) {
                         Icon(MaterialSymbols.Rounded.Edit, contentDescription = null)
@@ -126,7 +123,6 @@ fun DashboardScreen(
                 api = api,
                 onSave = { saved ->
                     api.putDashboard(saved)
-                    // keep chosen values of variables that still exist, start new ones from their defaults
                     values = initialValues(saved, api) + values.filterKeys { name -> saved.variables.any { it.name == name } }
                     dashboard = saved
                     editing = false
@@ -168,7 +164,6 @@ fun DashboardScreen(
     }
 }
 
-/** Creates an empty dashboard; refuses an id that already exists, since PUT would overwrite it. */
 @Composable
 fun NewDashboardDialog(
     existingIds: List<String>,

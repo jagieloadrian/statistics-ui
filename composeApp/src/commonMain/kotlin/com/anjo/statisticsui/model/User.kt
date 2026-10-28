@@ -53,7 +53,6 @@ data class UserUpdate(
     val role: String? = null,
 )
 
-/** Enabled sign-in methods; [oidc] is null when the backend has no sign-in provider. */
 @Serializable
 data class AuthConfig(
     val local: Boolean = true,

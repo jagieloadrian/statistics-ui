@@ -20,10 +20,6 @@ import kotlin.math.pow
 import kotlin.math.roundToLong
 import kotlin.time.Instant
 
-/**
- * One line per series × measure column, x = [xColumn] (`options.x`, default `ts`); all lines share the merged x values
- * as positions, sorted numerically when numeric (e.g. `generation`), else as text (ISO timestamps).
- */
 internal fun lineChartData(
     result: QueryResult,
     xColumn: String = "ts",
@@ -42,7 +38,6 @@ internal fun lineChartData(
                 }
             }
         }
-    // ponytail: x = index of the merged x values (evenly spaced), fine for bucketed data; proportional axis if gaps matter
     val xs =
         raw
             .flatMap { (_, points) -> points.map { it.first } }
@@ -60,7 +55,6 @@ internal fun lineChartData(
     )
 }
 
-/** One value per column of each series' last row; the label is the column name (= the measure's `as`). */
 internal fun statValues(result: QueryResult): List<Pair<String, JsonElement>> =
     result.series.flatMap { s ->
         val row = s.rows.lastOrNull() ?: return@flatMap emptyList()
@@ -84,14 +78,12 @@ internal fun JsonElement.format(
     return d?.let { formatNumber(it, decimals) } ?: p.content.shortTime(zone)
 }
 
-/** Stored value in the user's unit system (thresholds and gauge range stay in the declared unit). */
 internal fun formatValue(
     v: Double,
     options: WidgetOptions,
     display: UnitDisplay,
 ) = formatNumber(display.convert(v), options.decimals) + display.unit?.let { " $it" }.orEmpty()
 
-/** Exactly [decimals] places when given; otherwise whole numbers without decimals and others rounded to 2 places. */
 internal fun formatNumber(
     d: Double,
     decimals: Int? = null,
@@ -106,7 +98,6 @@ internal fun formatNumber(
     return sign + (n / scale) + if (places == 0) "" else "." + (n % scale).toString().padStart(places, '0')
 }
 
-/** Color of the highest threshold at or below [v]. */
 internal fun thresholdColor(
     v: Double,
     thresholds: List<Threshold>,
@@ -117,7 +108,6 @@ internal fun thresholdColor(
         ?.color
         ?.let(::parseColor)
 
-/** `#RRGGBB` → [Color]; anything else → null (palette color used). */
 internal fun parseColor(hex: String): Color? =
     hex
         .removePrefix("#")
@@ -125,7 +115,6 @@ internal fun parseColor(hex: String): Color? =
         ?.toLongOrNull(16)
         ?.let { Color(0xFF000000 or it) }
 
-/** ISO instant `2026-10-26T13:05:00Z` → `10-26 13:05` in [zone]; anything else unchanged. */
 internal fun String.shortTime(zone: TimeZone = TimeZone.UTC): String {
     if (!(length >= 16 && this[4] == '-' && this[7] == '-' && this[10] == 'T')) return this
     val t = runCatching { Instant.parse(this).toLocalDateTime(zone) }.getOrNull() ?: return substring(5, 16).replace('T', ' ')

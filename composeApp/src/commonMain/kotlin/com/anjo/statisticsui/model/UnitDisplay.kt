@@ -1,6 +1,5 @@
 package com.anjo.statisticsui.model
 
-/** metric [from] → imperial [to]: `to = from × factor + offset`. */
 private class Conversion(
     val from: String,
     val to: String,
@@ -8,10 +7,6 @@ private class Conversion(
     val offset: Double = 0.0,
 )
 
-/**
- * Unit table of contracts/definition-format.md (FR-022). For the way back the first entry with that imperial unit
- * wins, so `in` → `cm` and `mph` → `km/h`.
- */
 private val CONVERSIONS =
     listOf(
         Conversion("°C", "°F", 1.8, 32.0),
@@ -29,7 +24,6 @@ private val CONVERSIONS =
         Conversion("kPa", "psi", 1 / 6.894757293168),
     )
 
-/** How values of one declared unit are shown: [unit] is the displayed unit, [convert] maps stored → displayed values. */
 class UnitDisplay(
     val unit: String?,
     private val factor: Double = 1.0,
@@ -38,7 +32,6 @@ class UnitDisplay(
     fun convert(value: Double) = value * factor + offset
 }
 
-/** Display conversion of [unit] for a user of [system] (`metric`/`imperial`); unknown units are shown as declared. */
 fun unitDisplay(
     unit: String?,
     system: String,

@@ -46,7 +46,7 @@ import com.anjo.statisticsui.ui.common.ListEditor
 import com.anjo.statisticsui.ui.common.NumberField
 import com.anjo.statisticsui.ui.common.Picker
 import com.anjo.statisticsui.ui.common.attempt
-import com.anjo.statisticsui.ui.common.catching
+import com.anjo.statisticsui.ui.common.runSuspendCatching
 import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
@@ -64,7 +64,6 @@ private val VARIABLE_TYPES = listOf("dimension", "timeRange", "bucket")
 private val SIZES = (1..12).map { it.toString() }
 private val VISIBILITIES = listOf("private", "users", "all")
 
-/** Edits the whole dashboard definition locally; nothing is stored until Save (one PUT). */
 @Composable
 fun DashboardEditor(
     initial: Dashboard,
@@ -73,9 +72,9 @@ fun DashboardEditor(
     api: PlatformApi = koinInject(),
 ) {
     var dashboard by remember(initial) { mutableStateOf(initial) }
-    var open by remember(initial) { mutableStateOf<Int?>(null) } // index of the widget whose form is shown
+    var expandedWidget by remember(initial) { mutableStateOf<Int?>(null) }
     var datasetIds by remember { mutableStateOf(emptyList<String>()) }
-    val datasets = remember { mutableStateMapOf<String, Dataset>() } // measure/dimension names for the pickers
+    val datasets = remember { mutableStateMapOf<String, Dataset>() }
     var users by remember { mutableStateOf(emptyList<User>()) }
     var shared by remember(initial) { mutableStateOf(emptySet<Long>()) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -94,12 +93,17 @@ fun DashboardEditor(
             } + dashboard.variables.mapNotNull { it.dataset }
         ).filter { it.isNotBlank() }.toSet()
     LaunchedEffect(referenced) {
-        referenced.filter { it !in datasets }.forEach { id -> catching { api.dataset(id) }.onSuccess { datasets[id] = it } }
+        referenced.filter { it !in datasets }.forEach { id -> runSuspendCatching { api.dataset(id) }.onSuccess { datasets[id] = it } }
     }
     val widgets = dashboard.widgets
 
     fun setWidgets(list: List<Widget>) {
         dashboard = dashboard.copy(widgets = list)
+    }
+
+    suspend fun saveSharesThenDashboard() {
+        if (dashboard.visibility == "users") api.putShares(dashboard.id, shared.toList())
+        onSave(dashboard)
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
@@ -169,29 +173,29 @@ fun DashboardEditor(
         )
         widgets.forEachIndexed { i, w ->
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = { open = if (open == i) null else i }, modifier = Modifier.weight(1f)) {
+                TextButton(onClick = { expandedWidget = if (expandedWidget == i) null else i }, modifier = Modifier.weight(1f)) {
                     Text("${w.title.ifBlank { w.id }} · ${w.type} · ${w.w}×${w.h}", modifier = Modifier.fillMaxWidth())
                 }
                 IconButton(enabled = i > 0, onClick = {
                     setWidgets(widgets.swap(i, i - 1))
-                    open = i - 1
+                    expandedWidget = i - 1
                 }) {
                     Icon(MaterialSymbols.Rounded.Arrow_upward, contentDescription = "Move up", tint = Color.Gray)
                 }
                 IconButton(enabled = i < widgets.lastIndex, onClick = {
                     setWidgets(widgets.swap(i, i + 1))
-                    open = i + 1
+                    expandedWidget = i + 1
                 }) {
                     Icon(MaterialSymbols.Rounded.Arrow_downward, contentDescription = "Move down", tint = Color.Gray)
                 }
                 IconButton(onClick = {
                     setWidgets(widgets.filterIndexed { j, _ -> j != i })
-                    open = null
+                    expandedWidget = null
                 }) {
                     Icon(MaterialSymbols.Rounded.Delete, contentDescription = "Delete", tint = Color.Gray)
                 }
             }
-            if (open == i) {
+            if (expandedWidget == i) {
                 WidgetForm(w, dashboard.variables, datasetIds, datasets) { changed ->
                     setWidgets(widgets.mapIndexed { j, old -> if (j == i) changed else old })
                 }
@@ -201,7 +205,7 @@ fun DashboardEditor(
         TextButton(onClick = {
             val id = generateSequence(1) { it + 1 }.map { "w$it" }.first { id -> widgets.none { it.id == id } }
             setWidgets(widgets + Widget(id = id, type = "line", w = 12, h = 4, query = Query(dataset = datasetIds.firstOrNull().orEmpty())))
-            open = widgets.size
+            expandedWidget = widgets.size
         }) {
             Icon(MaterialSymbols.Rounded.Add, contentDescription = null)
             Text("Add widget")
@@ -209,11 +213,7 @@ fun DashboardEditor(
 
         Row(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
             Button(onClick = {
-                scope.attempt({ error = it }) {
-                    // shares first: onSave closes the editor, which cancels this scope
-                    if (dashboard.visibility == "users") api.putShares(dashboard.id, shared.toList())
-                    onSave(dashboard)
-                }
+                scope.attempt({ error = it }) { saveSharesThenDashboard() }
             }) { Text("Save") }
             TextButton(onClick = onCancel) { Text("Cancel") }
         }
@@ -221,7 +221,6 @@ fun DashboardEditor(
     }
 }
 
-/** Every field of the Widget table in definition-format; the query never gets from/to (the dashboard range does). */
 @Composable
 private fun WidgetForm(
     w: Widget,
@@ -274,7 +273,6 @@ private fun WidgetForm(
             }
             Field("as", m.alias.orEmpty(), Modifier.weight(1f)) { set(m.copy(alias = it.trim().ifBlank { null })) }
         }
-        // ponytail: map-backed rows; two rows with the same key merge (one filter/colour per name is all a map holds anyway)
         ListEditor(
             "Filter",
             q.filter.toList(),
@@ -316,7 +314,6 @@ private fun WidgetForm(
     }
 }
 
-/** Comma-separated list; keeps the typed text (e.g. a trailing comma) while it still parses to the same list. */
 @Composable
 private fun CsvField(
     label: String,
@@ -326,7 +323,8 @@ private fun CsvField(
 ) {
     fun parse(text: String) = text.split(',').map { it.trim() }.filter { it.isNotEmpty() }
     var text by remember { mutableStateOf(values.joinToString(", ")) }
-    if (parse(text) != values) text = values.joinToString(", ") // changed from outside
+    val changedOutside = parse(text) != values
+    if (changedOutside) text = values.joinToString(", ")
     Field(label, text, modifier) {
         text = it
         onChange(parse(it))

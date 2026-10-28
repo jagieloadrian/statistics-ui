@@ -17,13 +17,15 @@ import com.anjo.statisticsui.model.User
 import com.anjo.statisticsui.ui.admin.DatasetsScreen
 import com.anjo.statisticsui.ui.admin.SourcesScreen
 import com.anjo.statisticsui.ui.admin.UsersScreen
-import com.anjo.statisticsui.ui.common.catching
+import com.anjo.statisticsui.ui.common.runSuspendCatching
 import com.anjo.statisticsui.ui.dashboard.DashboardScreen
 import com.anjo.statisticsui.ui.home.MainLayout
 import com.anjo.statisticsui.ui.login.LoginScreen
 import com.anjo.statisticsui.ui.splash.SplashScreen
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+
+private val PUBLIC_ROUTES = setOf(Screen.Splash.route, Screen.Login.route)
 
 @Composable
 fun NavGraph(
@@ -40,10 +42,10 @@ fun NavGraph(
         user.prefs.homeDashboard?.let { navController.navigate(Screen.DashboardView.route(it)) }
     }
 
-    // Sign-out from anywhere (drawer, a 401 on any call) lands on the login screen.
     LaunchedEffect(session.token) {
         val route = navController.currentDestination?.route
-        if (session.token == null && route != null && route != Screen.Splash.route && route != Screen.Login.route) reset(Screen.Login.route)
+        val signedOutOnProtectedScreen = session.token == null && route != null && route !in PUBLIC_ROUTES
+        if (signedOutOnProtectedScreen) reset(Screen.Login.route)
     }
 
     NavHost(
@@ -55,8 +57,7 @@ fun NavGraph(
         composable(Screen.Splash.route) {
             SplashScreen {
                 scope.launch {
-                    // A 401 here clears the stored token; an unreachable backend still opens the app (screens show the error).
-                    val user = if (session.token == null) null else catching { api.me() }.getOrNull()
+                    val user = if (session.token == null) null else runSuspendCatching { api.me() }.getOrNull()
                     when {
                         user != null -> goHome(user)
                         session.token == null -> reset(Screen.Login.route)

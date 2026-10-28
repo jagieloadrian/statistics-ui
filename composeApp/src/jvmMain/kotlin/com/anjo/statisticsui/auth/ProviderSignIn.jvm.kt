@@ -11,7 +11,6 @@ import java.net.URI
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
-/** RFC 8252 loopback: the system browser signs in at the provider, which redirects back to [Loopback]. */
 actual suspend fun providerSignIn(api: PlatformApi): User? =
     Loopback().use { loopback ->
         val start = api.oidcStart(loopback.redirectUri)
@@ -21,7 +20,6 @@ actual suspend fun providerSignIn(api: PlatformApi): User? =
 
 actual suspend fun resumeProviderSignIn(api: PlatformApi): User? = null
 
-/** One-shot receiver on 127.0.0.1 for the provider's redirect to `/callback`; [close] frees the port. */
 internal class Loopback(
     private val timeout: Duration = 5.minutes,
 ) : AutoCloseable {
@@ -46,7 +44,6 @@ internal class Loopback(
         server.start()
     }
 
-    /** The `code` of the first callback; a provider error, another [state] or no answer within the timeout throw. */
     suspend fun awaitCode(state: String): String {
         val c = withTimeoutOrNull(timeout) { callback.await() } ?: throw Exception("No answer from the browser, try again")
         c.error?.let { throw Exception(it) }

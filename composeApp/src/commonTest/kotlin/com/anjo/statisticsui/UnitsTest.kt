@@ -8,7 +8,6 @@ import io.kotest.matchers.shouldBe
 class UnitsTest :
     FunSpec({
 
-        /** metric value [m] in [metric] equals imperial value [i] in [imperial], both ways, and round-trips. */
         fun check(
             metric: String,
             m: Double,

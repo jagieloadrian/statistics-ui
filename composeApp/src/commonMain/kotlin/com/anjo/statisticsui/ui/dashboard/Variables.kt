@@ -28,12 +28,13 @@ import com.anjo.statisticsui.model.Variable
 import com.anjo.statisticsui.model.VariableValue
 import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.Picker
-import com.anjo.statisticsui.ui.common.catching
+import com.anjo.statisticsui.ui.common.runSuspendCatching
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
-/** Pickers for `dimension` and `bucket` variables; a `timeRange` variable is the dashboard range selector itself. */
+private val SEARCH_DEBOUNCE = 250.milliseconds
+
 @Composable
 fun VariableBar(
     dashboard: Dashboard,
@@ -73,9 +74,9 @@ private fun DimensionPicker(
     val zone = displayZone()
     LaunchedEffect(open, search) {
         if (!open) return@LaunchedEffect
-        delay(250.milliseconds) // debounce typing
+        delay(SEARCH_DEBOUNCE)
         options =
-            catching { api.dimensionValues(variable.dataset.orEmpty(), variable.dimension.orEmpty(), search) }
+            runSuspendCatching { api.dimensionValues(variable.dataset.orEmpty(), variable.dimension.orEmpty(), search) }
                 .getOrDefault(emptyList())
     }
     Box {

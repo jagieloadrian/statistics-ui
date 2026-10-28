@@ -6,7 +6,6 @@ import androidx.compose.runtime.setValue
 import com.anjo.statisticsui.model.User
 import org.koin.core.annotation.Singleton
 
-/** Signed-in state; Compose state so screens react to sign-in, sign-out and changed preferences. */
 @Singleton
 class Session {
     var token by mutableStateOf(loadToken())

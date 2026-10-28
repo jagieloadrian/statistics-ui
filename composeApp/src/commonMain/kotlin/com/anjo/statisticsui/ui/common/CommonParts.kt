@@ -36,7 +36,6 @@ import com.composables.icons.materialsymbols.rounded.Add
 import com.composables.icons.materialsymbols.rounded.Arrow_back
 import com.composables.icons.materialsymbols.rounded.Delete
 
-/** The signed-in user's preferences (zone, units, theme) for every widget renderer. */
 val LocalPrefs = compositionLocalOf { Prefs() }
 
 @Composable
@@ -88,7 +87,6 @@ fun Field(
     )
 }
 
-/** Destructive action: first click arms the button and shows [confirmText], the second runs [onConfirm]. */
 @Composable
 fun ConfirmButton(
     text: String,
@@ -102,7 +100,6 @@ fun ConfirmButton(
     }) { Text(if (armed) confirmText else text) }
 }
 
-/** Button showing [value]; opens a menu of [options]. */
 @Composable
 fun Picker(
     value: String,
@@ -124,7 +121,6 @@ fun Picker(
     }
 }
 
-/** Editable rows of [items] with remove buttons and an "Add" button; [row] edits one item. */
 @Composable
 fun <T> ListEditor(
     title: String,
@@ -157,7 +153,6 @@ fun <T> ListEditor(
     }
 }
 
-/** Text field for an optional number; keeps half-typed text such as `1.` or `-` until it parses. */
 @Composable
 fun NumberField(
     label: String,
@@ -167,7 +162,8 @@ fun NumberField(
 ) {
     fun Double.plain() = if (this % 1.0 == 0.0) toLong().toString() else toString()
     var text by remember { mutableStateOf(value?.plain().orEmpty()) }
-    if (text.toDoubleOrNull() != value) text = value?.plain().orEmpty() // changed from outside
+    val changedOutside = text.toDoubleOrNull() != value
+    if (changedOutside) text = value?.plain().orEmpty()
     Field(label, text, modifier) {
         text = it
         onChange(it.toDoubleOrNull())

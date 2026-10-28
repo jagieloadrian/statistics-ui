@@ -84,7 +84,6 @@ fun DatasetsScreen(
                     initial = dataset,
                     isNew = isNew,
                     onSave = { saved, force ->
-                        // PUT is an upsert: a "new" dataset must not silently replace an existing one
                         require(!isNew || datasets.none { d -> d.id == saved.id }) { "Dataset '${saved.id}' already exists" }
                         api.putDataset(saved, force)
                         selected = saved
@@ -110,14 +109,12 @@ private fun DatasetForm(
     onDelete: suspend (Boolean) -> Unit,
 ) {
     var dataset by remember(initial) { mutableStateOf(initial) }
-    // ponytail: calculated kept as pairs while editing so renaming a key never merges two rows
     var calculated by remember(initial) { mutableStateOf(initial.calculated.toList()) }
     var retention by remember(initial) { mutableStateOf(initial.retentionDays?.toString().orEmpty()) }
     var error by remember(initial) { mutableStateOf<String?>(null) }
     var retry by remember(initial) { mutableStateOf<Pair<String, suspend () -> Unit>?>(null) }
     val scope = rememberCoroutineScope()
 
-    /** Runs [action]; a 409 (dataset still referenced, refs in the error) offers [anyway] = the same with `force`. */
     fun guarded(
         anyway: String,
         action: suspend (force: Boolean) -> Unit,
@@ -187,7 +184,6 @@ private fun DatasetForm(
     }
 }
 
-/** Left-hand definition list with a "New" button; [badge] renders extra info per id (e.g. source state). */
 @Composable
 fun AdminList(
     items: List<DefinitionSummary>,
