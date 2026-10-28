@@ -7,7 +7,6 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -15,15 +14,12 @@ import androidx.savedstate.read
 import com.anjo.statisticsui.api.PlatformApi
 import com.anjo.statisticsui.auth.Session
 import com.anjo.statisticsui.model.User
-import com.anjo.statisticsui.ui.account.AccountScreen
 import com.anjo.statisticsui.ui.admin.DatasetsScreen
 import com.anjo.statisticsui.ui.admin.SourcesScreen
 import com.anjo.statisticsui.ui.admin.UsersScreen
 import com.anjo.statisticsui.ui.common.catching
 import com.anjo.statisticsui.ui.dashboard.DashboardScreen
-import com.anjo.statisticsui.ui.home.DashboardContent
 import com.anjo.statisticsui.ui.home.MainLayout
-import com.anjo.statisticsui.ui.home.PlaceholderScreen
 import com.anjo.statisticsui.ui.login.LoginScreen
 import com.anjo.statisticsui.ui.splash.SplashScreen
 import kotlinx.coroutines.launch
@@ -32,8 +28,6 @@ import org.koin.compose.koinInject
 @Composable
 fun NavGraph(
     navController: NavHostController,
-    startDestination: String = Screen.Splash.route,
-    modifier: Modifier = Modifier,
     session: Session = koinInject(),
     api: PlatformApi = koinInject(),
 ) {
@@ -51,9 +45,8 @@ fun NavGraph(
     }
 
     NavHost(
-        modifier = modifier,
         navController = navController,
-        startDestination = startDestination,
+        startDestination = Screen.Splash.route,
         enterTransition = { fadeIn() + slideInHorizontally() },
         exitTransition = { fadeOut() + slideOutHorizontally() }
     ) {
@@ -76,9 +69,6 @@ fun NavGraph(
         composable(Screen.Main.route) {
             MainLayout(navController = navController)
         }
-        composable(Screen.Dashboard.route) {
-            DashboardContent(navController)
-        }
         composable(Screen.DashboardView.route) { entry ->
             DashboardScreen(entry.arguments?.read { getStringOrNull("id") }.orEmpty(), navController)
         }
@@ -90,12 +80,6 @@ fun NavGraph(
         }
         composable(Screen.Users.route) {
             UsersScreen(navController)
-        }
-        composable(Screen.Charts.route) {
-            PlaceholderScreen("Charts")
-        }
-        composable(Screen.Account.route) {
-            AccountScreen()
         }
     }
 }
