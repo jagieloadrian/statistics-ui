@@ -2,10 +2,12 @@ package com.anjo.statisticsui.ui.admin
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -15,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
@@ -31,14 +34,17 @@ import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.ListEditor
 import com.anjo.statisticsui.ui.common.Picker
 import com.anjo.statisticsui.ui.common.ScreenHeader
+import com.anjo.statisticsui.ui.common.isCompact
 import com.anjo.statisticsui.ui.common.screenPadding
 import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Add
+import com.composables.icons.materialsymbols.rounded.Arrow_back
 
 private val MEASURE_TYPES = listOf("number", "boolean", "text")
+private val LIST_WIDTH = 260.dp
 
 @Composable
 fun DatasetsScreen(
@@ -50,23 +56,26 @@ fun DatasetsScreen(
     Column(Modifier.fillMaxSize().padding(screenPadding())) {
         ScreenHeader("Datasets", navController)
         ErrorText(state.error)
-        Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(MEDIUM_PADDING)) {
-            AdminList(
-                items = state.datasets,
-                selectedId = state.selectedId,
-                onSelect = state::select,
-                onNew = state::startNew,
-                newText = "New dataset",
-            )
-            state.selected?.let { dataset ->
-                DatasetForm(
-                    rememberDatasetFormState(dataset, if (state.isNew) state.datasets.map { it.id } else emptyList()),
-                    isNew = state.isNew,
-                    onSave = state::save,
-                    onDelete = { force -> state.delete(dataset.id, force) },
-                )
-            }
-        }
+        AdminListDetail(
+            items = state.datasets,
+            selectedId = state.selectedId,
+            onSelect = state::select,
+            onNew = state::startNew,
+            newText = "New dataset",
+            backText = "All datasets",
+            onBack = state::close,
+            detail =
+                state.selected?.let { dataset ->
+                    {
+                        DatasetForm(
+                            rememberDatasetFormState(dataset, if (state.isNew) state.datasets.map { it.id } else emptyList()),
+                            isNew = state.isNew,
+                            onSave = state::save,
+                            onDelete = { force -> state.delete(dataset.id, force) },
+                        )
+                    }
+                },
+        )
     }
 }
 
@@ -80,7 +89,7 @@ private fun DatasetForm(
     val dataset = form.dataset
     val errors = form.errors
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        Row(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
             Field("ID", dataset.id, enabled = isNew, error = errors["id"], onBlur = { form.shown.leave("id") }) {
                 form.dataset = dataset.copy(id = it)
             }
@@ -140,16 +149,57 @@ private fun DatasetForm(
     }
 }
 
+// Compact windows show the list or the selected item; wider ones show both side by side
 @Composable
-fun AdminList(
+fun AdminListDetail(
     items: List<DefinitionSummary>,
     selectedId: String?,
     onSelect: (String) -> Unit,
     onNew: () -> Unit,
     newText: String,
+    backText: String,
+    onBack: () -> Unit,
     badge: @Composable (String) -> Unit = {},
+    detail: (@Composable () -> Unit)?,
 ) {
-    Column(Modifier.width(260.dp).fillMaxHeight().verticalScroll(rememberScrollState())) {
+    val compact = isCompact()
+    Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(MEDIUM_PADDING)) {
+        if (!compact || detail == null) {
+            AdminList(
+                items,
+                selectedId,
+                onSelect,
+                onNew,
+                newText,
+                badge,
+                if (compact) Modifier.fillMaxWidth() else Modifier.width(LIST_WIDTH),
+            )
+        }
+        if (detail != null) {
+            Column {
+                if (compact) {
+                    TextButton(onClick = onBack) {
+                        Icon(MaterialSymbols.Rounded.Arrow_back, contentDescription = null)
+                        Text(backText)
+                    }
+                }
+                detail()
+            }
+        }
+    }
+}
+
+@Composable
+private fun AdminList(
+    items: List<DefinitionSummary>,
+    selectedId: String?,
+    onSelect: (String) -> Unit,
+    onNew: () -> Unit,
+    newText: String,
+    badge: @Composable (String) -> Unit,
+    modifier: Modifier,
+) {
+    Column(modifier.fillMaxHeight().verticalScroll(rememberScrollState())) {
         Button(onClick = onNew) {
             Icon(MaterialSymbols.Rounded.Add, contentDescription = null)
             Text(newText)

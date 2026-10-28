@@ -47,6 +47,11 @@ class DatasetsState(
         isNew = true
     }
 
+    fun close() {
+        selected = null
+        isNew = false
+    }
+
     suspend fun save(
         dataset: Dataset,
         force: Boolean,

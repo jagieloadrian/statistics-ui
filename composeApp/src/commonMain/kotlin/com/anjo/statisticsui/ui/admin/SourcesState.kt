@@ -71,6 +71,11 @@ class SourcesState(
         isNew = true
     }
 
+    fun close() {
+        selected = null
+        isNew = false
+    }
+
     fun onSaved(source: Source) {
         selected = source
         isNew = false

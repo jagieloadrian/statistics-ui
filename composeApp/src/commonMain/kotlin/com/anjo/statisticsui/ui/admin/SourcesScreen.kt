@@ -2,6 +2,7 @@ package com.anjo.statisticsui.ui.admin
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -40,9 +41,10 @@ import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.ListEditor
 import com.anjo.statisticsui.ui.common.Picker
 import com.anjo.statisticsui.ui.common.ScreenHeader
+import com.anjo.statisticsui.ui.common.SectionTitle
+import com.anjo.statisticsui.ui.common.isCompact
 import com.anjo.statisticsui.ui.common.screenPadding
 import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
-import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.anjo.statisticsui.ui.theme.success
 import com.anjo.statisticsui.ui.theme.warning
@@ -61,24 +63,27 @@ fun SourcesScreen(
             OutlinedButton(onClick = { state.bundleOpen = true }) { Text("Export / import") }
         }
         ErrorText(state.error)
-        Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(MEDIUM_PADDING)) {
-            AdminList(
-                items = state.sources,
-                selectedId = state.selectedId,
-                onSelect = state::select,
-                onNew = state::startNew,
-                newText = "New source",
-                badge = { id -> state.states[id]?.let { StateChip(it) } },
-            )
-            state.selected?.let { source ->
-                SourceForm(
-                    rememberSourceFormState(source, state.isNew, state.sources.map { it.id }),
-                    datasets = state.datasets,
-                    onSaved = state::onSaved,
-                    onDeleted = state::onDeleted,
-                )
-            }
-        }
+        AdminListDetail(
+            items = state.sources,
+            selectedId = state.selectedId,
+            onSelect = state::select,
+            onNew = state::startNew,
+            newText = "New source",
+            backText = "All sources",
+            onBack = state::close,
+            badge = { id -> state.states[id]?.let { StateChip(it) } },
+            detail =
+                state.selected?.let { source ->
+                    {
+                        SourceForm(
+                            rememberSourceFormState(source, state.isNew, state.sources.map { it.id }),
+                            datasets = state.datasets,
+                            onSaved = state::onSaved,
+                            onDeleted = state::onDeleted,
+                        )
+                    }
+                },
+        )
     }
     if (state.bundleOpen) BundleDialog(onDismiss = state::closeBundle)
 }
@@ -92,20 +97,19 @@ private fun SourceForm(
 ) {
     val source = form.source
     val errors = form.errors
-    Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(MEDIUM_PADDING)) {
-        Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState())) {
-            Row(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+    val fields: @Composable (Modifier) -> Unit = { modifier ->
+        Column(modifier) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
                 Field(
                     "ID",
                     source.id,
-                    Modifier.weight(1f),
                     enabled = form.isNew,
                     error = errors["id"],
                     onBlur = { form.shown.leave("id") },
                 ) { form.edit(source.copy(id = it)) }
-                Field("Label", source.label.orEmpty(), Modifier.weight(1f)) { form.edit(source.copy(label = it.ifBlank { null })) }
+                Field("Label", source.label.orEmpty()) { form.edit(source.copy(label = it.ifBlank { null })) }
             }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
                 Picker("Dataset", source.dataset, datasets) { form.edit(source.copy(dataset = it)) }
                 Field(
                     "Rate limit per second",
@@ -124,12 +128,7 @@ private fun SourceForm(
 
             ListEditor("Mapping (first rule)", "Add field", form.rows, form::editRows, { MapRow() }) { row, set -> MappingRow(row, set) }
 
-            Text(
-                "Advanced: full mapping JSON",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING),
-            )
+            SectionTitle("Advanced: full mapping JSON")
             Field(
                 "Mapping JSON",
                 form.mappingJson,
@@ -146,13 +145,21 @@ private fun SourceForm(
             }
             ErrorText(form.error)
         }
-        if (!form.isNew) {
-            SourceOps(
-                source,
-                mapping = form::mapping,
-                onPause = { paused -> form.setPaused(paused, onSaved) },
-                modifier = Modifier.weight(1f),
-            )
+    }
+    val ops: @Composable (Modifier) -> Unit = { modifier ->
+        if (!form.isNew) SourceOps(source, mapping = form::mapping, onPause = { paused -> form.setPaused(paused, onSaved) }, modifier)
+    }
+
+    // Compact: one scrolling column; wider: form and status side by side, each scrolling on its own
+    if (isCompact()) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(MEDIUM_PADDING)) {
+            fields(Modifier)
+            ops(Modifier)
+        }
+    } else {
+        Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(MEDIUM_PADDING)) {
+            fields(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()))
+            ops(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()))
         }
     }
 }
@@ -182,7 +189,7 @@ private fun SourceOps(
 ) {
     LaunchedEffect(source) { ops.refresh() }
 
-    Column(modifier.fillMaxHeight().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
             Text(
                 "Status",
