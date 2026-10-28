@@ -58,6 +58,7 @@ fun LoginScreen(
                         keyboardType = KeyboardType.Email,
                         error = errors["email"],
                         onBlur = { state.shown.leave("email") },
+                        onDone = { state.signIn(onSignedIn) },
                     ) { state.email = it }
                     Field(
                         "Password",
@@ -66,6 +67,7 @@ fun LoginScreen(
                         password = true,
                         error = errors["password"],
                         onBlur = { state.shown.leave("password") },
+                        onDone = { state.signIn(onSignedIn) },
                     ) {
                         state.password = it
                     }

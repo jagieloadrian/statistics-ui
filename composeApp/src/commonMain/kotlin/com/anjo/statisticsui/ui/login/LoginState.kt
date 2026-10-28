@@ -47,6 +47,7 @@ class LoginState(
         }
 
     fun signIn(onSignedIn: (User) -> Unit) {
+        if (busy) return
         shown.submit()
         if (errors.isNotEmpty()) return
         scope.attempt({ error = it }) {

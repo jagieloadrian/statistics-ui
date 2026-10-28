@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -37,6 +38,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -137,6 +139,7 @@ fun Field(
     help: String? = null,
     error: String? = null,
     onBlur: () -> Unit = {},
+    onDone: (() -> Unit)? = null,
     onChange: (String) -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
@@ -149,7 +152,12 @@ fun Field(
         isError = error != null,
         supportingText = (error ?: help)?.let { { Text(it) } },
         visualTransformation = if (password) PasswordVisualTransformation() else VisualTransformation.None,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        keyboardOptions =
+            KeyboardOptions(
+                keyboardType = keyboardType,
+                imeAction = if (onDone != null) ImeAction.Done else ImeAction.Default,
+            ),
+        keyboardActions = KeyboardActions(onDone = { onDone?.invoke() }),
         modifier =
             modifier.onFocusChanged {
                 if (focused && !it.isFocused) onBlur()
