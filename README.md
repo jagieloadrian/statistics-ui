@@ -9,22 +9,26 @@ The app calls `http://127.0.0.1:8080/api/v2`. Another backend is a build-time se
 `./gradlew :composeApp:wasmJsBrowserDistribution -PbackendUrl=https://stats.example.com`; an empty value
 (`-PbackendUrl=`) makes the web build call the origin it was loaded from (see Deployment).
 
-Start the backend first (see its README): PostgreSQL, then
-`ADMIN_EMAIL=admin@local ADMIN_PASSWORD='change-me-now' ./gradlew run` in `StatisticsService`.
+## Run locally
 
-## Run
-
-Desktop (JVM):
+Backend first, with its local profile (password sign-in, no OIDC, CORS for this dev server), in `StatisticsService`:
 
 ```shell
-./gradlew :composeApp:run
+docker compose -f .devops/postgres-compose/compose.yaml up -d
+./gradlew runLocal
 ```
+
+Then the UI; the defaults already point at that backend (`http://127.0.0.1:8080`):
+
+```shell
+./gradlew :composeApp:wasmJsBrowserDevelopmentRun   # web on http://localhost:8081 (or jsBrowserDevelopmentRun)
+./gradlew :composeApp:run                           # desktop (JVM)
+```
+
+Sign in as `admin@local` / `change-me-now`.
 
 Tests: `./gradlew :composeApp:jvmTest` (the common tests run on the JVM). Lint: `./gradlew ktlintCheck`
 (ktlint, official style; `./gradlew ktlintFormat` fixes most findings). `./gradlew check` runs both.
-
-Web: `./gradlew :composeApp:wasmJsBrowserDevelopmentRun` (or `jsBrowserDevelopmentRun`) serves the UI on
-port 8081, the origin the backend allows by default (`CORS_HOSTS=localhost:8081`).
 
 ## Sign in
 
