@@ -15,6 +15,7 @@ import com.anjo.statisticsui.model.ImportResult
 import com.anjo.statisticsui.model.MapRow
 import com.anjo.statisticsui.model.MappingTestRequest
 import com.anjo.statisticsui.model.MappingTestResult
+import com.anjo.statisticsui.model.PubSubInfo
 import com.anjo.statisticsui.model.Rule
 import com.anjo.statisticsui.model.Source
 import com.anjo.statisticsui.model.SourceStatus
@@ -40,6 +41,8 @@ class SourcesState(
         private set
     var datasets by mutableStateOf(emptyList<String>())
         private set
+    var pubsub by mutableStateOf<PubSubInfo?>(null)
+        private set
     val states = mutableStateMapOf<String, String>()
     var selected by mutableStateOf<Source?>(null)
         private set
@@ -57,6 +60,7 @@ class SourcesState(
     fun reload() =
         scope.attempt({ error = it }) {
             datasets = api.list("datasets").map { it.id }
+            pubsub = api.authConfig().pubsub
             sources = api.list("sources")
             sources.forEach { source ->
                 launch {

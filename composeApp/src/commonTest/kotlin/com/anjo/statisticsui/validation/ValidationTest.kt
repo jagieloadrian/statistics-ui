@@ -1,5 +1,6 @@
 package com.anjo.statisticsui.validation
 
+import com.anjo.statisticsui.model.Channel
 import com.anjo.statisticsui.model.Dashboard
 import com.anjo.statisticsui.model.Dataset
 import com.anjo.statisticsui.model.Dimension
@@ -82,6 +83,12 @@ class ValidationTest :
             val source = Source(id = "station", dataset = "weather")
             sourceErrors(source, "50", "[]", emptyList()).shouldBeEmpty()
             sourceErrors(source.copy(dataset = ""), "0", "[{", emptyList()).keys shouldBe setOf("dataset", "rate", "mapping")
+        }
+
+        test("sourceChannelMirrorsTheBackendTypes") {
+            val source = Source(id = "station", dataset = "weather")
+            sourceErrors(source.copy(channel = Channel("pubsub")), "50", "[]", emptyList()).shouldBeEmpty()
+            sourceErrors(source.copy(channel = Channel("kafka")), "50", "[]", emptyList()) shouldBe mapOf("channel" to "One of push, pubsub")
         }
 
         test("dashboardRefreshVariablesAndWidgets") {

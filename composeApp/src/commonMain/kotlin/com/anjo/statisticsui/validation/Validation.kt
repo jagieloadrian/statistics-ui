@@ -1,5 +1,6 @@
 package com.anjo.statisticsui.validation
 
+import com.anjo.statisticsui.model.CHANNEL_TYPES
 import com.anjo.statisticsui.model.Dashboard
 import com.anjo.statisticsui.model.Dataset
 import com.anjo.statisticsui.model.Rule
@@ -111,6 +112,7 @@ fun sourceErrors(
     errorsOf(
         "id" to idError(source.id, existingIds),
         "dataset" to REQUIRED.takeIf { source.dataset.isBlank() },
+        "channel" to "One of ${CHANNEL_TYPES.joinToString()}".takeIf { source.channel.type !in CHANNEL_TYPES },
         "rate" to "A whole number above 0".takeIf { positiveWholeNumber(rate) == null },
         "mapping" to mappingError(mappingJson),
     )

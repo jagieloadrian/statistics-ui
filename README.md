@@ -53,6 +53,11 @@ Admins add other accounts under **Users** with an initial password:
 | editor | also create dashboards and edit their own, share them |
 | admin | everything: sources, datasets, users, export/import |
 
+In **Sources** the channel picks how data arrives: `push` (HTTP, address `/api/v2/ingest/<id>`) or `pubsub`
+(the broker the backend runs with). For `pubsub` the editor shows where collectors publish, from the `pubsub` field of
+`GET /auth/config`: the Kafka topic with the source id as record key, or the JetStream subject `<prefix>.<id>`, each
+with header `Authorization: Bearer <source token>`; without a broker (`BROKER=none`) it says nothing is consumed.
+
 **Account** sets time zone, units (metric/imperial), theme, home dashboard (opened after sign-in) and the password
 (not shown for provider-only accounts or when password sign-in is off).
 

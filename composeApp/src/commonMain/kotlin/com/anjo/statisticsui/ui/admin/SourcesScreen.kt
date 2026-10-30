@@ -34,9 +34,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.anjo.statisticsui.model.CHANNEL_TYPES
+import com.anjo.statisticsui.model.Channel
 import com.anjo.statisticsui.model.MapRow
+import com.anjo.statisticsui.model.PubSubInfo
 import com.anjo.statisticsui.model.Rule
 import com.anjo.statisticsui.model.Source
+import com.anjo.statisticsui.model.ingestAddress
 import com.anjo.statisticsui.ui.common.CheckboxField
 import com.anjo.statisticsui.ui.common.ConfirmButton
 import com.anjo.statisticsui.ui.common.ErrorText
@@ -93,6 +97,7 @@ private fun SourcesContent(
                         SourceForm(
                             rememberSourceFormState(source, state.isNew, state.sources.map { it.id }),
                             datasets = state.datasets,
+                            pubsub = state.pubsub,
                             onSaved = state::onSaved,
                             onDelete = { state.delete(source.id) },
                         )
@@ -106,6 +111,7 @@ private fun SourcesContent(
 private fun SourceForm(
     form: SourceFormState,
     datasets: List<String>,
+    pubsub: PubSubInfo?,
     onSaved: (Source) -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -125,6 +131,7 @@ private fun SourceForm(
             }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
                 Picker("Dataset", source.dataset, datasets) { form.edit(source.copy(dataset = it)) }
+                Picker("Channel", source.channel.type, CHANNEL_TYPES) { form.edit(source.copy(channel = Channel(it))) }
                 Field(
                     "Rate limit per second",
                     form.rate,
@@ -134,8 +141,9 @@ private fun SourceForm(
                 ) { form.rate = it }
             }
             ErrorText(errors["dataset"]?.let { "Dataset: $it" })
+            ErrorText(errors["channel"]?.let { "Channel: $it" })
             Text(
-                "Push address: /api/v2/ingest/${source.id}",
+                source.ingestAddress(pubsub),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium,
             )

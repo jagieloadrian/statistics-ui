@@ -58,6 +58,13 @@ data class UserUpdate(
 data class AuthConfig(
     val local: Boolean = true,
     val oidc: OidcInfo? = null,
+    val pubsub: PubSubInfo? = null,
+)
+
+@Serializable
+data class PubSubInfo(
+    val broker: String,
+    val address: String,
 )
 
 @Serializable
