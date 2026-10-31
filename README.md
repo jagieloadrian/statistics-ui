@@ -57,6 +57,8 @@ In **Sources** the channel picks how data arrives: `push` (HTTP, address `/api/v
 (the broker the backend runs with). For `pubsub` the editor shows where collectors publish, from the `pubsub` field of
 `GET /auth/config`: the Kafka topic with the source id as record key, or the JetStream subject `<prefix>.<id>`, each
 with header `Authorization: Bearer <source token>`; without a broker (`BROKER=none`) it says nothing is consumed.
+Like the backend, a `pubsub` source needs at least one mapping rule and an `identity` in every rule (redelivered
+messages are deduplicated by it).
 
 **Account** sets time zone, units (metric/imperial), theme, home dashboard (opened after sign-in) and the password
 (not shown for provider-only accounts or when password sign-in is off).

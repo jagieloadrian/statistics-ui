@@ -87,8 +87,18 @@ class ValidationTest :
 
         test("sourceChannelMirrorsTheBackendTypes") {
             val source = Source(id = "station", dataset = "weather")
-            sourceErrors(source.copy(channel = Channel("pubsub")), "50", "[]", emptyList()).shouldBeEmpty()
-            sourceErrors(source.copy(channel = Channel("kafka")), "50", "[]", emptyList()) shouldBe mapOf("channel" to "One of push, pubsub")
+            val withIdentity = """[{"identity":["id"],"vals":{"t":{"path":"t"}}}]"""
+            sourceErrors(source.copy(channel = Channel("pubsub")), "50", withIdentity, emptyList()).shouldBeEmpty()
+            sourceErrors(source.copy(channel = Channel("kafka")), "50", "[]", emptyList()) shouldBe
+                mapOf("channel" to "One of push, pubsub")
+        }
+
+        test("pubsubSourceNeedsIdentityInEveryRuleLikeTheBackend") {
+            val pubsub = Source(id = "station", dataset = "weather", channel = Channel("pubsub"))
+            val missing = mapOf("mapping" to "A pubsub source needs at least one rule, each with identity")
+            sourceErrors(pubsub, "50", "[]", emptyList()) shouldBe missing
+            sourceErrors(pubsub, "50", """[{"identity":["id"]},{"vals":{}}]""", emptyList()) shouldBe missing
+            sourceErrors(pubsub.copy(channel = Channel("push")), "50", "[]", emptyList()).shouldBeEmpty()
         }
 
         test("dashboardRefreshVariablesAndWidgets") {
