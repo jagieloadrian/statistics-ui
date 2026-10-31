@@ -12,6 +12,7 @@ import com.anjo.statisticsui.api.runSuspendCatching
 import com.anjo.statisticsui.model.Dashboard
 import com.anjo.statisticsui.model.Dataset
 import com.anjo.statisticsui.model.DimensionValue
+import com.anjo.statisticsui.model.Kind
 import com.anjo.statisticsui.model.Query
 import com.anjo.statisticsui.model.QueryResult
 import com.anjo.statisticsui.model.TimeRange
@@ -117,7 +118,7 @@ class DashboardEditorState(
 
     suspend fun load() =
         reporting({ error = it }) {
-            launch { datasetIds = api.list("datasets").map { it.id } }
+            launch { datasetIds = api.list(Kind.DATASETS).map { it.id } }
             users = api.users()
             shared = api.shares(dashboard.id).toSet()
         }

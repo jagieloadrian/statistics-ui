@@ -10,6 +10,7 @@ import com.anjo.statisticsui.model.Dataset
 import com.anjo.statisticsui.model.DefinitionSummary
 import com.anjo.statisticsui.model.DimensionValue
 import com.anjo.statisticsui.model.ImportResult
+import com.anjo.statisticsui.model.Kind
 import com.anjo.statisticsui.model.LoginRequest
 import com.anjo.statisticsui.model.LoginResponse
 import com.anjo.statisticsui.model.MappingTestRequest
@@ -112,14 +113,14 @@ class PlatformApi(
         userIds: List<Long>,
     ): Unit = request("dashboards/$dashboardId/shares") { json(HttpMethod.Put, Shares(userIds)) }
 
-    suspend fun list(kind: String): List<DefinitionSummary> = request(kind)
+    suspend fun list(kind: Kind): List<DefinitionSummary> = request(kind.path)
 
     suspend fun delete(
-        kind: String,
+        kind: Kind,
         id: String,
         force: Boolean = false,
     ): Unit =
-        request("$kind/$id") {
+        request("${kind.path}/$id") {
             method = HttpMethod.Delete
             if (force) parameter("force", true)
         }

@@ -3,6 +3,8 @@ package com.anjo.statisticsui.auth
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.anjo.statisticsui.model.ADMIN
+import com.anjo.statisticsui.model.EDITOR
 import com.anjo.statisticsui.model.Prefs
 import com.anjo.statisticsui.model.User
 import org.koin.core.annotation.Singleton
@@ -16,8 +18,8 @@ class Session {
     // Unsaved Account edits, so theme and colour preview app-wide until Save sends all prefs
     var draftPrefs by mutableStateOf<Prefs?>(null)
 
-    val isAdmin get() = user?.role == "admin"
-    val canEdit get() = user?.role == "admin" || user?.role == "editor"
+    val isAdmin get() = user?.role == ADMIN
+    val canEdit get() = user?.role in setOf(ADMIN, EDITOR)
 
     fun signIn(
         token: String,

@@ -11,6 +11,7 @@ import com.anjo.statisticsui.api.PlatformApi
 import com.anjo.statisticsui.model.NewUser
 import com.anjo.statisticsui.model.User
 import com.anjo.statisticsui.model.UserUpdate
+import com.anjo.statisticsui.model.VIEWER
 import com.anjo.statisticsui.ui.common.ShownErrors
 import com.anjo.statisticsui.ui.common.attempt
 import com.anjo.statisticsui.ui.common.deleteWithUndo
@@ -27,7 +28,7 @@ class UsersState(
         private set
     var email by mutableStateOf("")
     var name by mutableStateOf("")
-    var role by mutableStateOf("viewer")
+    var role by mutableStateOf(VIEWER)
     var password by mutableStateOf("")
     var error by mutableStateOf<String?>(null)
         private set

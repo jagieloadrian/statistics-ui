@@ -10,6 +10,7 @@ import com.anjo.statisticsui.api.ApiException
 import com.anjo.statisticsui.api.PlatformApi
 import com.anjo.statisticsui.model.Dataset
 import com.anjo.statisticsui.model.DefinitionSummary
+import com.anjo.statisticsui.model.Kind
 import com.anjo.statisticsui.ui.common.ShownErrors
 import com.anjo.statisticsui.ui.common.attempt
 import com.anjo.statisticsui.validation.FieldErrors
@@ -34,7 +35,7 @@ class DatasetsState(
 
     val selectedId get() = selected?.id.takeUnless { isNew }
 
-    fun reload() = scope.attempt({ error = it }) { datasets = api.list("datasets") }
+    fun reload() = scope.attempt({ error = it }) { datasets = api.list(Kind.DATASETS) }
 
     fun select(id: String) =
         scope.attempt({ error = it }) {
@@ -66,7 +67,7 @@ class DatasetsState(
         id: String,
         force: Boolean,
     ) {
-        api.delete("datasets", id, force)
+        api.delete(Kind.DATASETS, id, force)
         selected = null
         reload()
     }

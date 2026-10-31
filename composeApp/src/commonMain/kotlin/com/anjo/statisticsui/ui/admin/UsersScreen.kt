@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.anjo.statisticsui.model.ROLES
 import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.Picker
@@ -33,7 +34,6 @@ import com.anjo.statisticsui.ui.common.screenPadding
 import com.anjo.statisticsui.ui.theme.LARGE_SMALL_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.anjo.statisticsui.validation.MIN_PASSWORD_LENGTH
-import com.anjo.statisticsui.validation.ROLES
 
 private val FORM_WIDTH = 420.dp
 

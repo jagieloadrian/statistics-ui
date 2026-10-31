@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import com.anjo.statisticsui.api.PlatformApi
 import com.anjo.statisticsui.auth.Session
 import com.anjo.statisticsui.model.DefinitionSummary
+import com.anjo.statisticsui.model.Kind
 import com.anjo.statisticsui.model.Prefs
 import com.anjo.statisticsui.ui.common.attempt
 import kotlinx.coroutines.CoroutineScope
@@ -37,7 +38,7 @@ class HomeState(
     fun load() =
         scope.attempt({ error = it }) {
             try {
-                dashboards = api.list("dashboards")
+                dashboards = api.list(Kind.DASHBOARDS)
             } finally {
                 loading = false
             }

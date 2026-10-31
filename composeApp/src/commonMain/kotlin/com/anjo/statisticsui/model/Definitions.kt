@@ -3,6 +3,14 @@ package com.anjo.statisticsui.model
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
+enum class Kind(
+    val path: String,
+) {
+    DATASETS("datasets"),
+    SOURCES("sources"),
+    DASHBOARDS("dashboards"),
+}
+
 @Serializable
 data class DefinitionSummary(
     val id: String,

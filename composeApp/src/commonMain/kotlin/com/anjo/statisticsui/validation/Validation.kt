@@ -4,6 +4,7 @@ import com.anjo.statisticsui.model.CHANNEL_TYPES
 import com.anjo.statisticsui.model.Dashboard
 import com.anjo.statisticsui.model.Dataset
 import com.anjo.statisticsui.model.PUBSUB_CHANNEL
+import com.anjo.statisticsui.model.ROLES
 import com.anjo.statisticsui.model.Rule
 import com.anjo.statisticsui.model.Source
 import com.anjo.statisticsui.model.platformJson
@@ -13,7 +14,6 @@ typealias FieldErrors = Map<String, String>
 
 const val MIN_PASSWORD_LENGTH = 10
 const val MIN_REFRESH_SECONDS = 5
-val ROLES = listOf("viewer", "editor", "admin")
 
 private const val REQUIRED = "Required"
 private const val RESERVED_NAME = "ts"

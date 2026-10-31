@@ -8,6 +8,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.anjo.statisticsui.api.PlatformApi
 import com.anjo.statisticsui.auth.Session
+import com.anjo.statisticsui.model.Kind
 import com.anjo.statisticsui.model.Prefs
 import com.anjo.statisticsui.model.User
 import com.anjo.statisticsui.ui.common.ShownErrors
@@ -54,7 +55,7 @@ class AccountState(
     suspend fun load() =
         reporting({ prefsError = it }) {
             if (session.user == null) api.me()
-            dashboards = api.list("dashboards").map { it.id }
+            dashboards = api.list(Kind.DASHBOARDS).map { it.id }
             localSignIn = api.authConfig().local
         }
 
