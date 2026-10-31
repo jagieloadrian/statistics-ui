@@ -13,7 +13,7 @@ import kotlinx.serialization.SerializationException
 typealias FieldErrors = Map<String, String>
 
 const val MIN_PASSWORD_LENGTH = 10
-const val MIN_REFRESH_SECONDS = 5
+private const val MIN_REFRESH_SECONDS = 5
 
 private const val REQUIRED = "Required"
 private const val RESERVED_NAME = "ts"
@@ -28,7 +28,7 @@ fun emailError(email: String): String? =
         else -> null
     }
 
-fun newPasswordError(password: String): String? =
+private fun newPasswordError(password: String): String? =
     if (password.length < MIN_PASSWORD_LENGTH) "At least $MIN_PASSWORD_LENGTH characters" else null
 
 fun idError(

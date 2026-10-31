@@ -141,7 +141,7 @@ fun MainLayout(
 }
 
 @Composable
-fun DashboardContent(
+private fun DashboardContent(
     navController: NavHostController,
     state: HomeState = rememberHomeState(),
 ) {
@@ -214,7 +214,7 @@ fun DashboardContent(
 }
 
 @Composable
-fun DataTileCard(
+private fun DataTileCard(
     tile: DataTypeTile,
     favourite: Boolean? = null,
     onFavourite: () -> Unit = {},

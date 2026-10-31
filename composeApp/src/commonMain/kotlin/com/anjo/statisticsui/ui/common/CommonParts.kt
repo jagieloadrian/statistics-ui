@@ -60,7 +60,7 @@ val LocalPrefs = compositionLocalOf { Prefs() }
 
 private val PICKER_WIDTH = 180.dp
 
-val COMPACT_MAX_WIDTH = 600.dp
+private val COMPACT_MAX_WIDTH = 600.dp
 val EXPANDED_MIN_WIDTH = 840.dp
 
 @Composable

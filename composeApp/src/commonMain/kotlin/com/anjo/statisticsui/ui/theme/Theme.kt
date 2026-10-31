@@ -34,7 +34,7 @@ val ACCENTS =
         "blue-grey" to Color(0xFF607D8B),
     )
 
-const val DEFAULT_ACCENT = "teal"
+private const val DEFAULT_ACCENT = "teal"
 
 fun accentScheme(
     accent: String?,
