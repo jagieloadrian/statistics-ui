@@ -109,7 +109,7 @@ private class Palette(
             }
             fits = low
         }
-        val (r, g, b) = lchToSrgb(l, fits, hue)!!
+        val (r, g, b) = checkNotNull(lchToSrgb(l, fits, hue)) { "Chroma $fits is outside sRGB at tone $tone" }
         return Color(r, g, b)
     }
 }
