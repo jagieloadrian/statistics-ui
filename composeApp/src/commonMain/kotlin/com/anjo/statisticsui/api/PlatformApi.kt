@@ -59,11 +59,7 @@ class PlatformApi(
     suspend fun login(
         email: String,
         password: String,
-    ): User {
-        val answer: LoginResponse = request("auth/login") { json(HttpMethod.Post, LoginRequest(email, password)) }
-        session.signIn(answer.token, answer.user)
-        return answer.user
-    }
+    ): User = signedIn(request("auth/login") { json(HttpMethod.Post, LoginRequest(email, password)) })
 
     suspend fun authConfig(): AuthConfig = request("auth/config")
 
@@ -74,11 +70,7 @@ class PlatformApi(
         code: String,
         codeVerifier: String,
         redirectUri: String,
-    ): User {
-        val answer: LoginResponse = request("auth/oidc") { json(HttpMethod.Post, OidcLoginRequest(code, codeVerifier, redirectUri)) }
-        session.signIn(answer.token, answer.user)
-        return answer.user
-    }
+    ): User = signedIn(request("auth/oidc") { json(HttpMethod.Post, OidcLoginRequest(code, codeVerifier, redirectUri)) })
 
     suspend fun logout(): Result<Unit> {
         val serverRevocation = runSuspendCatching { request<Unit>("auth/logout") { method = HttpMethod.Post } }
@@ -122,7 +114,7 @@ class PlatformApi(
     ): Unit =
         request("${kind.path}/$id") {
             method = HttpMethod.Delete
-            if (force) parameter("force", true)
+            force(force)
         }
 
     suspend fun dataset(id: String): Dataset = request("datasets/$id")
@@ -137,7 +129,7 @@ class PlatformApi(
     ): Unit =
         request("datasets/${dataset.id}") {
             json(HttpMethod.Put, dataset)
-            if (force) parameter("force", true)
+            force(force)
         }
 
     suspend fun putSource(source: Source): Unit = request("sources/${source.id}") { json(HttpMethod.Put, source) }
@@ -182,6 +174,11 @@ class PlatformApi(
         return result ?: throw response.apiException()
     }
 
+    private fun signedIn(answer: LoginResponse): User {
+        session.signIn(answer.token, answer.user)
+        return answer.user
+    }
+
     private fun url(path: String) = "${BuildKonfig.backendurl}/api/v2/$path"
 
     private fun HttpRequestBuilder.authorize() {
@@ -215,6 +212,10 @@ class PlatformApi(
         if (!response.status.isSuccess()) throw response.apiException()
         return response.body()
     }
+}
+
+private fun HttpRequestBuilder.force(force: Boolean) {
+    if (force) parameter("force", true)
 }
 
 private inline fun <reified B : Any> HttpRequestBuilder.json(
