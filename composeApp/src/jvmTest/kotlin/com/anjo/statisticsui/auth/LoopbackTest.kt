@@ -11,36 +11,39 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import kotlin.time.Duration.Companion.milliseconds
 
-class LoopbackTest : FunSpec({
-    val http = HttpClient.newHttpClient()
-    fun get(url: String): String = http.send(HttpRequest.newBuilder(URI(url)).build(), HttpResponse.BodyHandlers.ofString()).body()
+class LoopbackTest :
+    FunSpec({
+        val http = HttpClient.newHttpClient()
 
-    test("callbackReturnsTheCode") {
-        Loopback().use { loopback ->
-            get("${loopback.redirectUri}?code=c1&state=s1") shouldBe "Done, you can close this window and return to StatsFlow"
-            loopback.awaitCode("s1") shouldBe "c1"
-        }
-    }
+        fun get(url: String): String = http.send(HttpRequest.newBuilder(URI(url)).build(), HttpResponse.BodyHandlers.ofString()).body()
 
-    test("otherStateIsRefused") {
-        Loopback().use { loopback ->
-            get("${loopback.redirectUri}?code=c1&state=forged")
-            shouldThrow<Exception> { loopback.awaitCode("s1") }.message shouldBe "Sign-in expired, try again"
+        test("callbackReturnsTheCode") {
+            Loopback().use { loopback ->
+                get("${loopback.redirectUri}?code=c1&state=s1") shouldBe "Done, you can close this window and return to StatsFlow"
+                loopback.awaitCode("s1") shouldBe "c1"
+            }
         }
-    }
 
-    test("providerErrorIsShownInBrowserAndApp") {
-        Loopback().use { loopback ->
-            get("${loopback.redirectUri}?error=access_denied&error_description=User%20cancelled&state=s1") shouldBe "User cancelled"
-            shouldThrow<Exception> { loopback.awaitCode("s1") }.message shouldBe "User cancelled"
+        test("otherStateIsRefused") {
+            Loopback().use { loopback ->
+                get("${loopback.redirectUri}?code=c1&state=forged")
+                shouldThrow<Exception> { loopback.awaitCode("s1") }.message shouldBe "Sign-in expired, try again"
+            }
         }
-    }
 
-    test("timeoutFailsAndFreesThePort") {
-        val port = Loopback(timeout = 200.milliseconds).use { loopback ->
-            shouldThrow<Exception> { loopback.awaitCode("s1") }.message shouldBe "No answer from the browser, try again"
-            URI(loopback.redirectUri).port
+        test("providerErrorIsShownInBrowserAndApp") {
+            Loopback().use { loopback ->
+                get("${loopback.redirectUri}?error=access_denied&error_description=User%20cancelled&state=s1") shouldBe "User cancelled"
+                shouldThrow<Exception> { loopback.awaitCode("s1") }.message shouldBe "User cancelled"
+            }
         }
-        ServerSocket(port, 0, InetAddress.getByName("127.0.0.1")).close()
-    }
-})
+
+        test("timeoutFailsAndFreesThePort") {
+            val port =
+                Loopback(timeout = 200.milliseconds).use { loopback ->
+                    shouldThrow<Exception> { loopback.awaitCode("s1") }.message shouldBe "No answer from the browser, try again"
+                    URI(loopback.redirectUri).port
+                }
+            ServerSocket(port, 0, InetAddress.getByName("127.0.0.1")).close()
+        }
+    })

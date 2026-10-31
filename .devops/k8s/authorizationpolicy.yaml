@@ -1,0 +1,15 @@
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: statistics-ui
+  namespace: apps
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: statistics-ui
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/istio-ingress/sa/home-gateway-istio

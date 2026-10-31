@@ -14,7 +14,14 @@ plugins {
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.koinCompiler)
     alias(libs.plugins.buildKonfig)
+    alias(libs.plugins.ktlint)
 }
+
+ktlint {
+    version = libs.versions.ktlintCli
+}
+
+val uiDevServerPort = 8081
 
 kotlin {
     jvm()
@@ -22,8 +29,7 @@ kotlin {
     js {
         browser {
             commonWebpackConfig {
-                // UI dev server on 8081, backend keeps 8080 (CORS_HOSTS default)
-                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).copy(port = 8081)
+                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).copy(port = uiDevServerPort)
             }
         }
         binaries.executable()
@@ -33,8 +39,7 @@ kotlin {
     wasmJs {
         browser {
             commonWebpackConfig {
-                // UI dev server on 8081, backend keeps 8080 (CORS_HOSTS default)
-                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).copy(port = 8081)
+                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).copy(port = uiDevServerPort)
             }
         }
         binaries.executable()
@@ -43,39 +48,24 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(libs.charty)
-            //compose
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
             implementation(libs.compose.ui)
-            implementation(libs.compose.components.resources)
-            implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.compose.navigation)
-            implementation(libs.compose.material.icons.rounded)
             implementation(libs.compose.material.symbols.rounded)
-            //lifecycle
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
-            implementation(libs.androidx.lifecycle.runtimeCompose)
-            //ktor
             implementation(libs.ktor.client.core)
-            implementation(libs.ktor.client.cio)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.ktor.client.logging)
 
-            implementation(libs.kotlin.logging)
-
-            //kotlin
             implementation(libs.kotlinx.date.time)
-            //koin
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.annotations)
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
-            implementation(libs.koin.compose.viewmodel)
         }
         commonTest.dependencies {
-            // ponytail: no io.kotest/KSP plugins, so js/wasm tests compile but are not discovered; add both to run them there
             implementation(libs.kotest.framework.engine)
             implementation(libs.kotest.assertions.core)
         }
@@ -85,18 +75,11 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
-            implementation(libs.kotlin.logging.jvm)
+            implementation(libs.ktor.client.cio)
             implementation(libs.logback.classic)
         }
         webMain.dependencies {
-            // localStorage for the session token (TokenStore.web.kt)
             implementation(libs.kotlinx.browser)
-        }
-        jsMain.dependencies {
-            implementation(libs.kotlin.logging.js)
-        }
-        wasmJsMain.dependencies {
-            implementation(libs.kotlin.logging.wasmjs)
         }
     }
 }
@@ -108,7 +91,7 @@ tasks.named<Test>("jvmTest") {
 buildkonfig {
     packageName = "com.anjo.statisticsui"
     defaultConfigs {
-        buildConfigField(STRING, "backendurl", "http://127.0.0.1:8080")
+        buildConfigField(STRING, "backendurl", providers.gradleProperty("backendUrl").getOrElse("http://127.0.0.1:8080"))
     }
 }
 
@@ -120,7 +103,6 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "com.anjo.statisticsui"
             packageVersion = providers.gradleProperty("appVersion").getOrElse("1.0.0")
-            // loopback receiver for provider sign-in (ProviderSignIn.jvm.kt)
             modules("jdk.httpserver")
         }
     }

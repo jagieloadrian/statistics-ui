@@ -6,10 +6,16 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 
 @Serializable
-data class Channel(val type: String = "push")
+data class Channel(
+    val type: String = "push",
+)
 
 @Serializable
-data class TimestampSpec(val path: String, val format: String = "iso", val maxAgeHours: Int? = null)
+data class TimestampSpec(
+    val path: String,
+    val format: String = "iso",
+    val maxAgeHours: Int? = null,
+)
 
 @Serializable
 data class FieldSpec(
@@ -47,10 +53,17 @@ data class Source(
 )
 
 @Serializable
-data class Counts(val hour: Long = 0, val day: Long = 0)
+data class Counts(
+    val hour: Long = 0,
+    val day: Long = 0,
+)
 
 @Serializable
-data class Rejection(val at: String, val reason: String, val excerpt: String? = null)
+data class Rejection(
+    val at: String,
+    val reason: String,
+    val excerpt: String? = null,
+)
 
 @Serializable
 data class SourceStatus(
@@ -62,10 +75,18 @@ data class SourceStatus(
 )
 
 @Serializable
-data class MappingTestRequest(val payload: JsonElement, val mapping: List<Rule>? = null)
+data class MappingTestRequest(
+    val payload: JsonElement,
+    val mapping: List<Rule>? = null,
+)
 
 @Serializable
-data class MappingTestResult(val records: List<JsonElement> = emptyList(), val errors: List<String> = emptyList())
+data class MappingTestResult(
+    val records: List<JsonElement> = emptyList(),
+    val errors: List<String> = emptyList(),
+)
 
 @Serializable
-data class Credential(val token: String)
+data class Credential(
+    val token: String,
+)

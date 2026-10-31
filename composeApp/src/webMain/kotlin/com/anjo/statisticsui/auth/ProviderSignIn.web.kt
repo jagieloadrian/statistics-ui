@@ -26,7 +26,11 @@ actual suspend fun resumeProviderSignIn(api: PlatformApi): User? {
     val verifier = sessionStorage.getItem(VERIFIER)
     val redirectUri = sessionStorage.getItem(REDIRECT)
     listOf(STATE, VERIFIER, REDIRECT).forEach(sessionStorage::removeItem)
-    callback.error?.let { throw Exception(it) }
-    if (callback.code == null || callback.state != state || verifier == null || redirectUri == null) throw Exception("Sign-in expired, try again")
+    callback.error?.let { error(it) }
+    if (callback.code == null || callback.state != state || verifier == null ||
+        redirectUri == null
+    ) {
+        error("Sign-in expired, try again")
+    }
     return api.oidcLogin(callback.code, verifier, redirectUri)
 }
