@@ -61,7 +61,6 @@ private fun UsersContent(
     ) {
         ScreenHeader("Users", navController)
         SectionTitle("Invite")
-        // One column of fields: the eye runs straight down instead of zig-zagging along a row
         Column(Modifier.widthIn(max = FORM_WIDTH), verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
             val errors = state.errors
             val field = Modifier.fillMaxWidth()
@@ -93,7 +92,6 @@ private fun UsersContent(
         SectionTitle("Accounts")
         state.listed.forEach { user ->
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
-                // Narrow windows move the role and delete controls under the email instead of squeezing it
                 FlowRow(
                     Modifier.fillMaxWidth().padding(LARGE_SMALL_PADDING),
                     itemVerticalAlignment = Alignment.CenterVertically,

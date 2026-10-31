@@ -15,7 +15,6 @@ class Session {
         private set
     var user by mutableStateOf<User?>(null)
 
-    // Unsaved Account edits, so theme and colour preview app-wide until Save sends all prefs
     var draftPrefs by mutableStateOf<Prefs?>(null)
 
     val isAdmin get() = user?.role == ADMIN

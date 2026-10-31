@@ -109,7 +109,6 @@ private fun DashboardView(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = SMALL_PADDING),
         verticalArrangement = Arrangement.spacedBy(SMALL_MEDIUM_PADDING),
     ) {
-        // Compact windows stack widgets at full width; the 12-column grid starts at medium
         val compact = isCompact()
         val rows = if (compact) dashboard.widgets.map(::listOf) else layoutRows(dashboard.widgets)
         rows.forEach { row ->

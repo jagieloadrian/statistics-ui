@@ -70,7 +70,6 @@ class AccountState(
         }
     }
 
-    // Leaving Account without Save drops the edits, and with them the theme and colour preview
     fun discardPrefs() {
         session.draftPrefs = null
     }

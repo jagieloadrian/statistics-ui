@@ -149,7 +149,6 @@ private fun DatasetForm(
     }
 }
 
-// Compact windows show the list or the selected item; wider ones show both side by side
 @Composable
 fun AdminListDetail(
     items: List<DefinitionSummary>,

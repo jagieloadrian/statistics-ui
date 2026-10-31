@@ -192,7 +192,6 @@ class PlatformApi(
         return ApiException(error?.let { (listOf(it.message) + it.details).joinToString("\n") } ?: "HTTP $status", status.value)
     }
 
-    // Failing to get any response means the server is unreachable (down, offline, CORS), whatever the engine calls it
     private suspend fun send(
         path: String,
         block: HttpRequestBuilder.() -> Unit,

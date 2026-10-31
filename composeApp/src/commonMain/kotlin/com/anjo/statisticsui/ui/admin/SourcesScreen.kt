@@ -172,7 +172,6 @@ private fun SourceForm(
         if (!form.isNew) SourceOps(source, mapping = form::mapping, onPause = { paused -> form.setPaused(paused, onSaved) }, modifier)
     }
 
-    // Compact: one scrolling column; wider: form and status side by side, each scrolling on its own
     if (isCompact()) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(MEDIUM_PADDING)) {
             fields(Modifier)
@@ -342,5 +341,4 @@ private fun StateChip(state: String) {
     }
 }
 
-// Bounds are short numbers; a fixed width keeps them on one line with Required
 private val NUMBER_WIDTH = 120.dp

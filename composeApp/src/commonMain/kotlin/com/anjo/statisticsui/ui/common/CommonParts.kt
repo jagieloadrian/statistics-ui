@@ -60,7 +60,6 @@ val LocalPrefs = compositionLocalOf { Prefs() }
 
 private val PICKER_WIDTH = 180.dp
 
-// M3 window size classes: compact is a phone in portrait, expanded starts at landscape tablets
 val COMPACT_MAX_WIDTH = 600.dp
 val EXPANDED_MIN_WIDTH = 840.dp
 
@@ -116,7 +115,6 @@ fun SectionTitle(text: String) {
     )
 }
 
-// Colour alone does not carry the error: icon plus text
 @Composable
 fun ErrorText(error: String?) {
     if (error != null) {
@@ -166,8 +164,6 @@ fun Field(
     )
 }
 
-// Validation timing: a field's error shows once the field is left, every error once the form is submitted,
-// so nothing turns red while the first value is still being typed
 class ShownErrors {
     private var submitted by mutableStateOf(false)
     private var left by mutableStateOf(emptySet<String>())
@@ -194,7 +190,6 @@ fun CheckboxField(
     checked: Boolean,
     onChange: (Boolean) -> Unit,
 ) {
-    // The whole row toggles, so the label is part of the touch target
     Row(
         Modifier.toggleable(checked, role = Role.Checkbox, onValueChange = onChange).padding(end = SMALL_PADDING),
         verticalAlignment = Alignment.CenterVertically,
@@ -269,7 +264,6 @@ fun <T> ListEditor(
 ) {
     SectionTitle(title)
     items.forEachIndexed { i, item ->
-        // Narrow windows wrap an item's fields instead of squeezing them; the container keeps a wrapped item together
         Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, shape = MaterialTheme.shapes.medium) {
             FlowRow(
                 Modifier.fillMaxWidth().padding(SMALL_PADDING),

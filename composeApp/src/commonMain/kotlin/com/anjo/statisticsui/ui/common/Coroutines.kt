@@ -24,10 +24,6 @@ fun CoroutineScope.attempt(
     block: suspend CoroutineScope.() -> Unit,
 ) = launch { reporting(onError, block) }
 
-/**
- * Deferred delete: nothing reaches the server until the snackbar closes without Undo, so undoing needs no server
- * support. Leaving the screen while the snackbar shows commits the delete. Returns whether it deleted.
- */
 suspend fun SnackbarHostState.deleteWithUndo(
     message: String,
     delete: suspend () -> Unit,

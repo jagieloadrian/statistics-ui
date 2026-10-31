@@ -94,7 +94,6 @@ fun MainLayout(
         }
     }
 
-    // Narrower than M3 expanded: bottom navigation bar instead of a drawer eating a third of the screen
     if (windowWidth() < EXPANDED_MIN_WIDTH) {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
@@ -247,7 +246,6 @@ fun DataTileCard(
                 }
                 Spacer(Modifier.weight(1f))
                 favourite?.let {
-                    // Shape changes with the state too, not only the colour
                     IconToggleButton(checked = it, onCheckedChange = { onFavourite() }) {
                         Icon(
                             if (it) MaterialSymbols.Rounded.Bookmark_added else MaterialSymbols.Rounded.Bookmark_add,

@@ -12,7 +12,6 @@ import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sin
 
-// Material 2 "500" swatches; the ids are what the server stores in prefs.accent
 val ACCENTS =
     mapOf(
         "red" to Color(0xFFF44336),
@@ -37,8 +36,6 @@ val ACCENTS =
 
 const val DEFAULT_ACCENT = "teal"
 
-// M3 tonal palettes from the accent's hue, built in CIELAB instead of HCT: a tone is L*, which fixes luminance,
-// so every M3 tone pair keeps the same contrast whatever the hue
 fun accentScheme(
     accent: String?,
     dark: Boolean,
@@ -56,7 +53,6 @@ fun accentScheme(
         darkTone: Int,
     ) = this[if (dark) darkTone else light]
 
-    // Every role used is set here, so the light builder's defaults never show, in the dark scheme either
     return lightColorScheme(
         primary = p.tone(40, 80),
         onPrimary = p.tone(100, 20),
@@ -101,7 +97,6 @@ private class Palette(
     val hue: Double,
     val chroma: Double,
 ) {
-    // The palette's chroma, or the most that still fits sRGB at this tone; the tone itself never moves
     operator fun get(tone: Int): Color {
         val l = tone.toDouble()
         var fits = chroma
@@ -119,7 +114,6 @@ private class Palette(
     }
 }
 
-// CIELAB with the D65 white of sRGB; matrices from IEC 61966-2-1
 private const val EPSILON = 216.0 / 24389
 private const val KAPPA = 24389.0 / 27
 private const val WHITE_X = 0.95047
@@ -163,7 +157,6 @@ private fun Color.hueAndChroma(): Pair<Double, Double> {
     return (atan2(bb, a) * 180 / PI).mod(360.0) to hypot(a, bb)
 }
 
-// M3 has no success or warning roles; these keep the 4.5:1 text contrast on the matching surface
 private val ColorScheme.isLight get() = surface.luminance() > 0.5f
 
 val ColorScheme.success get() = if (isLight) Color(0xFF1B6C2F) else Color(0xFF9AD6A3)
