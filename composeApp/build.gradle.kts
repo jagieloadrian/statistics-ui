@@ -73,6 +73,7 @@ kotlin {
         }
         jvmTest.dependencies {
             implementation(libs.kotest.runner.junit5)
+            implementation(libs.compose.ui.test)
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
