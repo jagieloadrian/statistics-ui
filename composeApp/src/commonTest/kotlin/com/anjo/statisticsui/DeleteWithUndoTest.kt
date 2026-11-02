@@ -1,6 +1,5 @@
 package com.anjo.statisticsui
 
-import androidx.compose.material3.SnackbarData
 import androidx.compose.material3.SnackbarHostState
 import com.anjo.statisticsui.ui.common.deleteWithUndo
 import io.kotest.core.spec.style.FunSpec
@@ -9,14 +8,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
-
-private suspend fun SnackbarHostState.awaitSnackbar(): SnackbarData {
-    while (true) {
-        currentSnackbarData?.let { return it }
-        yield()
-    }
-}
 
 class DeleteWithUndoTest :
     FunSpec({

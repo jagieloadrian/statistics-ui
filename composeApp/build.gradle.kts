@@ -69,6 +69,7 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotest.framework.engine)
             implementation(libs.kotest.assertions.core)
+            implementation(libs.ktor.client.mock)
         }
         jvmTest.dependencies {
             implementation(libs.kotest.runner.junit5)
@@ -87,6 +88,13 @@ kotlin {
 
 tasks.named<Test>("jvmTest") {
     useJUnitPlatform()
+    val prefsRoot =
+        layout.buildDirectory
+            .dir("test-prefs")
+            .get()
+            .asFile
+    systemProperty("java.util.prefs.userRoot", prefsRoot.path)
+    doFirst { prefsRoot.deleteRecursively() }
 }
 
 buildkonfig {
