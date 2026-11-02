@@ -4,7 +4,6 @@ import com.anjo.statisticsui.model.Widget
 
 internal const val COLUMNS = 12
 
-/** 12-column flow layout: widgets fill a row left to right; one that no longer fits starts the next row. */
 internal fun layoutRows(widgets: List<Widget>): List<List<Widget>> =
     widgets.fold(mutableListOf<MutableList<Widget>>()) { rows, w ->
         val last = rows.lastOrNull()
@@ -14,4 +13,10 @@ internal fun layoutRows(widgets: List<Widget>): List<List<Widget>> =
 
 internal fun Widget.span() = w.coerceIn(1, COLUMNS)
 
-internal fun <T> List<T>.swap(i: Int, j: Int) = toMutableList().also { it[i] = this[j]; it[j] = this[i] }
+internal fun <T> List<T>.swap(
+    i: Int,
+    j: Int,
+) = toMutableList().also {
+    it[i] = this[j]
+    it[j] = this[i]
+}

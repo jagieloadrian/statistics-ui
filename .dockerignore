@@ -1,0 +1,3 @@
+*
+!.devops/nginx/nginx.conf
+!composeApp/build/dist/wasmJs/productionExecutable/

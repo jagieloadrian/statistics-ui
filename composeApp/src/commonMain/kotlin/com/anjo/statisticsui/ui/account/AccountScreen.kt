@@ -1,111 +1,210 @@
 package com.anjo.statisticsui.ui.account
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.anjo.statisticsui.api.PlatformApi
-import com.anjo.statisticsui.auth.Session
-import com.anjo.statisticsui.model.Prefs
 import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.Picker
-import com.anjo.statisticsui.ui.common.attempt
-import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
+import com.anjo.statisticsui.ui.common.ScreenTitle
+import com.anjo.statisticsui.ui.common.SectionTitle
+import com.anjo.statisticsui.ui.common.ShownErrors
+import com.anjo.statisticsui.ui.common.screenPadding
+import com.anjo.statisticsui.ui.theme.ACCENTS
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
-import org.koin.compose.koinInject
+import com.anjo.statisticsui.validation.MIN_PASSWORD_LENGTH
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Check
+import com.composables.icons.materialsymbols.rounded.Logout
 
 private val UNITS = listOf("metric", "imperial")
 private val THEMES = listOf("system", "light", "dark")
-private const val NO_HOME = "(home screen)"
+private const val NO_HOME = "Home screen"
+private val FIELD_WIDTH = 420.dp
+private val SWATCH_SIZE = 48.dp
 
 @Composable
-fun AccountScreen(api: PlatformApi = koinInject(), session: Session = koinInject()) {
-    val user = session.user
-    var prefs by remember(user) { mutableStateOf(user?.prefs ?: Prefs()) }
-    var dashboards by remember { mutableStateOf(emptyList<String>()) }
-    var prefsInfo by remember { mutableStateOf<String?>(null) }
-    var prefsError by remember { mutableStateOf<String?>(null) }
-    var current by remember { mutableStateOf("") }
-    var new by remember { mutableStateOf("") }
-    var repeat by remember { mutableStateOf("") }
-    var passwordInfo by remember { mutableStateOf<String?>(null) }
-    var passwordError by remember { mutableStateOf<String?>(null) }
-    var localSignIn by remember { mutableStateOf(true) }
-    val scope = rememberCoroutineScope()
-    LaunchedEffect(Unit) {
-        attempt({ prefsError = it }) {
-            if (session.user == null) api.me()
-            dashboards = api.list("dashboards").map { it.id }
-            localSignIn = api.authConfig().local
-        }
-    }
+fun AccountScreen(state: AccountState = rememberAccountState()) {
+    LaunchedEffect(Unit) { state.load() }
+    DisposableEffect(Unit) { onDispose(state::discardPrefs) }
+    val prefs = state.prefs
 
     Column(
-        Modifier.fillMaxSize().padding(LARGE_MEDIUM_PADDING).verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)
+        Modifier.fillMaxSize().padding(screenPadding()).verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(SMALL_PADDING),
     ) {
-        Text("Account", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-        user?.let { Text("${it.name.ifBlank { it.email }} · ${it.email} · ${it.role}", color = Color.Gray) }
-
-        Text("Preferences", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING))
-        Field("Time zone, e.g. Europe/Warsaw (empty = this device)", prefs.timeZone.orEmpty(), Modifier.width(420.dp)) {
-            prefs = prefs.copy(timeZone = it.trim().ifBlank { null })
+        ScreenTitle("Account")
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(SMALL_MEDIUM_PADDING),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
+            state.user?.let {
+                Text(
+                    "${it.name.ifBlank { it.email }} · ${it.email} · ${it.role}",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            OutlinedButton(onClick = state::signOut) {
+                Icon(MaterialSymbols.Rounded.Logout, contentDescription = null)
+                Text("Sign out")
+            }
         }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
-            Text("Units", color = Color.Gray)
-            Picker(prefs.units, UNITS) { prefs = prefs.copy(units = it) }
-            Text("Theme", color = Color.Gray)
-            Picker(prefs.theme, THEMES) { prefs = prefs.copy(theme = it) }
-            Text("Home dashboard", color = Color.Gray)
-            Picker(prefs.homeDashboard ?: NO_HOME, listOf(NO_HOME) + dashboards) { prefs = prefs.copy(homeDashboard = it.takeUnless { h -> h == NO_HOME }) }
-        }
-        Button(onClick = {
-            prefsInfo = null
-            scope.attempt({ prefsError = it }) { api.putPrefs(prefs); prefsInfo = "Preferences saved" }
-        }) { Text("Save preferences") }
-        prefsInfo?.let { Text(it, color = Color.Gray) }
-        ErrorText(prefsError)
 
-        // provider-only accounts have no password; with local sign-in off nobody uses one
-        if (user?.hasPassword != false && localSignIn) {
-            Text("Change password", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(top = SMALL_MEDIUM_PADDING))
-            Field("Current password", current, Modifier.width(420.dp), password = true) { current = it }
-            Field("New password (at least 10 characters)", new, Modifier.width(420.dp), password = true) { new = it }
-            Field("Repeat new password", repeat, Modifier.width(420.dp), password = true) { repeat = it }
-            if (repeat.isNotEmpty() && repeat != new) Text("Passwords differ", color = MaterialTheme.colorScheme.error)
-            Button(enabled = current.isNotEmpty() && new.length >= 10 && new == repeat, onClick = {
-                passwordInfo = null
-                scope.attempt({ passwordError = it }) {
-                    api.changePassword(current, new)
-                    current = ""; new = ""; repeat = ""
-                    passwordInfo = "Password changed; your other sessions were signed out"
+        SectionTitle("Preferences")
+        Field(
+            "Time zone (optional)",
+            prefs.timeZone.orEmpty(),
+            Modifier.widthIn(max = FIELD_WIDTH).fillMaxWidth(),
+            help = "For example Europe/Warsaw. Leave empty to use this device's time zone.",
+        ) {
+            state.prefs = prefs.copy(timeZone = it.trim().ifBlank { null })
+        }
+        Picker("Units", prefs.units, UNITS) { state.prefs = prefs.copy(units = it) }
+        Picker("Theme", prefs.theme, THEMES) { state.prefs = prefs.copy(theme = it) }
+        AccentPicker(prefs.accent) { state.prefs = prefs.copy(accent = it) }
+        Picker(
+            "Home dashboard",
+            prefs.homeDashboard ?: NO_HOME,
+            listOf(NO_HOME) + state.dashboards,
+            Modifier.widthIn(max = FIELD_WIDTH).fillMaxWidth(),
+        ) {
+            state.prefs = prefs.copy(homeDashboard = it.takeUnless { home -> home == NO_HOME })
+        }
+        Button(onClick = state::savePrefs) { Text("Save preferences") }
+        state.prefsInfo?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        ErrorText(state.prefsError)
+
+        if (state.canChangePassword) PasswordForm(state)
+    }
+}
+
+@Composable
+private fun AccentPicker(
+    selected: String,
+    onSelect: (String) -> Unit,
+) {
+    Text("Colour: ${accentLabel(selected)}", color = MaterialTheme.colorScheme.onSurface)
+    FlowRow(
+        Modifier.widthIn(max = FIELD_WIDTH).selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
+        verticalArrangement = Arrangement.spacedBy(SMALL_PADDING),
+    ) {
+        ACCENTS.forEach { (name, seed) ->
+            Box(
+                Modifier
+                    .size(SWATCH_SIZE)
+                    .clip(CircleShape)
+                    .background(seed)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                    .selectable(selected = name == selected, role = Role.RadioButton) { onSelect(name) }
+                    .semantics { contentDescription = accentLabel(name) },
+                contentAlignment = Alignment.Center,
+            ) {
+                if (name == selected) {
+                    Icon(
+                        MaterialSymbols.Rounded.Check,
+                        contentDescription = null,
+                        tint =
+                            if (seed.luminance() >
+                                0.4f
+                            ) {
+                                Color.Black
+                            } else {
+                                Color.White
+                            },
+                    )
                 }
-            }) { Text("Change password") }
-            passwordInfo?.let { Text(it, color = Color.Gray) }
-            ErrorText(passwordError)
+            }
         }
     }
+    Text(
+        "Theme and colour preview right away; Save preferences keeps them",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+// "deep-orange" reads as "Deep orange"
+private fun accentLabel(id: String) = id.replace('-', ' ').replaceFirstChar { it.uppercase() }
+
+@Composable
+private fun PasswordForm(state: AccountState) {
+    val errors = state.passwordErrors
+    SectionTitle("Change password")
+    PasswordField(
+        "Current password",
+        state.currentPassword,
+        errors["current"],
+        state.passwordShown,
+        "current",
+    ) { state.currentPassword = it }
+    PasswordField(
+        "New password",
+        state.newPassword,
+        errors["new"],
+        state.passwordShown,
+        "new",
+        help = "At least $MIN_PASSWORD_LENGTH characters",
+    ) {
+        state.newPassword = it
+    }
+    PasswordField("Repeat new password", state.repeatedPassword, errors["repeated"], state.passwordShown, "repeated") {
+        state.repeatedPassword = it
+    }
+    Button(onClick = state::changePassword) { Text("Change password") }
+    state.passwordInfo?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+    ErrorText(state.passwordError)
+}
+
+@Composable
+private fun PasswordField(
+    label: String,
+    value: String,
+    error: String?,
+    shown: ShownErrors,
+    key: String,
+    help: String? = null,
+    onChange: (String) -> Unit,
+) {
+    Field(
+        label,
+        value,
+        Modifier.widthIn(max = FIELD_WIDTH).fillMaxWidth(),
+        password = true,
+        help = help,
+        error = error,
+        onBlur = { shown.leave(key) },
+        onChange = onChange,
+    )
 }

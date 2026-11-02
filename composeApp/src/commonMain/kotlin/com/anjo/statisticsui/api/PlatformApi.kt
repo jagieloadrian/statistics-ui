@@ -1,7 +1,7 @@
 package com.anjo.statisticsui.api
 
+import com.anjo.statisticsui.BuildKonfig
 import com.anjo.statisticsui.auth.Session
-import com.anjo.statisticsui.configuration.AppConfig
 import com.anjo.statisticsui.model.ApiError
 import com.anjo.statisticsui.model.AuthConfig
 import com.anjo.statisticsui.model.Credential
@@ -45,15 +45,20 @@ import io.ktor.http.isSuccess
 import kotlinx.serialization.json.JsonElement
 import org.koin.core.annotation.Singleton
 
-/** Non-2xx answer; [status] lets callers react to e.g. 409 (references, retry with `force`). */
-class ApiException(message: String, val status: Int) : Exception(message)
+class ApiException(
+    message: String,
+    val status: Int,
+) : Exception(message)
 
-/** Client for the platform API v2 (contracts/api-v2.md). `kind` = `datasets`, `sources` or `dashboards`. */
 @Singleton
-class PlatformApi(private val client: HttpClient, private val appConfig: AppConfig, private val session: Session) {
-
-    /** Stores the session on success; wrong credentials → 401 with one generic message, too many tries → 429. */
-    suspend fun login(email: String, password: String): User {
+class PlatformApi(
+    private val client: HttpClient,
+    private val session: Session,
+) {
+    suspend fun login(
+        email: String,
+        password: String,
+    ): User {
         val answer: LoginResponse = request("auth/login") { json(HttpMethod.Post, LoginRequest(email, password)) }
         session.signIn(answer.token, answer.user)
         return answer.user
@@ -61,52 +66,63 @@ class PlatformApi(private val client: HttpClient, private val appConfig: AppConf
 
     suspend fun authConfig(): AuthConfig = request("auth/config")
 
-    /** Provider unreachable → 503 "Sign-in provider unavailable". */
     suspend fun oidcStart(redirectUri: String): OidcStart =
         request("auth/oidc/start") { json(HttpMethod.Post, OidcStartRequest(redirectUri)) }
 
-    /** Finishes provider sign-in and stores the session, like [login]. */
-    suspend fun oidcLogin(code: String, codeVerifier: String, redirectUri: String): User {
+    suspend fun oidcLogin(
+        code: String,
+        codeVerifier: String,
+        redirectUri: String,
+    ): User {
         val answer: LoginResponse = request("auth/oidc") { json(HttpMethod.Post, OidcLoginRequest(code, codeVerifier, redirectUri)) }
         session.signIn(answer.token, answer.user)
         return answer.user
     }
 
-    /** Ends the session locally even when the server cannot be reached. */
-    suspend fun logout() {
-        try {
-            request<Unit>("auth/logout") { method = HttpMethod.Post }
-        } finally {
-            session.signOut()
-        }
+    suspend fun logout(): Result<Unit> {
+        val serverRevocation = runSuspendCatching { request<Unit>("auth/logout") { method = HttpMethod.Post } }
+        session.signOut()
+        return serverRevocation
     }
 
     suspend fun me(): User = request<User>("me").also { session.user = it }
 
     suspend fun putPrefs(prefs: Prefs): User = request<User>("me/prefs") { json(HttpMethod.Put, prefs) }.also { session.user = it }
 
-    /** Other sessions of the user are revoked; wrong current password or a new one under 10 chars → 400. */
-    suspend fun changePassword(current: String, new: String): Unit =
-        request("me/password") { json(HttpMethod.Put, PasswordChange(current, new)) }
+    suspend fun changePassword(
+        current: String,
+        new: String,
+    ): Unit = request("me/password") { json(HttpMethod.Put, PasswordChange(current, new)) }
 
     suspend fun users(): List<User> = request("users")
 
     suspend fun createUser(user: NewUser): User = request("users") { json(HttpMethod.Post, user) }
 
-    suspend fun updateUser(id: Long, update: UserUpdate): Unit = request("users/$id") { json(HttpMethod.Put, update) }
+    suspend fun updateUser(
+        id: Long,
+        update: UserUpdate,
+    ): Unit = request("users/$id") { json(HttpMethod.Put, update) }
 
     suspend fun deleteUser(id: Long): Unit = request("users/$id") { method = HttpMethod.Delete }
 
     suspend fun shares(dashboardId: String): List<Long> = request<Shares>("dashboards/$dashboardId/shares").userIds
 
-    suspend fun putShares(dashboardId: String, userIds: List<Long>): Unit =
-        request("dashboards/$dashboardId/shares") { json(HttpMethod.Put, Shares(userIds)) }
+    suspend fun putShares(
+        dashboardId: String,
+        userIds: List<Long>,
+    ): Unit = request("dashboards/$dashboardId/shares") { json(HttpMethod.Put, Shares(userIds)) }
 
     suspend fun list(kind: String): List<DefinitionSummary> = request(kind)
 
-    /** [force] overrides the 409 reference guard (dataset still used by widgets, variables or sources). */
-    suspend fun delete(kind: String, id: String, force: Boolean = false): Unit =
-        request("$kind/$id") { method = HttpMethod.Delete; if (force) parameter("force", true) }
+    suspend fun delete(
+        kind: String,
+        id: String,
+        force: Boolean = false,
+    ): Unit =
+        request("$kind/$id") {
+            method = HttpMethod.Delete
+            if (force) parameter("force", true)
+        }
 
     suspend fun dataset(id: String): Dataset = request("datasets/$id")
 
@@ -114,74 +130,96 @@ class PlatformApi(private val client: HttpClient, private val appConfig: AppConf
 
     suspend fun dashboard(id: String): Dashboard = request("dashboards/$id")
 
-    suspend fun putDataset(dataset: Dataset, force: Boolean = false): Unit = request("datasets/${dataset.id}") {
-        json(HttpMethod.Put, dataset)
-        if (force) parameter("force", true)
-    }
+    suspend fun putDataset(
+        dataset: Dataset,
+        force: Boolean = false,
+    ): Unit =
+        request("datasets/${dataset.id}") {
+            json(HttpMethod.Put, dataset)
+            if (force) parameter("force", true)
+        }
 
     suspend fun putSource(source: Source): Unit = request("sources/${source.id}") { json(HttpMethod.Put, source) }
 
-    suspend fun putDashboard(dashboard: Dashboard): Unit =
-        request("dashboards/${dashboard.id}") { json(HttpMethod.Put, dashboard) }
+    suspend fun putDashboard(dashboard: Dashboard): Unit = request("dashboards/${dashboard.id}") { json(HttpMethod.Put, dashboard) }
 
-    /** Returns the new source token; it is shown once and the previous one stops working. */
     suspend fun rotateCredential(sourceId: String): String =
         request<Credential>("sources/$sourceId/credential") { method = HttpMethod.Post }.token
 
     suspend fun sourceStatus(sourceId: String): SourceStatus = request("sources/$sourceId/status")
 
-    suspend fun testMapping(sourceId: String, test: MappingTestRequest): MappingTestResult =
-        request("sources/$sourceId/mapping-test") { json(HttpMethod.Post, test) }
+    suspend fun testMapping(
+        sourceId: String,
+        test: MappingTestRequest,
+    ): MappingTestResult = request("sources/$sourceId/mapping-test") { json(HttpMethod.Post, test) }
 
     suspend fun query(query: Query): QueryResult = request("query") { json(HttpMethod.Post, query) }
 
-    suspend fun dimensionValues(dataset: String, dimension: String, search: String = "", limit: Int = 50, offset: Int = 0):
-            List<DimensionValue> = request("datasets/$dataset/dimensions/$dimension/values") {
-        parameter("search", search)
-        parameter("limit", limit)
-        parameter("offset", offset)
-    }
+    suspend fun dimensionValues(
+        dataset: String,
+        dimension: String,
+        search: String = "",
+        limit: Int = 50,
+        offset: Int = 0,
+    ): List<DimensionValue> =
+        request("datasets/$dataset/dimensions/$dimension/values") {
+            parameter("search", search)
+            parameter("limit", limit)
+            parameter("offset", offset)
+        }
 
-    /** Raw JSON so the copy shown to the user keeps every field. */
     suspend fun exportBundle(): JsonElement = request("export")
 
-    /** 200 = imported; 400 with the same shape = nothing stored. Any other answer throws. */
     suspend fun importBundle(bundle: JsonElement): ImportResult {
-        val response = client.request(url("import")) {
-            authorize()
-            json(HttpMethod.Post, bundle)
-        }
-        val result = if (response.status.isSuccess() || response.status == HttpStatusCode.BadRequest) {
-            runCatching { response.body<ImportResult>() }.getOrNull()
-        } else null
+        val response = send("import") { json(HttpMethod.Post, bundle) }
+        val result =
+            if (response.status.isSuccess() || response.status == HttpStatusCode.BadRequest) {
+                runSuspendCatching { response.body<ImportResult>() }.getOrNull()
+            } else {
+                null
+            }
         return result ?: throw response.apiException()
     }
 
-    private fun url(path: String) = "${appConfig.backendUrl}/api/v2/$path"
+    private fun url(path: String) = "${BuildKonfig.backendurl}/api/v2/$path"
 
     private fun HttpRequestBuilder.authorize() {
         accept(ContentType.Application.Json)
         session.token?.let { bearerAuth(it) }
     }
 
-    /** A 401 on a request that carried a token means it expired or was revoked: sign out (NavGraph shows login). */
     private suspend fun HttpResponse.apiException(): ApiException {
         if (status == HttpStatusCode.Unauthorized && call.request.headers[HttpHeaders.Authorization] != null) session.signOut()
-        val error = runCatching { body<ApiError>() }.getOrNull()
+        val error = runSuspendCatching { body<ApiError>() }.getOrNull()
         return ApiException(error?.let { (listOf(it.message) + it.details).joinToString("\n") } ?: "HTTP $status", status.value)
     }
 
-    private suspend inline fun <reified T> request(path: String, block: HttpRequestBuilder.() -> Unit = {}): T {
-        val response = client.request(url(path)) {
-            authorize()
-            block()
-        }
+    // Failing to get any response means the server is unreachable (down, offline, CORS), whatever the engine calls it
+    private suspend fun send(
+        path: String,
+        block: HttpRequestBuilder.() -> Unit,
+    ): HttpResponse =
+        runSuspendCatching {
+            client.request(url(path)) {
+                authorize()
+                block()
+            }
+        }.getOrElse { throw ApiException("Cannot reach the server. Check your connection and try again.", 0) }
+
+    private suspend inline fun <reified T> request(
+        path: String,
+        noinline block: HttpRequestBuilder.() -> Unit = {},
+    ): T {
+        val response = send(path, block)
         if (!response.status.isSuccess()) throw response.apiException()
         return response.body()
     }
 }
 
-private inline fun <reified B : Any> HttpRequestBuilder.json(verb: HttpMethod, body: B) {
+private inline fun <reified B : Any> HttpRequestBuilder.json(
+    verb: HttpMethod,
+    body: B,
+) {
     method = verb
     contentType(ContentType.Application.Json)
     setBody(body)

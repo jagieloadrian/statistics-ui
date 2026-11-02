@@ -3,7 +3,10 @@ package com.anjo.statisticsui.model
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Threshold(val value: Double, val color: String)
+data class Threshold(
+    val value: Double,
+    val color: String,
+)
 
 @Serializable
 data class WidgetOptions(
@@ -52,4 +55,6 @@ data class Dashboard(
 )
 
 @Serializable
-data class Shares(val userIds: List<Long>)
+data class Shares(
+    val userIds: List<Long>,
+)
