@@ -4,6 +4,12 @@ metadata:
   name: statistics-ui
 spec:
   interval: 10m
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    remediation:
+      retries: 3
   chart:
     spec:
       chart: ./charts/app
