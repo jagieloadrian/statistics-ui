@@ -98,6 +98,16 @@ tasks.named<Test>("jvmTest") {
     doFirst { prefsRoot.deleteRecursively() }
 }
 
+kover {
+    reports {
+        verify {
+            rule {
+                minBound(50)
+            }
+        }
+    }
+}
+
 buildkonfig {
     packageName = "com.anjo.statisticsui"
     defaultConfigs {
