@@ -15,6 +15,7 @@ plugins {
     alias(libs.plugins.koinCompiler)
     alias(libs.plugins.buildKonfig)
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.kover)
 }
 
 ktlint {

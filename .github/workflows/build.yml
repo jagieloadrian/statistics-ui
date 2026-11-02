@@ -36,7 +36,14 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
 
       - name: Lint and test
-        run: ./gradlew ktlintCheck :composeApp:jvmTest :composeApp:compileKotlinJs :composeApp:compileKotlinWasmJs
+        run: ./gradlew ktlintCheck :composeApp:jvmTest :composeApp:koverXmlReport :composeApp:compileKotlinJs :composeApp:compileKotlinWasmJs
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v7
+        continue-on-error: true
+        with:
+          files: composeApp/build/reports/kover/report.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Compute image tag
         if: github.event_name != 'pull_request'
