@@ -69,7 +69,10 @@ class ValidationTest :
         }
 
         test("datasetNamesRetentionAndId") {
+            // given
             val dataset = Dataset(id = "weather", measures = listOf(Measure("temp")), dimensions = listOf(Dimension("city")))
+
+            // when and then
             datasetErrors(dataset, listOf("feels_like"), "", emptyList()).shouldBeEmpty()
             datasetErrors(dataset, emptyList(), "30", emptyList()).shouldBeEmpty()
             datasetErrors(dataset, emptyList(), "0", emptyList()) shouldContainKey "retention"
@@ -80,31 +83,45 @@ class ValidationTest :
         }
 
         test("sourceNeedsDatasetRateAndMapping") {
+            // given
             val source = Source(id = "station", dataset = "weather")
+
+            // when and then
             sourceErrors(source, "50", "[]", emptyList()).shouldBeEmpty()
             sourceErrors(source.copy(dataset = ""), "0", "[{", emptyList()).keys shouldBe setOf("dataset", "rate", "mapping")
         }
 
         test("sourceChannelMirrorsTheBackendTypes") {
+            // given
             val source = Source(id = "station", dataset = "weather")
             val withIdentity = """[{"identity":["id"],"vals":{"t":{"path":"t"}}}]"""
+
+            // when and then
             sourceErrors(source.copy(channel = Channel("pubsub")), "50", withIdentity, emptyList()).shouldBeEmpty()
             sourceErrors(source.copy(channel = Channel("kafka")), "50", "[]", emptyList()) shouldBe
                 mapOf("channel" to "One of push, pubsub")
         }
 
         test("pubsubSourceNeedsIdentityInEveryRuleLikeTheBackend") {
+            // given
             val pubsub = Source(id = "station", dataset = "weather", channel = Channel("pubsub"))
             val missing = mapOf("mapping" to "A pubsub source needs at least one rule, each with identity")
+
+            // when and then
             sourceErrors(pubsub, "50", "[]", emptyList()) shouldBe missing
             sourceErrors(pubsub, "50", """[{"identity":["id"]},{"vals":{}}]""", emptyList()) shouldBe missing
             sourceErrors(pubsub.copy(channel = Channel("push")), "50", "[]", emptyList()).shouldBeEmpty()
         }
 
         test("dashboardRefreshVariablesAndWidgets") {
+            // given
             val widget = Widget(id = "w1", type = "line", query = Query(dataset = "weather"))
+
+            // when and then
             Dashboard(id = "home", refreshSeconds = 5, widgets = listOf(widget)).let { dashboardErrors(it).shouldBeEmpty() }
             Dashboard(id = "home", refreshSeconds = null).let { dashboardErrors(it).shouldBeEmpty() }
+
+            // given
             val invalid =
                 Dashboard(
                     id = "home",
@@ -112,6 +129,8 @@ class ValidationTest :
                     variables = listOf(Variable("a", "timeRange"), Variable("b", "timeRange")),
                     widgets = listOf(widget, widget),
                 )
+
+            // when and then
             dashboardErrors(invalid).keys shouldBe setOf("refresh", "variables", "widgets")
         }
     })

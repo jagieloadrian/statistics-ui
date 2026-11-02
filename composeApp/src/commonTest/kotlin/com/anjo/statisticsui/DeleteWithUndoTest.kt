@@ -22,35 +22,50 @@ class DeleteWithUndoTest :
     FunSpec({
 
         test("undoSkipsTheDelete") {
+            // given
             val host = SnackbarHostState()
             var deletes = 0
+
+            // when
             coroutineScope {
                 val result = async { host.deleteWithUndo("Deleted") { deletes++ } }
                 host.awaitSnackbar().performAction()
                 result.await() shouldBe false
             }
+
+            // then
             deletes shouldBe 0
         }
 
         test("dismissDeletes") {
+            // given
             val host = SnackbarHostState()
             var deletes = 0
+
+            // when
             coroutineScope {
                 val result = async { host.deleteWithUndo("Deleted") { deletes++ } }
                 host.awaitSnackbar().dismiss()
                 result.await() shouldBe true
             }
+
+            // then
             deletes shouldBe 1
         }
 
         test("leavingTheScreenDeletes") {
+            // given
             val host = SnackbarHostState()
             var deletes = 0
+
+            // when
             coroutineScope {
                 val job = launch { host.deleteWithUndo("Deleted") { deletes++ } }
                 host.awaitSnackbar()
                 job.cancelAndJoin()
             }
+
+            // then
             deletes shouldBe 1
         }
     })
