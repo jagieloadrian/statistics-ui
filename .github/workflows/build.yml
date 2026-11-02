@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     permissions:
-      contents: write # deploy step commits the new image tag to .devops/helm/release.yaml
+      contents: write
       packages: write
     steps:
       - uses: actions/checkout@v7
@@ -61,7 +61,6 @@ jobs:
           push: true
           tags: ghcr.io/jagieloadrian/statistics-ui:${{ steps.tag.outputs.tag }}
 
-      # Flux reads .devops/helm from main; a push made with GITHUB_TOKEN does not trigger another run.
       - name: Deploy (bump image tag)
         if: github.ref == 'refs/heads/main'
         run: |

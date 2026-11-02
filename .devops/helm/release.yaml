@@ -1,11 +1,15 @@
-# Wdrożenie: wspólny chart homelab-infra/charts/app (opis values: charts/app/values.yaml).
-# Flux czyta .devops/helm/ z main; tag obrazu podbija CI (build.yml, krok Deploy).
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: statistics-ui
 spec:
   interval: 10m
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    remediation:
+      retries: 3
   chart:
     spec:
       chart: ./charts/app

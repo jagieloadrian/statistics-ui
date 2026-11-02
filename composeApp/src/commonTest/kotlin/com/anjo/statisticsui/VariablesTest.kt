@@ -27,19 +27,25 @@ class VariablesTest :
             )
 
         test("substitutesFilterValuesAndBucket") {
+            // when
             val q = resolve(query, mapOf("device" to listOf("pico-1", "pico-2"), "bucket" to listOf("1h")), range)
+
+            // then
             q.filter shouldBe mapOf("device" to listOf("pico-1", "pico-2", "pico-9"), "type" to listOf("total"))
             q.bucket shouldBe "1h"
             (q.from to q.to) shouldBe ("2026-10-26T12:00:00Z" to "2026-10-27T12:00:00Z")
         }
 
         test("emptyVariableDropsFilterAndBucketFallsBackToAuto") {
+            // when
             val q =
                 resolve(
                     query.copy(filter = mapOf("device" to listOf("\$device"))),
                     mapOf("device" to emptyList(), "bucket" to emptyList()),
                     range,
                 )
+
+            // then
             q.filter shouldBe emptyMap()
             q.bucket shouldBe "auto"
         }
@@ -50,7 +56,10 @@ class VariablesTest :
         }
 
         test("rangeFromTimeRangeVariableElseDefaultRange") {
+            // given
             val base = Dashboard(id = "d", defaultRange = RelativeRange("P30D"))
+
+            // when and then
             initialDuration(base) shouldBe 30.days
             initialDuration(base.copy(variables = listOf(Variable("range", "timeRange")))) shouldBe 30.days
             initialDuration(base.copy(variables = listOf(Variable("range", "timeRange", default = "P1D")))) shouldBe 1.days

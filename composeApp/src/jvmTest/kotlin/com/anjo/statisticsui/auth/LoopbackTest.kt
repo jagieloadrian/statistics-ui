@@ -26,7 +26,10 @@ class LoopbackTest :
 
         test("otherStateIsRefused") {
             Loopback().use { loopback ->
+                // when
                 get("${loopback.redirectUri}?code=c1&state=forged")
+
+                // then
                 shouldThrow<Exception> { loopback.awaitCode("s1") }.message shouldBe "Sign-in expired, try again"
             }
         }
@@ -39,11 +42,14 @@ class LoopbackTest :
         }
 
         test("timeoutFailsAndFreesThePort") {
+            // when
             val port =
                 Loopback(timeout = 200.milliseconds).use { loopback ->
                     shouldThrow<Exception> { loopback.awaitCode("s1") }.message shouldBe "No answer from the browser, try again"
                     URI(loopback.redirectUri).port
                 }
+
+            // then
             ServerSocket(port, 0, InetAddress.getByName("127.0.0.1")).close()
         }
     })

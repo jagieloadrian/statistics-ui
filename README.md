@@ -18,11 +18,18 @@ docker compose -f .devops/postgres-compose/compose.yaml up -d
 ./gradlew runLocal
 ```
 
-Then the UI; the defaults already point at that backend (`http://127.0.0.1:8080`):
+Then the UI; the defaults already point at that backend (`http://127.0.0.1:8080`).
+
+Web: the dev server opens `http://localhost:8081` (`jsBrowserDevelopmentRun` runs the JS build instead of Wasm):
 
 ```shell
-./gradlew :composeApp:wasmJsBrowserDevelopmentRun   # web on http://localhost:8081 (or jsBrowserDevelopmentRun)
-./gradlew :composeApp:run                           # desktop (JVM)
+./gradlew :composeApp:wasmJsBrowserDevelopmentRun
+```
+
+Desktop (JVM window):
+
+```shell
+./gradlew :composeApp:run
 ```
 
 Sign in as `admin@local` / `change-me-now`.
