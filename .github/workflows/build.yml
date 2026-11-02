@@ -36,7 +36,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
 
       - name: Lint and test
-        run: ./gradlew ktlintCheck :composeApp:jvmTest :composeApp:koverXmlReport :composeApp:compileKotlinJs :composeApp:compileKotlinWasmJs
+        run: ./gradlew ktlintCheck :composeApp:jvmTest :composeApp:koverXmlReport :composeApp:koverVerify :composeApp:compileKotlinJs :composeApp:compileKotlinWasmJs
 
       - name: Upload coverage
         uses: codecov/codecov-action@v7
