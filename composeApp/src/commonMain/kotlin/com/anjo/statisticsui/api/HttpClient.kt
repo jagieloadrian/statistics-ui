@@ -1,6 +1,7 @@
 package com.anjo.statisticsui.api
 
 import io.ktor.client.HttpClient
+import io.ktor.client.HttpClientConfig
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.DEFAULT
 import io.ktor.client.plugins.logging.LogLevel
@@ -11,20 +12,21 @@ import kotlinx.serialization.json.Json
 import org.koin.core.annotation.Singleton
 
 @Singleton
-fun createHttpClient(): HttpClient =
-    HttpClient {
-        install(ContentNegotiation) {
-            json(
-                Json {
-                    encodeDefaults = true
-                    isLenient = true
-                    coerceInputValues = true
-                    ignoreUnknownKeys = true
-                },
-            )
-        }
-        install(Logging) {
-            logger = Logger.DEFAULT
-            level = LogLevel.INFO
-        }
+fun createHttpClient(): HttpClient = HttpClient { platformConfig() }
+
+internal fun HttpClientConfig<*>.platformConfig() {
+    install(ContentNegotiation) {
+        json(
+            Json {
+                encodeDefaults = true
+                isLenient = true
+                coerceInputValues = true
+                ignoreUnknownKeys = true
+            },
+        )
     }
+    install(Logging) {
+        logger = Logger.DEFAULT
+        level = LogLevel.INFO
+    }
+}
