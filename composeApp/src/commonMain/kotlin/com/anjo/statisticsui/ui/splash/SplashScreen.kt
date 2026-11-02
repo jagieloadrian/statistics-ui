@@ -135,7 +135,7 @@ fun SplashScreen(onAnimationFinished: () -> Unit) {
 }
 
 @Composable
-fun StatsLogo(
+private fun StatsLogo(
     progress: Float,
     lineColor: Color,
     modifier: Modifier = Modifier,
@@ -184,7 +184,7 @@ fun StatsLogo(
 }
 
 @Composable
-fun LoadingDots() {
+private fun LoadingDots() {
     val infiniteTransition = rememberInfiniteTransition()
 
     val alpha1 by infiniteTransition.animateFloat(
@@ -211,7 +211,7 @@ fun LoadingDots() {
 }
 
 @Composable
-fun Dot(alpha: Float) {
+private fun Dot(alpha: Float) {
     Box(
         modifier =
             Modifier

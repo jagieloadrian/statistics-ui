@@ -1,7 +1,10 @@
 package com.anjo.statisticsui.validation
 
+import com.anjo.statisticsui.model.CHANNEL_TYPES
 import com.anjo.statisticsui.model.Dashboard
 import com.anjo.statisticsui.model.Dataset
+import com.anjo.statisticsui.model.PUBSUB_CHANNEL
+import com.anjo.statisticsui.model.ROLES
 import com.anjo.statisticsui.model.Rule
 import com.anjo.statisticsui.model.Source
 import com.anjo.statisticsui.model.platformJson
@@ -10,8 +13,7 @@ import kotlinx.serialization.SerializationException
 typealias FieldErrors = Map<String, String>
 
 const val MIN_PASSWORD_LENGTH = 10
-const val MIN_REFRESH_SECONDS = 5
-val ROLES = listOf("viewer", "editor", "admin")
+private const val MIN_REFRESH_SECONDS = 5
 
 private const val REQUIRED = "Required"
 private const val RESERVED_NAME = "ts"
@@ -26,7 +28,7 @@ fun emailError(email: String): String? =
         else -> null
     }
 
-fun newPasswordError(password: String): String? =
+private fun newPasswordError(password: String): String? =
     if (password.length < MIN_PASSWORD_LENGTH) "At least $MIN_PASSWORD_LENGTH characters" else null
 
 fun idError(
@@ -111,8 +113,9 @@ fun sourceErrors(
     errorsOf(
         "id" to idError(source.id, existingIds),
         "dataset" to REQUIRED.takeIf { source.dataset.isBlank() },
+        "channel" to "One of ${CHANNEL_TYPES.joinToString()}".takeIf { source.channel.type !in CHANNEL_TYPES },
         "rate" to "A whole number above 0".takeIf { positiveWholeNumber(rate) == null },
-        "mapping" to mappingError(mappingJson),
+        "mapping" to mappingError(mappingJson, source.channel.type),
     )
 
 fun dashboardErrors(dashboard: Dashboard): FieldErrors =
@@ -141,15 +144,19 @@ private fun namesError(names: List<String>): String? {
     }
 }
 
-private fun mappingError(mappingJson: String): String? =
-    try {
-        platformJson.decodeFromString<List<Rule>>(mappingJson)
-        null
-    } catch (e: SerializationException) {
-        "Not a valid mapping: ${e.message}"
-    } catch (e: IllegalArgumentException) {
-        "Not a valid mapping: ${e.message}"
-    }
+private fun mappingError(
+    mappingJson: String,
+    channel: String,
+): String? {
+    val rules =
+        try {
+            platformJson.decodeFromString<List<Rule>>(mappingJson)
+        } catch (e: IllegalArgumentException) {
+            return "Not a valid mapping: ${e.message}"
+        }
+    val identityMissing = rules.isEmpty() || rules.any { it.identity.isEmpty() }
+    return "A pubsub source needs at least one rule, each with identity".takeIf { channel == PUBSUB_CHANNEL && identityMissing }
+}
 
 private fun errorsOf(vararg fields: Pair<String, String?>): FieldErrors =
     fields.mapNotNull { (field, error) -> error?.let { field to it } }.toMap()

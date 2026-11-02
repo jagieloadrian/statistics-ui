@@ -10,6 +10,7 @@ import com.anjo.statisticsui.model.Dataset
 import com.anjo.statisticsui.model.DefinitionSummary
 import com.anjo.statisticsui.model.DimensionValue
 import com.anjo.statisticsui.model.ImportResult
+import com.anjo.statisticsui.model.Kind
 import com.anjo.statisticsui.model.LoginRequest
 import com.anjo.statisticsui.model.LoginResponse
 import com.anjo.statisticsui.model.MappingTestRequest
@@ -58,11 +59,7 @@ class PlatformApi(
     suspend fun login(
         email: String,
         password: String,
-    ): User {
-        val answer: LoginResponse = request("auth/login") { json(HttpMethod.Post, LoginRequest(email, password)) }
-        session.signIn(answer.token, answer.user)
-        return answer.user
-    }
+    ): User = signedIn(request("auth/login") { json(HttpMethod.Post, LoginRequest(email, password)) })
 
     suspend fun authConfig(): AuthConfig = request("auth/config")
 
@@ -73,11 +70,7 @@ class PlatformApi(
         code: String,
         codeVerifier: String,
         redirectUri: String,
-    ): User {
-        val answer: LoginResponse = request("auth/oidc") { json(HttpMethod.Post, OidcLoginRequest(code, codeVerifier, redirectUri)) }
-        session.signIn(answer.token, answer.user)
-        return answer.user
-    }
+    ): User = signedIn(request("auth/oidc") { json(HttpMethod.Post, OidcLoginRequest(code, codeVerifier, redirectUri)) })
 
     suspend fun logout(): Result<Unit> {
         val serverRevocation = runSuspendCatching { request<Unit>("auth/logout") { method = HttpMethod.Post } }
@@ -112,16 +105,16 @@ class PlatformApi(
         userIds: List<Long>,
     ): Unit = request("dashboards/$dashboardId/shares") { json(HttpMethod.Put, Shares(userIds)) }
 
-    suspend fun list(kind: String): List<DefinitionSummary> = request(kind)
+    suspend fun list(kind: Kind): List<DefinitionSummary> = request(kind.path)
 
     suspend fun delete(
-        kind: String,
+        kind: Kind,
         id: String,
         force: Boolean = false,
     ): Unit =
-        request("$kind/$id") {
+        request("${kind.path}/$id") {
             method = HttpMethod.Delete
-            if (force) parameter("force", true)
+            force(force)
         }
 
     suspend fun dataset(id: String): Dataset = request("datasets/$id")
@@ -136,7 +129,7 @@ class PlatformApi(
     ): Unit =
         request("datasets/${dataset.id}") {
             json(HttpMethod.Put, dataset)
-            if (force) parameter("force", true)
+            force(force)
         }
 
     suspend fun putSource(source: Source): Unit = request("sources/${source.id}") { json(HttpMethod.Put, source) }
@@ -181,6 +174,11 @@ class PlatformApi(
         return result ?: throw response.apiException()
     }
 
+    private fun signedIn(answer: LoginResponse): User {
+        session.signIn(answer.token, answer.user)
+        return answer.user
+    }
+
     private fun url(path: String) = "${BuildKonfig.backendurl}/api/v2/$path"
 
     private fun HttpRequestBuilder.authorize() {
@@ -194,7 +192,6 @@ class PlatformApi(
         return ApiException(error?.let { (listOf(it.message) + it.details).joinToString("\n") } ?: "HTTP $status", status.value)
     }
 
-    // Failing to get any response means the server is unreachable (down, offline, CORS), whatever the engine calls it
     private suspend fun send(
         path: String,
         block: HttpRequestBuilder.() -> Unit,
@@ -214,6 +211,10 @@ class PlatformApi(
         if (!response.status.isSuccess()) throw response.apiException()
         return response.body()
     }
+}
+
+private fun HttpRequestBuilder.force(force: Boolean) {
+    if (force) parameter("force", true)
 }
 
 private inline fun <reified B : Any> HttpRequestBuilder.json(

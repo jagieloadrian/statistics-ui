@@ -2,17 +2,17 @@ name: devops
 
 on:
   pull_request:
-    paths: ['.devops/k8s/**', '.github/workflows/devops.yml']
+    paths: ['.devops/helm/**', '.github/workflows/devops.yml']
   push:
     branches: [main]
-    paths: ['.devops/k8s/**', '.github/workflows/devops.yml']
+    paths: ['.devops/helm/**', '.github/workflows/devops.yml']
 
 permissions:
   contents: read
 
 defaults:
   run:
-    shell: bash  # -eo pipefail: błąd kustomize build nie ginie w potoku
+    shell: bash  # -eo pipefail: błąd helm template nie ginie w potoku
 
 env:
   KUBECONFORM_VERSION: v0.8.0
@@ -24,8 +24,19 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Checkout chart (homelab-infra)
+        uses: actions/checkout@v7
+        with:
+          repository: jagieloadrian/homelab-infra
+          path: homelab-infra
+          sparse-checkout: charts
+
       - name: Install kubeconform
         run: curl -sSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" | sudo tar xz -C /usr/local/bin kubeconform
 
       - name: Kubernetes manifests
-        run: kustomize build .devops/k8s | kubeconform -strict -summary -schema-location default -schema-location "$CRD_SCHEMAS" -
+        run: |
+          kc() { kubeconform -strict -summary -schema-location default -schema-location "$CRD_SCHEMAS" -; }
+          r=.devops/helm/release.yaml
+          kc < "$r"
+          yq '.spec.values' "$r" | helm template "$(yq .metadata.name "$r")" homelab-infra/charts/app -f - | kc

@@ -155,7 +155,6 @@ private fun AccentPicker(
     )
 }
 
-// "deep-orange" reads as "Deep orange"
 private fun accentLabel(id: String) = id.replace('-', ' ').replaceFirstChar { it.uppercase() }
 
 @Composable

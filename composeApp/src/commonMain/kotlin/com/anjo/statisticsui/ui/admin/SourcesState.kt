@@ -12,9 +12,11 @@ import com.anjo.statisticsui.api.PlatformApi
 import com.anjo.statisticsui.api.runSuspendCatching
 import com.anjo.statisticsui.model.DefinitionSummary
 import com.anjo.statisticsui.model.ImportResult
+import com.anjo.statisticsui.model.Kind
 import com.anjo.statisticsui.model.MapRow
 import com.anjo.statisticsui.model.MappingTestRequest
 import com.anjo.statisticsui.model.MappingTestResult
+import com.anjo.statisticsui.model.PubSubInfo
 import com.anjo.statisticsui.model.Rule
 import com.anjo.statisticsui.model.Source
 import com.anjo.statisticsui.model.SourceStatus
@@ -40,6 +42,8 @@ class SourcesState(
         private set
     var datasets by mutableStateOf(emptyList<String>())
         private set
+    var pubsub by mutableStateOf<PubSubInfo?>(null)
+        private set
     val states = mutableStateMapOf<String, String>()
     var selected by mutableStateOf<Source?>(null)
         private set
@@ -56,8 +60,9 @@ class SourcesState(
 
     fun reload() =
         scope.attempt({ error = it }) {
-            datasets = api.list("datasets").map { it.id }
-            sources = api.list("sources")
+            datasets = api.list(Kind.DATASETS).map { it.id }
+            pubsub = api.authConfig().pubsub
+            sources = api.list(Kind.SOURCES)
             sources.forEach { source ->
                 launch {
                     runSuspendCatching { api.sourceStatus(source.id) }.fold({ states[source.id] = it.state }, { error = it.message })
@@ -93,7 +98,7 @@ class SourcesState(
         deleting += id
         scope.attempt({ error = it }) {
             try {
-                val deleted = snackbar.deleteWithUndo("Deleted source $id") { api.delete("sources", id) }
+                val deleted = snackbar.deleteWithUndo("Deleted source $id") { api.delete(Kind.SOURCES, id) }
                 if (deleted) {
                     reload()
                 } else if (selected == null) {

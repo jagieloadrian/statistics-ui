@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.anjo.statisticsui.model.ROLES
 import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.Picker
@@ -33,7 +34,6 @@ import com.anjo.statisticsui.ui.common.screenPadding
 import com.anjo.statisticsui.ui.theme.LARGE_SMALL_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.anjo.statisticsui.validation.MIN_PASSWORD_LENGTH
-import com.anjo.statisticsui.validation.ROLES
 
 private val FORM_WIDTH = 420.dp
 
@@ -61,7 +61,6 @@ private fun UsersContent(
     ) {
         ScreenHeader("Users", navController)
         SectionTitle("Invite")
-        // One column of fields: the eye runs straight down instead of zig-zagging along a row
         Column(Modifier.widthIn(max = FORM_WIDTH), verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
             val errors = state.errors
             val field = Modifier.fillMaxWidth()
@@ -93,7 +92,6 @@ private fun UsersContent(
         SectionTitle("Accounts")
         state.listed.forEach { user ->
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
-                // Narrow windows move the role and delete controls under the email instead of squeezing it
                 FlowRow(
                     Modifier.fillMaxWidth().padding(LARGE_SMALL_PADDING),
                     itemVerticalAlignment = Alignment.CenterVertically,

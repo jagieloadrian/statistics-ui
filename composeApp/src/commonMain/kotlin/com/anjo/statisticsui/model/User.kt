@@ -2,6 +2,11 @@ package com.anjo.statisticsui.model
 
 import kotlinx.serialization.Serializable
 
+const val ADMIN = "admin"
+const val EDITOR = "editor"
+const val VIEWER = "viewer"
+val ROLES = listOf(VIEWER, EDITOR, ADMIN)
+
 @Serializable
 data class Prefs(
     val timeZone: String? = null,
@@ -58,6 +63,13 @@ data class UserUpdate(
 data class AuthConfig(
     val local: Boolean = true,
     val oidc: OidcInfo? = null,
+    val pubsub: PubSubInfo? = null,
+)
+
+@Serializable
+data class PubSubInfo(
+    val broker: String,
+    val address: String,
 )
 
 @Serializable

@@ -12,8 +12,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 
 private suspend fun SnackbarHostState.awaitSnackbar(): SnackbarData {
-    while (currentSnackbarData == null) yield()
-    return currentSnackbarData!!
+    while (true) {
+        currentSnackbarData?.let { return it }
+        yield()
+    }
 }
 
 class DeleteWithUndoTest :

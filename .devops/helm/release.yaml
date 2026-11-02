@@ -1,0 +1,27 @@
+# Wdrożenie: wspólny chart homelab-infra/charts/app (opis values: charts/app/values.yaml).
+# Flux czyta .devops/helm/ z main; tag obrazu podbija CI (build.yml, krok Deploy).
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: statistics-ui
+spec:
+  interval: 10m
+  chart:
+    spec:
+      chart: ./charts/app
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+  values:
+    image: ghcr.io/jagieloadrian/statistics-ui:main-20261102110357-303b45a
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        memory: 32Mi
+    tmpSize: 16Mi
+    route:
+      hostname: statistics.home.arpa

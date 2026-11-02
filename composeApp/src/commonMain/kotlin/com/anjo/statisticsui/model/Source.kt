@@ -5,9 +5,13 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 
+const val PUSH_CHANNEL = "push"
+const val PUBSUB_CHANNEL = "pubsub"
+val CHANNEL_TYPES = listOf(PUSH_CHANNEL, PUBSUB_CHANNEL)
+
 @Serializable
 data class Channel(
-    val type: String = "push",
+    val type: String = PUSH_CHANNEL,
 )
 
 @Serializable
@@ -51,6 +55,14 @@ data class Source(
     val dataset: String,
     val mapping: List<Rule> = emptyList(),
 )
+
+fun Source.ingestAddress(pubsub: PubSubInfo?): String =
+    when {
+        channel.type != PUBSUB_CHANNEL -> "Push address: /api/v2/ingest/$id"
+        pubsub == null -> "No broker configured on the server (BROKER=none): pubsub messages are not consumed"
+        pubsub.broker == "kafka" -> "Kafka topic ${pubsub.address}, record key $id, header Authorization: Bearer <source token>"
+        else -> "JetStream subject ${pubsub.address}.$id, header Authorization: Bearer <source token>"
+    }
 
 @Serializable
 data class Counts(
