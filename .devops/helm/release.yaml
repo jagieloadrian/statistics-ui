@@ -19,7 +19,7 @@ spec:
         name: flux-system
         namespace: flux-system
   values:
-    image: ghcr.io/jagieloadrian/statistics-ui:main-20261102155625-6efeca9
+    image: ghcr.io/jagieloadrian/statistics-ui:main-20261102203552-e9cd3ee
     resources:
       requests:
         cpu: 10m
