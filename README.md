@@ -78,18 +78,18 @@ on the origin it loaded the UI from.
   `GET /health/live` and `GET /health/ready`, JSON access log on stdout (`timestamp`, `level`, `message`,
   `logger`, `traceId` from `traceparent`), errors on stderr, graceful stop on SIGQUIT, `.wasm` served as
   `application/wasm`. linux/amd64 and linux/arm64; the Dockerfile has no `RUN`, so buildx needs no emulation.
-- **Manifests:** `.devops/k8s` (ServiceAccount, Deployment, Service, HTTPRoute, AuthorizationPolicy, namespace
-  `apps`) is read directly by Flux from `main` of this repo (registered in homelab-infra
-  `clusters/home/apps/statistics-ui.yaml`).
+- **Manifests:** `.devops/helm/release.yaml`, a Flux HelmRelease of the shared homelab-infra chart `charts/app`
+  (ServiceAccount, Deployment, Service, HTTPRoute, AuthorizationPolicy, namespace `apps`), is read directly by Flux
+  from `main` of this repo (registered in homelab-infra `clusters/home/apps/statistics-ui.yaml`).
 - **CI:** `.github/workflows/build.yml` pushes `main-<yyyyMMddHHmmss>-<sha7>` on main and `<semver>` on `v*` tags,
-  never `latest`; on main it then commits the new tag to `.devops/k8s`, which Flux rolls out.
+  never `latest`; on main it then commits the new tag to `.devops/helm/release.yaml`, which Flux rolls out.
 
 Local image build:
 
 ```shell
 ./gradlew :composeApp:wasmJsBrowserDistribution -PbackendUrl=
 docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/jagieloadrian/statistics-ui:<tag> --push .
-kubectl kustomize .devops/k8s
+yq .spec.values .devops/helm/release.yaml | helm template statistics-ui ../homelab-infra/charts/app -f -
 ```
 
 Register `http://statistics.home.arpa/` as a redirect URI of the OIDC client at the provider.
@@ -97,7 +97,7 @@ Register `http://statistics.home.arpa/` as a redirect URI of the OIDC client at 
 ### Definition of Ready
 
 Verified locally (multi-arch push to a local registry, container run with `--read-only --tmpfs /tmp
---user 10001:10001 --cap-drop ALL`, kustomize + kubeconform with the CRD catalog):
+--user 10001:10001 --cap-drop ALL`; manifests: `helm template` + kubeconform with the CRD catalog in CI `devops.yml`):
 
 - [x] Manifest list has `linux/amd64` and `linux/arm64` (`docker buildx imagetools inspect`)
 - [x] Immutable tag `main-<yyyyMMddHHmmss>-<sha7>` or semver, never `latest` (build.yml)
