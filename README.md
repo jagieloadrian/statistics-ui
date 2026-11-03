@@ -3,6 +3,11 @@
 Compose Multiplatform frontend (desktop JVM, web) of the universal statistics platform. Backend and the platform
 spec live in the `StatisticsService` repo (spec 004).
 
+How it fits with statistics-service, NATS, Postgres and the homelab (diagrams):
+[homelab-infra `docs/architecture.md`](https://github.com/jagieloadrian/homelab-infra/blob/main/docs/architecture.md).
+How data gets into the dashboards:
+[statistics-service README](https://github.com/jagieloadrian/statistics-service#how-data-gets-in).
+
 ## Backend URL
 
 The app calls `http://127.0.0.1:8080/api/v2`. Another backend is a build-time setting, e.g.
