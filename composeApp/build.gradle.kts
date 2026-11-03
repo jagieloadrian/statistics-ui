@@ -15,6 +15,7 @@ plugins {
     alias(libs.plugins.koinCompiler)
     alias(libs.plugins.buildKonfig)
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.kover)
 }
 
 ktlint {
@@ -68,9 +69,11 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotest.framework.engine)
             implementation(libs.kotest.assertions.core)
+            implementation(libs.ktor.client.mock)
         }
         jvmTest.dependencies {
             implementation(libs.kotest.runner.junit5)
+            implementation(libs.compose.ui.test)
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
@@ -86,6 +89,23 @@ kotlin {
 
 tasks.named<Test>("jvmTest") {
     useJUnitPlatform()
+    val prefsRoot =
+        layout.buildDirectory
+            .dir("test-prefs")
+            .get()
+            .asFile
+    systemProperty("java.util.prefs.userRoot", prefsRoot.path)
+    doFirst { prefsRoot.deleteRecursively() }
+}
+
+kover {
+    reports {
+        verify {
+            rule {
+                minBound(50)
+            }
+        }
+    }
 }
 
 buildkonfig {
