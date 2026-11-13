@@ -104,6 +104,11 @@ docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/jagieloadrian/
 yq .spec.values .devops/helm/release.yaml | helm template statistics-ui ../homelab-infra/charts/app -f -
 ```
 
+homelab-infra is private: CI `devops.yml` fetches `charts/app` with a token of the deploy GitHub App (variable
+`DEPLOY_APP_CLIENT_ID`, secret `DEPLOY_APP_PRIVATE_KEY`), limited to homelab-infra and Contents: read. The app must be
+installed on homelab-infra too (GitHub → Settings → GitHub Apps → the app → Configure → Repository access → add
+`homelab-infra`); without it the step fails with `Not Found`.
+
 Register `http://statistics.home.arpa/` as a redirect URI of the OIDC client at the provider.
 
 ### Definition of Ready
