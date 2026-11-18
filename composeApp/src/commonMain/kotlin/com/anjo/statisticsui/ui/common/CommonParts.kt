@@ -266,14 +266,16 @@ fun <T> ListEditor(
     SectionTitle(title)
     items.forEachIndexed { i, item ->
         Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, shape = MaterialTheme.shapes.medium) {
-            FlowRow(
-                Modifier.fillMaxWidth().padding(SMALL_PADDING),
-                itemVerticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
-                verticalArrangement = Arrangement.spacedBy(SMALL_PADDING),
-            ) {
-                row(item) { changed -> onChange(items.mapIndexed { j, old -> if (j == i) changed else old }) }
-                IconButton(onClick = { onChange(items.filterIndexed { j, _ -> j != i }) }) {
+            Row(Modifier.fillMaxWidth().padding(SMALL_PADDING)) {
+                FlowRow(
+                    Modifier.weight(1f),
+                    itemVerticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
+                    verticalArrangement = Arrangement.spacedBy(SMALL_PADDING),
+                ) {
+                    row(item) { changed -> onChange(items.mapIndexed { j, old -> if (j == i) changed else old }) }
+                }
+                IconButton(onClick = { onChange(items.filterIndexed { j, _ -> j != i }) }, Modifier.padding(top = SMALL_PADDING)) {
                     Icon(MaterialSymbols.Rounded.Delete, contentDescription = "Remove", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
