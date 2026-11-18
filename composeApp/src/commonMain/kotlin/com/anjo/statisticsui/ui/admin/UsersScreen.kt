@@ -22,9 +22,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.anjo.statisticsui.model.ADMIN
 import com.anjo.statisticsui.model.ROLES
+import com.anjo.statisticsui.model.User
+import com.anjo.statisticsui.model.VIEWER
 import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.Picker
@@ -32,6 +36,7 @@ import com.anjo.statisticsui.ui.common.ScreenHeader
 import com.anjo.statisticsui.ui.common.SectionTitle
 import com.anjo.statisticsui.ui.common.screenPadding
 import com.anjo.statisticsui.ui.theme.LARGE_SMALL_PADDING
+import com.anjo.statisticsui.ui.theme.PreviewTheme
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.anjo.statisticsui.validation.MIN_PASSWORD_LENGTH
 
@@ -91,21 +96,52 @@ private fun UsersContent(
 
         SectionTitle("Accounts")
         state.listed.forEach { user ->
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
-                FlowRow(
-                    Modifier.fillMaxWidth().padding(LARGE_SMALL_PADDING),
-                    itemVerticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
-                    verticalArrangement = Arrangement.spacedBy(SMALL_PADDING),
-                ) {
-                    Column(Modifier.weight(1f).widthIn(min = 200.dp)) {
-                        Text(user.email, color = MaterialTheme.colorScheme.onSurface)
-                        if (user.name.isNotEmpty()) Text(user.name, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    Picker("Role", user.role, ROLES) { state.changeRole(user, it) }
-                    OutlinedButton(onClick = { state.delete(user) }) { Text("Delete") }
-                }
-            }
+            UserCard(user, onRole = { state.changeRole(user, it) }, onDelete = { state.delete(user) })
         }
     }
 }
+
+@Composable
+private fun UserCard(
+    user: User,
+    onRole: (String) -> Unit,
+    onDelete: () -> Unit,
+) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+        FlowRow(
+            Modifier.fillMaxWidth().padding(LARGE_SMALL_PADDING),
+            itemVerticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
+            verticalArrangement = Arrangement.spacedBy(SMALL_PADDING),
+        ) {
+            Column(Modifier.weight(1f).widthIn(min = 200.dp)) {
+                Text(user.email, color = MaterialTheme.colorScheme.onSurface)
+                if (user.name.isNotEmpty()) Text(user.name, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Picker("Role", user.role, ROLES, onSelect = onRole)
+            OutlinedButton(onClick = onDelete) { Text("Delete") }
+        }
+    }
+}
+
+@Composable
+private fun UserCardsPreview(dark: Boolean) {
+    PreviewTheme(dark) {
+        Column(Modifier.padding(SMALL_PADDING), verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+            UserCard(User(1, "ada@example.com", "Ada Lovelace", ADMIN), {}, {})
+            UserCard(User(2, "a.very.long.address.for.wrapping@statistics.example.com", role = VIEWER), {}, {})
+        }
+    }
+}
+
+@Preview(widthDp = 360)
+@Composable
+private fun UserCardsNarrow() = UserCardsPreview(dark = false)
+
+@Preview(widthDp = 900)
+@Composable
+private fun UserCardsWide() = UserCardsPreview(dark = false)
+
+@Preview(widthDp = 360)
+@Composable
+private fun UserCardsNarrowDark() = UserCardsPreview(dark = true)

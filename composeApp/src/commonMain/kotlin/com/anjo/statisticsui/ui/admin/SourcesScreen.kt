@@ -32,6 +32,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.anjo.statisticsui.model.CHANNEL_TYPES
@@ -52,6 +53,7 @@ import com.anjo.statisticsui.ui.common.SectionTitle
 import com.anjo.statisticsui.ui.common.isCompact
 import com.anjo.statisticsui.ui.common.screenPadding
 import com.anjo.statisticsui.ui.theme.MEDIUM_PADDING
+import com.anjo.statisticsui.ui.theme.PreviewTheme
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.anjo.statisticsui.ui.theme.success
 import com.anjo.statisticsui.ui.theme.warning
@@ -342,3 +344,33 @@ private fun StateChip(state: String) {
 }
 
 private val NUMBER_WIDTH = 120.dp
+
+@Composable
+private fun MappingRowsPreview(dark: Boolean) {
+    PreviewTheme(dark) {
+        Column(Modifier.padding(SMALL_PADDING), verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+            ListEditor(
+                "Mapping (first rule)",
+                "Add field",
+                listOf(
+                    MapRow("device", dim = true, path = "deviceId"),
+                    MapRow("temperature", path = "vals.temperature", min = "-40", max = "85"),
+                ),
+                {},
+                { MapRow() },
+            ) { row, set -> MappingRow(row, set) }
+        }
+    }
+}
+
+@Preview(widthDp = 360)
+@Composable
+private fun MappingRowsNarrow() = MappingRowsPreview(dark = false)
+
+@Preview(widthDp = 900)
+@Composable
+private fun MappingRowsWide() = MappingRowsPreview(dark = false)
+
+@Preview(widthDp = 900)
+@Composable
+private fun MappingRowsWideDark() = MappingRowsPreview(dark = true)

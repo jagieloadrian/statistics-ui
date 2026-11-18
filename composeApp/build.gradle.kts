@@ -53,6 +53,7 @@ kotlin {
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
             implementation(libs.compose.ui)
+            implementation(libs.compose.ui.tooling.preview)
             implementation(libs.androidx.compose.navigation)
             implementation(libs.compose.material.symbols.rounded)
             implementation(libs.ktor.client.core)
@@ -100,6 +101,11 @@ tasks.named<Test>("jvmTest") {
 
 kover {
     reports {
+        filters {
+            excludes {
+                annotatedBy("androidx.compose.ui.tooling.preview.Preview")
+            }
+        }
         verify {
             rule {
                 minBound(50)
