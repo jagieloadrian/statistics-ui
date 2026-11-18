@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,6 +22,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.text
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -41,6 +45,9 @@ import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.anjo.statisticsui.validation.MIN_PASSWORD_LENGTH
 
 private val FORM_WIDTH = 420.dp
+
+// Keeps the email near its Role and Delete controls on wide screens
+private val CARD_WIDTH = 720.dp
 
 @Composable
 fun UsersScreen(
@@ -107,7 +114,10 @@ private fun UserCard(
     onRole: (String) -> Unit,
     onDelete: () -> Unit,
 ) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+    Card(
+        Modifier.widthIn(max = CARD_WIDTH),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+    ) {
         FlowRow(
             Modifier.fillMaxWidth().padding(LARGE_SMALL_PADDING),
             itemVerticalAlignment = Alignment.CenterVertically,
@@ -115,11 +125,18 @@ private fun UserCard(
             verticalArrangement = Arrangement.spacedBy(SMALL_PADDING),
         ) {
             Column(Modifier.weight(1f).widthIn(min = 200.dp)) {
-                Text(user.email, color = MaterialTheme.colorScheme.onSurface)
+                // A zero-width space lets a long address wrap before @; semantics keep the real address
+                Text(
+                    user.email.replace("@", "\u200B@"),
+                    Modifier.semantics { text = AnnotatedString(user.email) },
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
                 if (user.name.isNotEmpty()) Text(user.name, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Picker("Role", user.role, ROLES, onSelect = onRole)
-            OutlinedButton(onClick = onDelete) { Text("Delete") }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+                Picker("Role", user.role, ROLES, onSelect = onRole)
+                OutlinedButton(onClick = onDelete, Modifier.padding(top = SMALL_PADDING)) { Text("Delete") }
+            }
         }
     }
 }
