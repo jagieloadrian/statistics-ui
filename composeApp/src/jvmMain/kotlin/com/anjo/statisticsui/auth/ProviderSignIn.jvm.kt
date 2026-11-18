@@ -4,6 +4,8 @@ import com.anjo.statisticsui.api.PlatformApi
 import com.anjo.statisticsui.model.User
 import com.sun.net.httpserver.HttpServer
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.awt.Desktop
 import java.net.InetSocketAddress
@@ -14,7 +16,7 @@ import kotlin.time.Duration.Companion.minutes
 actual suspend fun providerSignIn(api: PlatformApi): User? =
     Loopback().use { loopback ->
         val start = api.oidcStart(loopback.redirectUri)
-        Desktop.getDesktop().browse(URI(start.authorizationUrl))
+        withContext(Dispatchers.IO) { Desktop.getDesktop().browse(URI(start.authorizationUrl)) }
         api.oidcLogin(loopback.awaitCode(start.state), start.codeVerifier, loopback.redirectUri)
     }
 

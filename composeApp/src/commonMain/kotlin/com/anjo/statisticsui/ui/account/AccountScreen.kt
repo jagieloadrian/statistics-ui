@@ -32,7 +32,9 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.anjo.statisticsui.model.Prefs
 import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.Picker
@@ -41,6 +43,7 @@ import com.anjo.statisticsui.ui.common.SectionTitle
 import com.anjo.statisticsui.ui.common.ShownErrors
 import com.anjo.statisticsui.ui.common.screenPadding
 import com.anjo.statisticsui.ui.theme.ACCENTS
+import com.anjo.statisticsui.ui.theme.PreviewTheme
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.anjo.statisticsui.validation.MIN_PASSWORD_LENGTH
@@ -207,3 +210,20 @@ private fun PasswordField(
         onChange = onChange,
     )
 }
+
+@Composable
+private fun AccentPickerPreview(dark: Boolean) {
+    PreviewTheme(dark) {
+        Column(Modifier.padding(SMALL_PADDING), verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+            AccentPicker(Prefs().accent) {}
+        }
+    }
+}
+
+@Preview(widthDp = 360)
+@Composable
+private fun AccentPickerLight() = AccentPickerPreview(dark = false)
+
+@Preview(widthDp = 360)
+@Composable
+private fun AccentPickerDark() = AccentPickerPreview(dark = true)

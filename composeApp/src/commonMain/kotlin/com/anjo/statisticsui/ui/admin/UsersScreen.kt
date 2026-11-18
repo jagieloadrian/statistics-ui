@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,10 +22,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.text
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.anjo.statisticsui.model.ADMIN
 import com.anjo.statisticsui.model.ROLES
+import com.anjo.statisticsui.model.User
+import com.anjo.statisticsui.model.VIEWER
 import com.anjo.statisticsui.ui.common.ErrorText
 import com.anjo.statisticsui.ui.common.Field
 import com.anjo.statisticsui.ui.common.Picker
@@ -32,10 +40,14 @@ import com.anjo.statisticsui.ui.common.ScreenHeader
 import com.anjo.statisticsui.ui.common.SectionTitle
 import com.anjo.statisticsui.ui.common.screenPadding
 import com.anjo.statisticsui.ui.theme.LARGE_SMALL_PADDING
+import com.anjo.statisticsui.ui.theme.PreviewTheme
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
 import com.anjo.statisticsui.validation.MIN_PASSWORD_LENGTH
 
 private val FORM_WIDTH = 420.dp
+
+// Keeps the email near its Role and Delete controls on wide screens
+private val CARD_WIDTH = 720.dp
 
 @Composable
 fun UsersScreen(
@@ -91,21 +103,62 @@ private fun UsersContent(
 
         SectionTitle("Accounts")
         state.listed.forEach { user ->
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
-                FlowRow(
-                    Modifier.fillMaxWidth().padding(LARGE_SMALL_PADDING),
-                    itemVerticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
-                    verticalArrangement = Arrangement.spacedBy(SMALL_PADDING),
-                ) {
-                    Column(Modifier.weight(1f).widthIn(min = 200.dp)) {
-                        Text(user.email, color = MaterialTheme.colorScheme.onSurface)
-                        if (user.name.isNotEmpty()) Text(user.name, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    Picker("Role", user.role, ROLES) { state.changeRole(user, it) }
-                    OutlinedButton(onClick = { state.delete(user) }) { Text("Delete") }
-                }
+            UserCard(user, onRole = { state.changeRole(user, it) }, onDelete = { state.delete(user) })
+        }
+    }
+}
+
+@Composable
+private fun UserCard(
+    user: User,
+    onRole: (String) -> Unit,
+    onDelete: () -> Unit,
+) {
+    Card(
+        Modifier.widthIn(max = CARD_WIDTH),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+    ) {
+        FlowRow(
+            Modifier.fillMaxWidth().padding(LARGE_SMALL_PADDING),
+            itemVerticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
+            verticalArrangement = Arrangement.spacedBy(SMALL_PADDING),
+        ) {
+            Column(Modifier.weight(1f).widthIn(min = 200.dp)) {
+                // A zero-width space lets a long address wrap before @; semantics keep the real address
+                Text(
+                    user.email.replace("@", "\u200B@"),
+                    Modifier.semantics { text = AnnotatedString(user.email) },
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                if (user.name.isNotEmpty()) Text(user.name, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+                Picker("Role", user.role, ROLES, onSelect = onRole)
+                OutlinedButton(onClick = onDelete, Modifier.padding(top = SMALL_PADDING)) { Text("Delete") }
             }
         }
     }
 }
+
+@Composable
+private fun UserCardsPreview(dark: Boolean) {
+    PreviewTheme(dark) {
+        Column(Modifier.padding(SMALL_PADDING), verticalArrangement = Arrangement.spacedBy(SMALL_PADDING)) {
+            UserCard(User(1, "ada@example.com", "Ada Lovelace", ADMIN), {}, {})
+            UserCard(User(2, "a.very.long.address.for.wrapping@statistics.example.com", role = VIEWER), {}, {})
+        }
+    }
+}
+
+@Preview(widthDp = 360)
+@Composable
+private fun UserCardsNarrow() = UserCardsPreview(dark = false)
+
+@Preview(widthDp = 900)
+@Composable
+private fun UserCardsWide() = UserCardsPreview(dark = false)
+
+@Preview(widthDp = 360)
+@Composable
+private fun UserCardsNarrowDark() = UserCardsPreview(dark = true)

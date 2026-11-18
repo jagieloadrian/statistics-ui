@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.anjo.statisticsui.model.Prefs
+import com.anjo.statisticsui.model.plain
 import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
@@ -265,14 +266,16 @@ fun <T> ListEditor(
     SectionTitle(title)
     items.forEachIndexed { i, item ->
         Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, shape = MaterialTheme.shapes.medium) {
-            FlowRow(
-                Modifier.fillMaxWidth().padding(SMALL_PADDING),
-                itemVerticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
-                verticalArrangement = Arrangement.spacedBy(SMALL_PADDING),
-            ) {
-                row(item) { changed -> onChange(items.mapIndexed { j, old -> if (j == i) changed else old }) }
-                IconButton(onClick = { onChange(items.filterIndexed { j, _ -> j != i }) }) {
+            Row(Modifier.fillMaxWidth().padding(SMALL_PADDING)) {
+                FlowRow(
+                    Modifier.weight(1f),
+                    itemVerticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(SMALL_PADDING),
+                    verticalArrangement = Arrangement.spacedBy(SMALL_PADDING),
+                ) {
+                    row(item) { changed -> onChange(items.mapIndexed { j, old -> if (j == i) changed else old }) }
+                }
+                IconButton(onClick = { onChange(items.filterIndexed { j, _ -> j != i }) }, Modifier.padding(top = SMALL_PADDING)) {
                     Icon(MaterialSymbols.Rounded.Delete, contentDescription = "Remove", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -294,7 +297,6 @@ fun NumberField(
     onBlur: () -> Unit = {},
     onChange: (Double?) -> Unit,
 ) {
-    fun Double.plain() = if (this % 1.0 == 0.0) toLong().toString() else toString()
     var text by remember { mutableStateOf(value?.plain().orEmpty()) }
     val changedOutside = text.toDoubleOrNull() != value
     if (changedOutside) text = value?.plain().orEmpty()

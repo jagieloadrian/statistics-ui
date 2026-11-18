@@ -1,7 +1,10 @@
 package com.anjo.statisticsui.ui.theme
 
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import kotlin.math.PI
@@ -162,3 +165,13 @@ private val ColorScheme.isLight get() = surface.luminance() > 0.5f
 val ColorScheme.success get() = if (isLight) Color(0xFF1B6C2F) else Color(0xFF9AD6A3)
 
 val ColorScheme.warning get() = if (isLight) Color(0xFF7A5900) else Color(0xFFF2C14D)
+
+@Composable
+fun PreviewTheme(
+    dark: Boolean = false,
+    content: @Composable () -> Unit,
+) {
+    MaterialTheme(colorScheme = accentScheme(DEFAULT_ACCENT, dark)) {
+        Surface(color = MaterialTheme.colorScheme.background, content = content)
+    }
+}

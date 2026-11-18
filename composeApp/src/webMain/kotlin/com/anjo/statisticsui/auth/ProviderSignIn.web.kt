@@ -19,6 +19,7 @@ actual suspend fun providerSignIn(api: PlatformApi): User? {
     return null
 }
 
+@OptIn(ExperimentalWasmJsInterop::class)
 actual suspend fun resumeProviderSignIn(api: PlatformApi): User? {
     val callback = parseCallback(window.location.search) ?: return null
     window.history.replaceState(null, "", window.location.pathname)

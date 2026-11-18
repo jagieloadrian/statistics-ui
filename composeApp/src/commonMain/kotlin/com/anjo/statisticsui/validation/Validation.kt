@@ -96,7 +96,12 @@ fun datasetErrors(
     retention: String,
     existingIds: Collection<String>,
 ): FieldErrors {
-    val names = dataset.measures.map { it.name } + dataset.dimensions.map { it.name } + calculatedNames
+    val names =
+        buildList {
+            dataset.measures.mapTo(this) { it.name }
+            dataset.dimensions.mapTo(this) { it.name }
+            addAll(calculatedNames)
+        }
     return errorsOf(
         "id" to idError(dataset.id, existingIds),
         "names" to namesError(names),
