@@ -106,4 +106,16 @@ class DashboardLogicTest :
             listOf(rule).withRows(rule.rows()) shouldBe listOf(rule)
             emptyList<Rule>().withRows(emptyList()) shouldBe emptyList()
         }
+
+        test("mappingRowsShowWholeBoundsWithoutDecimals") {
+            // given
+            val rule = Rule(vals = mapOf("temperature" to FieldSpec(min = -40.0, max = 85.5)))
+
+            // when
+            val row = rule.rows().single()
+
+            // then
+            row.min shouldBe "-40"
+            row.max shouldBe "85.5"
+        }
     })

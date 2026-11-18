@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.anjo.statisticsui.model.Prefs
+import com.anjo.statisticsui.model.plain
 import com.anjo.statisticsui.ui.theme.LARGE_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_MEDIUM_PADDING
 import com.anjo.statisticsui.ui.theme.SMALL_PADDING
@@ -294,7 +295,6 @@ fun NumberField(
     onBlur: () -> Unit = {},
     onChange: (Double?) -> Unit,
 ) {
-    fun Double.plain() = if (this % 1.0 == 0.0) toLong().toString() else toString()
     var text by remember { mutableStateOf(value?.plain().orEmpty()) }
     val changedOutside = text.toDoubleOrNull() != value
     if (changedOutside) text = value?.plain().orEmpty()

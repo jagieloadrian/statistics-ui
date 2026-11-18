@@ -14,7 +14,9 @@ private fun row(
     target: String,
     spec: FieldSpec,
     dim: Boolean,
-) = MapRow(target, dim, spec.path.orEmpty(), spec.required, spec.min?.toString().orEmpty(), spec.max?.toString().orEmpty(), spec)
+) = MapRow(target, dim, spec.path.orEmpty(), spec.required, spec.min?.plain().orEmpty(), spec.max?.plain().orEmpty(), spec)
+
+internal fun Double.plain() = if (this % 1.0 == 0.0) toLong().toString() else toString()
 
 internal fun Rule?.rows(): List<MapRow> =
     this?.let { r -> r.dims.map { row(it.key, it.value, true) } + r.vals.map { row(it.key, it.value, false) } }.orEmpty()
